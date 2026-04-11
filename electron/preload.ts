@@ -11,6 +11,7 @@ const api = {
       ipcRenderer.invoke('students:checkDuplicate', input, excludeId),
     import: (rows: unknown[]) => ipcRenderer.invoke('students:import', rows),
     nextCode: () => ipcRenderer.invoke('students:nextCode'),
+    migrateKana: () => ipcRenderer.invoke('students:migrateKana'),
   },
   venues: {
     list:    (activeOnly?: boolean, region?: string) => ipcRenderer.invoke('venues:list', activeOnly, region),

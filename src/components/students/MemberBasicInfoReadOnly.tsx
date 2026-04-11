@@ -109,7 +109,7 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
           <Row label="受講者番号" value={dash(student.student_code)} />
           <Row label="氏名" value={`${student.last_name} ${student.first_name}`} />
           <Row
-            label="ふりがな"
+            label="フリガナ"
             value={
               [student.last_kana, student.first_kana]
                 .map((x) => x?.trim())

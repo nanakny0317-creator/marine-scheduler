@@ -41,6 +41,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   const [dupResult, setDupResult] = useState<DuplicateCheckResult | null>(null)
   const [saving, setSaving] = useState(false)
   const [zipLoading, setZipLoading] = useState(false)
+  const [composing, setComposing] = useState(false)
   const firstRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
 
   // フィールド更新
   const set = (k: keyof StudentInput, v: string | null) => {
+    if (composing) return
     setForm((f) => ({ ...f, [k]: v }))
     setErrors((e) => ({ ...e, [k]: undefined }))
   }
@@ -147,6 +149,8 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
           type={type}
           value={(form[name] as string) ?? ''}
           onChange={(e) => set(name, e.target.value)}
+          onCompositionStart={() => setComposing(true)}
+          onCompositionEnd={() => setComposing(false)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={`field-input ${errors[name] ? 'ring-2 ring-red-300 border-red-300' : ''}`}
@@ -235,8 +239,8 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
               <F label="名" name="first_name" required placeholder="太郎" />
             </div>
             <div className="grid grid-cols-2 gap-3 mt-2">
-              <F label="せい（ふりがな）" name="last_kana" placeholder="やまだ" />
-              <F label="めい（ふりがな）" name="first_kana" placeholder="たろう" />
+              <F label="せい（フリガナ）" name="last_kana" placeholder="やまだ" />
+              <F label="めい（フリガナ）" name="first_kana" placeholder="たろう" />
             </div>
           </fieldset>
 

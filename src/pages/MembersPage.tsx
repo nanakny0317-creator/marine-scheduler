@@ -113,6 +113,13 @@ export default function MembersPage() {
     if (selectedId != null) await loadEnrollments(selectedId)
   }
 
+  const handleMigrateKana = async () => {
+    if (!window.confirm('既存の会員情報のフリガナを全てカタカナに統一しますか？\nこの操作は元に戻せません。')) return
+    await studentsApi.migrateKana()
+    await loadStudents()
+    alert('フリガナの統一が完了しました。')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-lavender-50 via-white to-mint-50 flex flex-col">
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-lavender-100 px-6 py-4 flex flex-wrap items-center gap-3 shrink-0">
@@ -126,6 +133,14 @@ export default function MembersPage() {
         <span className="text-lavender-200 hidden sm:inline">|</span>
         <h1 className="text-base font-bold text-gray-700">👤 会員一覧</h1>
         <span className="text-xs text-gray-400">基本情報・講習日程・申込の管理</span>
+        <div className="ml-auto flex gap-2">
+          <button
+            onClick={handleMigrateKana}
+            className="btn-secondary text-xs"
+          >
+            フリガナ統一
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 flex flex-col min-h-0 px-6 py-6 max-w-6xl w-full mx-auto gap-4">

@@ -22,8 +22,8 @@ import type { ParsedBody } from '../../types'
 const TARGET_FIELDS: { key: keyof StudentInput; label: string; required?: boolean }[] = [
   { key: 'last_name',   label: '姓',               required: true },
   { key: 'first_name',  label: '名',               required: true },
-  { key: 'last_kana',   label: 'せい（ふりがな）' },
-  { key: 'first_kana',  label: 'めい（ふりがな）' },
+  { key: 'last_kana',   label: 'せい（フリガナ）' },
+  { key: 'first_kana',  label: 'めい（フリガナ）' },
   { key: 'birth_date',  label: '生年月日' },
   { key: 'gender',      label: '性別' },
   { key: 'postal_code', label: '郵便番号' },
@@ -607,7 +607,7 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                     <tr>
                       <th className="table-head-cell">姓</th>
                       <th className="table-head-cell">名</th>
-                      <th className="table-head-cell">ふりがな</th>
+                      <th className="table-head-cell">フリガナ</th>
                       <th className="table-head-cell">電話</th>
                       <th className="table-head-cell">メール</th>
                     </tr>

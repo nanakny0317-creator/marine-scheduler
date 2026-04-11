@@ -8,6 +8,7 @@ import {
   checkDuplicate,
   importStudents,
   nextStudentCode,
+  migrateKanaToKatakana,
 } from '../db/students'
 
 export function registerStudentHandlers() {
@@ -19,4 +20,5 @@ export function registerStudentHandlers() {
   ipcMain.handle('students:checkDuplicate', (_e, input, excludeId) => checkDuplicate(input, excludeId))
   ipcMain.handle('students:import', (_e, rows) => importStudents(rows))
   ipcMain.handle('students:nextCode', () => nextStudentCode())
+  ipcMain.handle('students:migrateKana', () => { migrateKanaToKatakana(); return true })
 }

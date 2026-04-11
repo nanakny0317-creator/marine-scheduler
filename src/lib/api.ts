@@ -49,6 +49,9 @@ export const studentsApi = {
 
   nextCode: (): Promise<string> =>
     window.api.students.nextCode(),
+
+  migrateKana: (): Promise<boolean> =>
+    window.api.students.migrateKana(),
 }
 
 export const enrollmentsApi = {

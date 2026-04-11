@@ -177,7 +177,7 @@ export default function StudentList() {
                 className="table-head-cell cursor-pointer"
                 onClick={() => toggleSort('last_kana')}
               >
-                ふりがな <SortIcon col="last_kana" />
+                フリガナ <SortIcon col="last_kana" />
               </th>
               <th className="table-head-cell">生年月日</th>
               <th className="table-head-cell">性別</th>

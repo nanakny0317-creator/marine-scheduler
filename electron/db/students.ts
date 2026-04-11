@@ -7,6 +7,14 @@ import type {
   DuplicateCheckResult,
 } from '../../src/types'
 
+// ひらがなをカタカナに変換
+function toKatakana(str: string | null): string | null {
+  if (!str) return str
+  return str.replace(/[\u3041-\u3096]/g, (match) => {
+    return String.fromCharCode(match.charCodeAt(0) + 0x60)
+  })
+}
+
 function toStudent(row: Row): Student {
   return {
     id: Number(row.id),
@@ -87,7 +95,10 @@ export function getStudent(id: number): Student | null {
 
 // -------- 作成 --------
 export function createStudent(input: StudentInput): Student {
-  const code = input.student_code?.trim() || nextStudentCode()
+  const processedInput = { ...input }
+  processedInput.last_kana = toKatakana(input.last_kana)
+  processedInput.first_kana = toKatakana(input.first_kana)
+  const code = processedInput.student_code?.trim() || nextStudentCode()
   const id = run(
     `INSERT INTO students
        (student_code, last_name, first_name, last_kana, first_kana, birth_date, gender,
@@ -98,13 +109,13 @@ export function createStudent(input: StudentInput): Student {
              datetime('now','localtime'), datetime('now','localtime'))`,
     [
       code,
-      input.last_name, input.first_name,
-      input.last_kana ?? null, input.first_kana ?? null,
-      input.birth_date ?? null, input.gender ?? null,
-      input.postal_code ?? null, input.prefecture ?? null,
-      input.city ?? null, input.address1 ?? null, input.address2 ?? null,
-      input.phone ?? null, input.mobile ?? null,
-      input.email ?? null, input.note ?? null,
+      processedInput.last_name, processedInput.first_name,
+      processedInput.last_kana ?? null, processedInput.first_kana ?? null,
+      processedInput.birth_date ?? null, processedInput.gender ?? null,
+      processedInput.postal_code ?? null, processedInput.prefecture ?? null,
+      processedInput.city ?? null, processedInput.address1 ?? null, processedInput.address2 ?? null,
+      processedInput.phone ?? null, processedInput.mobile ?? null,
+      processedInput.email ?? null, processedInput.note ?? null,
     ]
   )
   return getStudent(id)!
@@ -112,6 +123,9 @@ export function createStudent(input: StudentInput): Student {
 
 // -------- 更新 --------
 export function updateStudent(id: number, input: StudentInput): Student {
+  const processedInput = { ...input }
+  processedInput.last_kana = toKatakana(input.last_kana)
+  processedInput.first_kana = toKatakana(input.first_kana)
   run(
     `UPDATE students SET
        student_code=?,
@@ -122,14 +136,14 @@ export function updateStudent(id: number, input: StudentInput): Student {
        updated_at=datetime('now','localtime')
      WHERE id=?`,
     [
-      input.student_code ?? null,
-      input.last_name, input.first_name,
-      input.last_kana ?? null, input.first_kana ?? null,
-      input.birth_date ?? null, input.gender ?? null,
-      input.postal_code ?? null, input.prefecture ?? null,
-      input.city ?? null, input.address1 ?? null, input.address2 ?? null,
-      input.phone ?? null, input.mobile ?? null,
-      input.email ?? null, input.note ?? null,
+      processedInput.student_code ?? null,
+      processedInput.last_name, processedInput.first_name,
+      processedInput.last_kana ?? null, processedInput.first_kana ?? null,
+      processedInput.birth_date ?? null, processedInput.gender ?? null,
+      processedInput.postal_code ?? null, processedInput.prefecture ?? null,
+      processedInput.city ?? null, processedInput.address1 ?? null, processedInput.address2 ?? null,
+      processedInput.phone ?? null, processedInput.mobile ?? null,
+      processedInput.email ?? null, processedInput.note ?? null,
       id,
     ]
   )
@@ -174,7 +188,10 @@ export function importStudents(rows: StudentInput[]): { inserted: number; skippe
     for (const row of rows) {
       if (!row.last_name?.trim() || !row.first_name?.trim()) { skipped++; continue }
       try {
-        const code = row.student_code?.trim() || nextStudentCode()
+        const processedRow = { ...row }
+        processedRow.last_kana = toKatakana(row.last_kana)
+        processedRow.first_kana = toKatakana(row.first_kana)
+        const code = processedRow.student_code?.trim() || nextStudentCode()
         run(
           `INSERT INTO students
              (student_code, last_name, first_name, last_kana, first_kana, birth_date, gender,
@@ -185,13 +202,13 @@ export function importStudents(rows: StudentInput[]): { inserted: number; skippe
                    datetime('now','localtime'), datetime('now','localtime'))`,
           [
             code,
-            row.last_name, row.first_name,
-            row.last_kana ?? null, row.first_kana ?? null,
-            row.birth_date ?? null, row.gender ?? null,
-            row.postal_code ?? null, row.prefecture ?? null,
-            row.city ?? null, row.address1 ?? null, row.address2 ?? null,
-            row.phone ?? null, row.mobile ?? null,
-            row.email ?? null, row.note ?? null,
+            processedRow.last_name, processedRow.first_name,
+            processedRow.last_kana ?? null, processedRow.first_kana ?? null,
+            processedRow.birth_date ?? null, processedRow.gender ?? null,
+            processedRow.postal_code ?? null, processedRow.prefecture ?? null,
+            processedRow.city ?? null, processedRow.address1 ?? null, processedRow.address2 ?? null,
+            processedRow.phone ?? null, processedRow.mobile ?? null,
+            processedRow.email ?? null, processedRow.note ?? null,
           ]
         )
         inserted++
@@ -202,4 +219,14 @@ export function importStudents(rows: StudentInput[]): { inserted: number; skippe
   })
 
   return { inserted, skipped }
+}
+
+// -------- 既存データのふりがなをカタカナに統一 --------
+export function migrateKanaToKatakana(): void {
+  const students = query('SELECT id, last_kana, first_kana FROM students WHERE last_kana IS NOT NULL OR first_kana IS NOT NULL')
+  for (const student of students) {
+    const newLastKana = toKatakana(student.last_kana ? String(student.last_kana) : null)
+    const newFirstKana = toKatakana(student.first_kana ? String(student.first_kana) : null)
+    run('UPDATE students SET last_kana = ?, first_kana = ? WHERE id = ?', [newLastKana, newFirstKana, student.id])
+  }
 }
