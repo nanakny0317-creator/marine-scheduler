@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"C:\\\\Users\\\\info\\\\Documents\\\\my-scheduler\")",
+      "Bash(npm install:*)",
+      "Bash(npm --version)",
+      "Bash(npx tsc:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx vite:*)",
+      "Bash(npx cross-env:*)",
+      "Bash(npm run:*)",
+      "Bash(node:*)",
+      "Bash(taskkill /F /IM electron.exe)",
+      "Bash(taskkill /F /IM \"my-scheduler - コピー.exe\")",
+      "Bash(powershell:*)",
+      "Read(//c/Users/nanak/Documents//**)",
+      "Read(//c/Users/nanak/Documents/**)",
+      "Bash(powershell.exe:*)",
+      "Bash(n\\\\\")",
+      "Bash(taskkill /F /IM \"my-scheduler.exe\")"
+    ]
+  }
+}
