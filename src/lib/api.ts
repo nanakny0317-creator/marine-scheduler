@@ -4,7 +4,7 @@
  */
 import type {
   Student, StudentInput, StudentSearchParams, DuplicateCheckResult,
-  Enrollment, EnrollmentInput, ApplicationType,
+  Enrollment, EnrollmentInput,
   Venue, VenueInput,
 } from '../types'
 
@@ -65,6 +65,12 @@ export const enrollmentsApi = {
 
   listAll: (applicationType?: string): Promise<Array<{ enrollment: Enrollment; student: Student }>> =>
     window.api.enrollments.listAll(applicationType),
+
+  update: (id: number, input: EnrollmentInput): Promise<Enrollment> =>
+    window.api.enrollments.update(id, input),
+
+  delete: (id: number): Promise<boolean> =>
+    window.api.enrollments.delete(id),
 }
 
 /**

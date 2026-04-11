@@ -46,6 +46,43 @@ export function listEnrollments(studentId: number): Enrollment[] {
   ).map(toEnrollment)
 }
 
+export function updateEnrollment(id: number, input: EnrollmentInput): Enrollment {
+  const existing = queryOne('SELECT id FROM enrollments WHERE id=?', [id])
+  if (!existing) throw new Error('申込が見つかりません')
+
+  run(
+    `UPDATE enrollments SET
+       student_id = ?,
+       menu = ?,
+       course_date = ?,
+       venue = ?,
+       status = ?,
+       extra_json = ?,
+       note = ?,
+       updated_at = datetime('now','localtime')
+     WHERE id = ?`,
+    [
+      input.student_id,
+      input.menu,
+      input.course_date ?? null,
+      input.venue ?? null,
+      input.status,
+      input.extra_json,
+      input.note ?? null,
+      id,
+    ] as SqlParam[]
+  )
+  return toEnrollment(queryOne('SELECT * FROM enrollments WHERE id=?', [id])!)
+}
+
+/** 申込のみ削除（受講者レコードは残す） */
+export function deleteEnrollment(id: number): boolean {
+  const row = queryOne('SELECT id FROM enrollments WHERE id=?', [id])
+  if (!row) return false
+  run('DELETE FROM enrollments WHERE id=?', [id])
+  return true
+}
+
 /**
  * 受講者＋申込をまとめてインポートする（トランザクション）
  */

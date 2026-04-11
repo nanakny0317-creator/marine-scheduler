@@ -148,6 +148,13 @@ export default function HomePage() {
           onClick={() => navigate('/venues')}
         />
         <HomeButton
+          icon="👤"
+          title="会員一覧"
+          desc={"会員情報と講習日程\nの確認・編集"}
+          color="lavender"
+          onClick={() => navigate('/members')}
+        />
+        <HomeButton
           icon="🖨️"
           title="宛名印刷"
           desc={"宛名ラベル・受講票\nの印刷"}

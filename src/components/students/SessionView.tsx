@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
-import { studentsApi } from '../../lib/api'
+import { enrollmentsApi } from '../../lib/api'
 import StudentForm from './StudentForm'
+import MemberBasicInfoModal from './MemberBasicInfoModal'
 import CsvImportModal from './CsvImportModal'
 import { useSession, TABS } from '../../contexts/SessionContext'
 
@@ -29,15 +30,22 @@ export default function SessionView() {
   // activeTab はコンテキスト管理（サイドバーのフィルタと共有）
   const { selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
 
-  const [editStudent, setEditStudent] = useState<Student | null | undefined>(undefined)
+  const [viewStudent, setViewStudent] = useState<Student | null>(null)
+  const [editStudent, setEditStudent] = useState<Student | null>(null)
   const [showCsvImport, setShowCsvImport] = useState(false)
 
   // sessions はコンテキスト側で activeTab フィルタ済みのため、items をそのまま使う
   const filteredItems = selectedSession?.items ?? []
 
   const handleDelete = async (student: Student, enrollment: Enrollment) => {
-    if (!window.confirm(`「${student.last_name} ${student.first_name}」の申込を削除しますか？\n（受講者データも削除されます）`)) return
-    await studentsApi.delete(student.id)
+    if (
+      !window.confirm(
+        `「${student.last_name} ${student.first_name}」のこの申込を削除しますか？\n\n会員（受講者）の基本情報は残ります。講習スケジュールの一覧からだけ外れます。`
+      )
+    ) {
+      return
+    }
+    await enrollmentsApi.delete(enrollment.id)
     reload()
   }
 
@@ -143,16 +151,17 @@ export default function SessionView() {
                 {/* 操作ボタン */}
                 <div className="flex gap-1 shrink-0">
                   <button
-                    onClick={() => setEditStudent(student)}
+                    type="button"
+                    onClick={() => setViewStudent(student)}
                     className="btn-secondary btn-sm"
                   >
-                    編集
+                    基本情報
                   </button>
                   <button
                     onClick={() => handleDelete(student, enrollment)}
                     className="btn-danger btn-sm"
                   >
-                    削除
+                    申込削除
                   </button>
                 </div>
               </div>
@@ -168,12 +177,25 @@ export default function SessionView() {
         </p>
       )}
 
-      {/* 受講者編集モーダル */}
-      {editStudent !== undefined && (
+      {viewStudent && (
+        <MemberBasicInfoModal
+          student={viewStudent}
+          onClose={() => setViewStudent(null)}
+          onEdit={() => {
+            setEditStudent(viewStudent)
+            setViewStudent(null)
+          }}
+        />
+      )}
+
+      {editStudent && (
         <StudentForm
           student={editStudent}
-          onSaved={() => { setEditStudent(undefined); reload() }}
-          onCancel={() => setEditStudent(undefined)}
+          onSaved={() => {
+            setEditStudent(null)
+            reload()
+          }}
+          onCancel={() => setEditStudent(null)}
         />
       )}
 

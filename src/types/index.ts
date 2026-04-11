@@ -161,6 +161,8 @@ export interface ElectronAPI {
       rows: Array<{ student: StudentInput; enrollment: Omit<EnrollmentInput, 'student_id'> }>
     ) => Promise<{ inserted: number; skipped: number }>
     listAll: (applicationType?: string) => Promise<Array<{ enrollment: Enrollment; student: Student }>>
+    update: (id: number, input: EnrollmentInput) => Promise<Enrollment>
+    delete: (id: number) => Promise<boolean>
   }
 }
 

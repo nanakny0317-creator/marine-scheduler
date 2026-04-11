@@ -24,6 +24,8 @@ const api = {
     list: (studentId: number) => ipcRenderer.invoke('enrollments:list', studentId),
     importBatch: (rows: unknown[]) => ipcRenderer.invoke('enrollments:importBatch', rows),
     listAll: (applicationType?: string) => ipcRenderer.invoke('enrollments:listAll', applicationType),
+    update: (id: number, input: unknown) => ipcRenderer.invoke('enrollments:update', id, input),
+    delete: (id: number) => ipcRenderer.invoke('enrollments:delete', id),
   },
 }
 
