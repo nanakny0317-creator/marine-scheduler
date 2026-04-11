@@ -246,7 +246,9 @@ export default function MembersPage() {
                             <span className="text-xs font-bold text-lavender-600 bg-white px-2 py-0.5 rounded border border-lavender-100">
                               {appTypeLabel(e)}
                             </span>
-                            <span className="text-xs text-gray-400">{e.menu}</span>
+                            {JSON.parse(e.extra_json ?? '{}').application_type === 'new' && e.menu && (
+                              <span className="text-xs text-gray-400">{e.menu}</span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-700 space-y-1">
                             <div>

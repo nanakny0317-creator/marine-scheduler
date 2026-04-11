@@ -8,6 +8,69 @@ import { useEffect, useRef, useState } from 'react'
 import type { Student, StudentInput, DuplicateCheckResult } from '../../types'
 import { studentsApi, fetchAddressByZip } from '../../lib/api'
 
+// コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
+interface FieldProps {
+  label: string
+  type?: string
+  placeholder?: string
+  required?: boolean
+  error?: string
+  value: string
+  onChange: (v: string) => void
+  onKeyDown: (e: React.KeyboardEvent) => void
+  inputRef?: React.RefObject<HTMLInputElement>
+  children?: React.ReactNode
+}
+
+function Field({
+  label, type = 'text', placeholder = '', required, error,
+  value, onChange, onKeyDown, inputRef,
+  children,
+}: FieldProps) {
+  // ローカル state で表示値を管理：IME変換中も未確定文字を表示できる
+  const [localValue, setLocalValue] = useState(value)
+  const composingRef = useRef(false)
+
+  // 外部から value が変わったとき（郵便番号自動入力など）はローカルにも反映
+  useEffect(() => {
+    if (!composingRef.current) {
+      setLocalValue(value)
+    }
+  }, [value])
+
+  return (
+    <div>
+      <label className="field-label">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      {children ?? (
+        <input
+          ref={inputRef}
+          type={type}
+          value={localValue}
+          onChange={(e) => {
+            setLocalValue(e.target.value)
+            if (!composingRef.current) {
+              onChange(e.target.value)
+            }
+          }}
+          onCompositionStart={() => { composingRef.current = true }}
+          onCompositionEnd={(e) => {
+            composingRef.current = false
+            const v = (e.target as HTMLInputElement).value
+            setLocalValue(v)
+            onChange(v)
+          }}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          className={`field-input ${error ? 'ring-2 ring-red-300 border-red-300' : ''}`}
+        />
+      )}
+      {error && <p className="text-xs text-red-400 mt-0.5">{error}</p>}
+    </div>
+  )
+}
+
 const EMPTY: StudentInput = {
   student_code: null,
   last_name: '',
@@ -41,7 +104,6 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   const [dupResult, setDupResult] = useState<DuplicateCheckResult | null>(null)
   const [saving, setSaving] = useState(false)
   const [zipLoading, setZipLoading] = useState(false)
-  const [composing, setComposing] = useState(false)
   const firstRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -56,7 +118,6 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
 
   // フィールド更新
   const set = (k: keyof StudentInput, v: string | null) => {
-    if (composing) return
     setForm((f) => ({ ...f, [k]: v }))
     setErrors((e) => ({ ...e, [k]: undefined }))
   }
@@ -129,36 +190,12 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     if (e.key === 'Escape') onCancel()
   }
 
-  const F = ({
-    label, name, type = 'text', placeholder = '', required = false,
-    children,
-  }: {
-    label: string
-    name: keyof StudentInput
-    type?: string
-    placeholder?: string
-    required?: boolean
-    children?: React.ReactNode
-  }) => (
-    <div>
-      <label className="field-label">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
-      </label>
-      {children ?? (
-        <input
-          type={type}
-          value={(form[name] as string) ?? ''}
-          onChange={(e) => set(name, e.target.value)}
-          onCompositionStart={() => setComposing(true)}
-          onCompositionEnd={() => setComposing(false)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className={`field-input ${errors[name] ? 'ring-2 ring-red-300 border-red-300' : ''}`}
-        />
-      )}
-      {errors[name] && <p className="text-xs text-red-400 mt-0.5">{errors[name]}</p>}
-    </div>
-  )
+  const f = (name: keyof StudentInput) => ({
+    value: (form[name] as string) ?? '',
+    onChange: (v: string) => set(name, v),
+    onKeyDown: handleKeyDown,
+    error: errors[name],
+  })
 
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[55] p-4">
@@ -225,22 +262,12 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
               氏名
             </legend>
             <div className="grid grid-cols-2 gap-3">
-              <F label="姓" name="last_name" required placeholder="山田">
-                <input
-                  ref={firstRef}
-                  type="text"
-                  value={form.last_name}
-                  onChange={(e) => set('last_name', e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="山田"
-                  className={`field-input ${errors.last_name ? 'ring-2 ring-red-300' : ''}`}
-                />
-              </F>
-              <F label="名" name="first_name" required placeholder="太郎" />
+              <Field label="姓" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
+              <Field label="名" required placeholder="太郎" {...f('first_name')} />
             </div>
             <div className="grid grid-cols-2 gap-3 mt-2">
-              <F label="せい（フリガナ）" name="last_kana" placeholder="やまだ" />
-              <F label="めい（フリガナ）" name="first_kana" placeholder="たろう" />
+              <Field label="せい（フリガナ）" placeholder="やまだ" {...f('last_kana')} />
+              <Field label="めい（フリガナ）" placeholder="たろう" {...f('first_kana')} />
             </div>
           </fieldset>
 
@@ -250,8 +277,8 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
               基本情報
             </legend>
             <div className="grid grid-cols-2 gap-3">
-              <F label="生年月日" name="birth_date" type="date" />
-              <F label="性別" name="gender">
+              <Field label="生年月日" type="date" {...f('birth_date')} />
+              <Field label="性別" {...f('gender')}>
                 <select
                   value={form.gender ?? ''}
                   onChange={(e) =>
@@ -265,7 +292,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
                   <option value="female">女性</option>
                   <option value="other">その他</option>
                 </select>
-              </F>
+              </Field>
             </div>
           </fieldset>
 
@@ -298,14 +325,14 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
                   )}
                 </div>
               </div>
-              <F label="都道府県" name="prefecture" placeholder="東京都" />
-              <F label="市区町村" name="city" placeholder="渋谷区" />
+              <Field label="都道府県" placeholder="東京都" {...f('prefecture')} />
+              <Field label="市区町村" placeholder="渋谷区" {...f('city')} />
             </div>
             <div className="mt-2">
-              <F label="番地・建物名" name="address1" placeholder="道玄坂1-2-3" />
+              <Field label="番地・建物名" placeholder="道玄坂1-2-3" {...f('address1')} />
             </div>
             <div className="mt-2">
-              <F label="住所2（マンション名等）" name="address2" placeholder="" />
+              <Field label="住所2（マンション名等）" placeholder="" {...f('address2')} />
             </div>
           </fieldset>
 
@@ -315,11 +342,11 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
               連絡先
             </legend>
             <div className="grid grid-cols-2 gap-3">
-              <F label="電話番号" name="phone" type="tel" placeholder="03-0000-0000" />
-              <F label="携帯電話" name="mobile" type="tel" placeholder="090-0000-0000" />
+              <Field label="電話番号" type="tel" placeholder="03-0000-0000" {...f('phone')} />
+              <Field label="携帯電話" type="tel" placeholder="090-0000-0000" {...f('mobile')} />
             </div>
             <div className="mt-2">
-              <F label="メールアドレス" name="email" type="email" placeholder="taro@example.com" />
+              <Field label="メールアドレス" type="email" placeholder="taro@example.com" {...f('email')} />
             </div>
           </fieldset>
 

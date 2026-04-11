@@ -6,6 +6,7 @@ import { enrollmentsApi } from '../../lib/api'
 import StudentForm from './StudentForm'
 import MemberBasicInfoModal from './MemberBasicInfoModal'
 import CsvImportModal from './CsvImportModal'
+import ScheduleItemDetailModal from './ScheduleItemDetailModal'
 import { useSession, TABS } from '../../contexts/SessionContext'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -33,6 +34,7 @@ export default function SessionView() {
   const [viewStudent, setViewStudent] = useState<Student | null>(null)
   const [editStudent, setEditStudent] = useState<Student | null>(null)
   const [showCsvImport, setShowCsvImport] = useState(false)
+  const [detailItem, setDetailItem] = useState<{ student: Student; enrollment: Enrollment } | null>(null)
 
   // sessions はコンテキスト側で activeTab フィルタ済みのため、items をそのまま使う
   const filteredItems = selectedSession?.items ?? []
@@ -114,7 +116,9 @@ export default function SessionView() {
             return (
               <div
                 key={enrollment.id}
-                className="px-5 py-3 flex items-center gap-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition"
+                className="px-5 py-3 flex items-center gap-3 border-b border-gray-50 last:border-0 hover:bg-lavender-50/60 transition cursor-pointer select-none"
+                onDoubleClick={() => setDetailItem({ student, enrollment })}
+                title="ダブルクリックで詳細表示"
               >
                 {/* 種別バッジ */}
                 <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${TYPE_CLASS[appType] ?? 'bg-gray-100 text-gray-500'}`}>
@@ -138,9 +142,9 @@ export default function SessionView() {
                   )}
                 </div>
 
-                {/* メニュー */}
+                {/* メニュー（受講申請のみ） */}
                 <span className="text-xs text-gray-400 truncate flex-1 hidden sm:block">
-                  {enrollment.menu}
+                  {appType === 'new' ? enrollment.menu : ''}
                 </span>
 
                 {/* 電話 */}
@@ -170,11 +174,21 @@ export default function SessionView() {
         )}
       </div>
 
-      {/* 合計件数 */}
+      {/* 合計件数 + ヒント */}
       {!loading && selectedSession && (
         <p className="text-xs text-gray-400 text-right shrink-0">
           合計 {filteredItems.length} 件
+          <span className="ml-3 text-gray-300">ダブルクリックで詳細・編集</span>
         </p>
+      )}
+
+      {detailItem && (
+        <ScheduleItemDetailModal
+          student={detailItem.student}
+          enrollment={detailItem.enrollment}
+          onClose={() => setDetailItem(null)}
+          onUpdated={() => { reload() }}
+        />
       )}
 
       {viewStudent && (
