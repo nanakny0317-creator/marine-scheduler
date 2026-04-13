@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
@@ -7,6 +7,7 @@ import StudentForm from './StudentForm'
 import MemberBasicInfoModal from './MemberBasicInfoModal'
 import CsvImportModal from './CsvImportModal'
 import ScheduleItemDetailModal from './ScheduleItemDetailModal'
+import ReceiptPrintModal from './ReceiptPrintModal'
 import { useSession, TABS } from '../../contexts/SessionContext'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -35,9 +36,40 @@ export default function SessionView() {
   const [editStudent, setEditStudent] = useState<Student | null>(null)
   const [showCsvImport, setShowCsvImport] = useState(false)
   const [detailItem, setDetailItem] = useState<{ student: Student; enrollment: Enrollment } | null>(null)
+  const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set())
+  const [showReceipt, setShowReceipt] = useState(false)
 
   // sessions はコンテキスト側で activeTab フィルタ済みのため、items をそのまま使う
   const filteredItems = selectedSession?.items ?? []
+
+  const allChecked = filteredItems.length > 0 && filteredItems.every(({ enrollment }) => checkedIds.has(enrollment.id))
+  const someChecked = filteredItems.some(({ enrollment }) => checkedIds.has(enrollment.id))
+
+  const checkedItems = useMemo(
+    () => filteredItems.filter(({ enrollment }) => checkedIds.has(enrollment.id)),
+    [filteredItems, checkedIds]
+  )
+
+  const toggleAll = () => {
+    if (allChecked) {
+      setCheckedIds(new Set())
+    } else {
+      setCheckedIds(new Set(filteredItems.map(({ enrollment }) => enrollment.id)))
+    }
+  }
+
+  const toggleOne = (enrollmentId: number) => {
+    setCheckedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(enrollmentId)) { next.delete(enrollmentId) } else { next.add(enrollmentId) }
+      return next
+    })
+  }
+
+  // 日程切替時にチェックをリセット
+  useEffect(() => {
+    setCheckedIds(new Set())
+  }, [selectedSession?.course_date, selectedSession?.course_time, selectedSession?.venue])
 
   const handleDelete = async (student: Student, enrollment: Enrollment) => {
     if (
@@ -99,6 +131,15 @@ export default function SessionView() {
           <span className="ml-auto text-xs text-gray-400 bg-white rounded-full px-2 py-0.5 border border-lavender-100">
             {filteredItems.length} 名
           </span>
+          {someChecked && (
+            <button
+              type="button"
+              onClick={() => setShowReceipt(true)}
+              className="btn-primary btn-sm shrink-0"
+            >
+              受領書印刷（{checkedItems.length}名）
+            </button>
+          )}
         </div>
       )}
 
@@ -111,66 +152,92 @@ export default function SessionView() {
         ) : filteredItems.length === 0 ? (
           <p className="text-center text-gray-400 text-sm py-16">該当する受講者がいません</p>
         ) : (
-          filteredItems.map(({ enrollment, student }) => {
-            const appType = getAppType(enrollment)
-            return (
-              <div
-                key={enrollment.id}
-                className="px-5 py-3 flex items-center gap-3 border-b border-gray-50 last:border-0 hover:bg-lavender-50/60 transition cursor-pointer select-none"
-                onDoubleClick={() => setDetailItem({ student, enrollment })}
-                title="ダブルクリックで詳細表示"
-              >
-                {/* 種別バッジ */}
-                <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${TYPE_CLASS[appType] ?? 'bg-gray-100 text-gray-500'}`}>
-                  {TYPE_LABEL[appType] ?? appType}
-                </span>
+          <>
+            {/* 全選択行 */}
+            <div className="px-5 py-2 flex items-center gap-3 border-b border-lavender-100 bg-lavender-50/40">
+              <input
+                type="checkbox"
+                checked={allChecked}
+                ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked }}
+                onChange={toggleAll}
+                className="w-4 h-4 accent-lavender-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-500">
+                {someChecked ? `${checkedItems.length}名を選択中` : '全選択'}
+              </span>
+            </div>
 
-                {/* 氏名 */}
-                <div className="min-w-[130px]">
-                  <span className="text-sm font-medium text-gray-700">
-                    {student.last_name} {student.first_name}
+            {filteredItems.map(({ enrollment, student }) => {
+              const appType = getAppType(enrollment)
+              const isChecked = checkedIds.has(enrollment.id)
+              return (
+                <div
+                  key={enrollment.id}
+                  className={`px-5 py-3 flex items-center gap-3 border-b border-gray-50 last:border-0 hover:bg-lavender-50/60 transition cursor-pointer select-none ${isChecked ? 'bg-lavender-50/70' : ''}`}
+                  onDoubleClick={() => setDetailItem({ student, enrollment })}
+                  title="ダブルクリックで詳細表示"
+                >
+                  {/* チェックボックス */}
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleOne(enrollment.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 accent-lavender-500 cursor-pointer shrink-0"
+                  />
+
+                  {/* 種別バッジ */}
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${TYPE_CLASS[appType] ?? 'bg-gray-100 text-gray-500'}`}>
+                    {TYPE_LABEL[appType] ?? appType}
                   </span>
-                  {(student.last_kana || student.first_kana) && (
-                    <span className="text-xs text-gray-400 ml-1.5">
-                      {student.last_kana} {student.first_kana}
+
+                  {/* 氏名 */}
+                  <div className="min-w-[130px]">
+                    <span className="text-sm font-medium text-gray-700">
+                      {student.last_name} {student.first_name}
                     </span>
-                  )}
-                  {student.student_code && (
-                    <span className="text-[10px] text-lavender-400 ml-1.5 font-mono">
-                      #{student.student_code}
-                    </span>
-                  )}
+                    {(student.last_kana || student.first_kana) && (
+                      <span className="text-xs text-gray-400 ml-1.5">
+                        {student.last_kana} {student.first_kana}
+                      </span>
+                    )}
+                    {student.student_code && (
+                      <span className="text-[10px] text-lavender-400 ml-1.5 font-mono">
+                        #{student.student_code}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* メニュー（受講申請のみ） */}
+                  <span className="text-xs text-gray-400 truncate flex-1 hidden sm:block">
+                    {appType === 'new' ? enrollment.menu : ''}
+                  </span>
+
+                  {/* 電話 */}
+                  <span className="text-xs text-gray-400 shrink-0">
+                    {student.phone || student.mobile || ''}
+                  </span>
+
+                  {/* 操作ボタン */}
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setViewStudent(student) }}
+                      className="btn-secondary btn-sm"
+                    >
+                      基本情報
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(student, enrollment) }}
+                      className="btn-danger btn-sm"
+                    >
+                      申込削除
+                    </button>
+                  </div>
                 </div>
-
-                {/* メニュー（受講申請のみ） */}
-                <span className="text-xs text-gray-400 truncate flex-1 hidden sm:block">
-                  {appType === 'new' ? enrollment.menu : ''}
-                </span>
-
-                {/* 電話 */}
-                <span className="text-xs text-gray-400 shrink-0">
-                  {student.phone || student.mobile || ''}
-                </span>
-
-                {/* 操作ボタン */}
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setViewStudent(student)}
-                    className="btn-secondary btn-sm"
-                  >
-                    基本情報
-                  </button>
-                  <button
-                    onClick={() => handleDelete(student, enrollment)}
-                    className="btn-danger btn-sm"
-                  >
-                    申込削除
-                  </button>
-                </div>
-              </div>
-            )
-          })
+              )
+            })}
+          </>
         )}
       </div>
 
@@ -218,6 +285,14 @@ export default function SessionView() {
         <CsvImportModal
           onClose={() => setShowCsvImport(false)}
           onImported={() => { setShowCsvImport(false); reload() }}
+        />
+      )}
+
+      {/* 受領書印刷モーダル */}
+      {showReceipt && (
+        <ReceiptPrintModal
+          items={checkedItems}
+          onClose={() => setShowReceipt(false)}
         />
       )}
     </div>

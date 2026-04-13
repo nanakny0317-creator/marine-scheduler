@@ -28,6 +28,9 @@ const api = {
     update: (id: number, input: unknown) => ipcRenderer.invoke('enrollments:update', id, input),
     delete: (id: number) => ipcRenderer.invoke('enrollments:delete', id),
   },
+  print: {
+    html: (html: string) => ipcRenderer.invoke('print:html', html),
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)

@@ -15,6 +15,7 @@ import {
   parseMailwiseBody,
   parsedBodyToStudent,
   parsedBodyToEnrollmentExtra,
+  isLikelyApplication,
 } from '../../lib/bodyParser'
 import type { ParsedBody } from '../../types'
 
@@ -58,6 +59,8 @@ interface ParsedRow {
   /** 本文に書いてあった住所1の生テキスト */
   bodyRawAddress: string | null
   applicationType: ApplicationType
+  /** 申込メールらしいか（返信・通知メールを自動検出） */
+  likelyApplication: boolean
 }
 
 /** 本文住所テキストを都道府県・市区町村・番地に分割 */
@@ -81,6 +84,7 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
   const [parsing, setParsing] = useState(false)
   const [importing, setImporting] = useState(false)
   const [addressChoices, setAddressChoices] = useState<Record<number, AddressChoice>>({})
+  const [excludedIndices, setExcludedIndices] = useState<Set<number>>(new Set())
   const [previewTab, setPreviewTab] = useState<ApplicationType | 'all'>('all')
   const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -186,8 +190,10 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
     setParsing(true)
 
     const rows: ParsedRow[] = []
+    const autoExcluded = new Set<number>()
     for (const row of csvRows) {
       const body = row[bodyColumn] ?? ''
+      const likelyApplication = isLikelyApplication(body)
       const parsed = parseMailwiseBody(body)
       const studentBase = parsedBodyToStudent(parsed)
       const extra = parsedBodyToEnrollmentExtra(parsed)
@@ -260,11 +266,13 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
         note: null,
       }
 
-      rows.push({ parsed, student, enrollment, addressMismatch, addressNote, zipAddress, bodyRawAddress, applicationType: parsed.application_type })
+      if (!likelyApplication) autoExcluded.add(rows.length)
+      rows.push({ parsed, student, enrollment, addressMismatch, addressNote, zipAddress, bodyRawAddress, applicationType: parsed.application_type, likelyApplication })
     }
 
     setParsedRows(rows)
     setAddressChoices({})
+    setExcludedIndices(autoExcluded)
     setParsing(false)
     setStep('preview')
   }
@@ -298,7 +306,10 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
     setImporting(true)
     try {
       if (mode === 'mailwise') {
-        const resolvedRows = parsedRows.map((r, i) => {
+        const resolvedRows = parsedRows
+          .map((r, i) => ({ r, i }))
+          .filter(({ i }) => !excludedIndices.has(i))
+          .map(({ r, i }) => {
           if (!r.addressMismatch) return { student: r.student, enrollment: r.enrollment }
           const choice = addressChoices[i] ?? 'body'
           let addr: { prefecture: string | null; city: string | null; address1: string | null; note: string | null }
@@ -471,8 +482,23 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
             const visibleRows = parsedRows
               .map((r, i) => ({ r, i }))
               .filter(({ r }) => previewTab === 'all' || r.applicationType === previewTab)
+            const importCount = parsedRows.length - excludedIndices.size
+            const toggleExclude = (i: number) => {
+              setExcludedIndices(prev => {
+                const next = new Set(prev)
+                if (next.has(i)) { next.delete(i) } else { next.add(i) }
+                return next
+              })
+            }
             return (
             <>
+              {/* 自動除外の警告バナー */}
+              {excludedIndices.size > 0 && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                  <p className="font-semibold mb-1">⚠ 申込以外のメールを自動検出しました（{excludedIndices.size}件）</p>
+                  <p>返信・通知メールと思われる行はチェックを外しています。内容を確認してインポートするか決めてください。</p>
+                </div>
+              )}
               {/* タブ */}
               <div className="flex gap-1 border-b border-lavender-100 pb-0">
                 {tabs.map(({ key, label, count }) => (
@@ -490,14 +516,25 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                 ))}
               </div>
               <p className="text-sm text-gray-500">
-                解析結果（先頭 3 件表示）。問題がなければインポートを実行してください。
+                各行のチェックで取り込む/除外するを選べます。全 {parsedRows.length} 件中 <span className="text-lavender-500 font-medium">{importCount} 件</span>をインポートします。
               </p>
-              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                {visibleRows.slice(0, 3).map(({ r, i }) => (
-                  <div key={i} className="card p-3 space-y-1">
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {visibleRows.map(({ r, i }) => (
+                  <div key={i} className={`card p-3 space-y-1 ${excludedIndices.has(i) ? 'opacity-50' : ''}`}>
                     <p className="text-xs font-semibold text-lavender-400 mb-2 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={!excludedIndices.has(i)}
+                        onChange={() => toggleExclude(i)}
+                        className="w-4 h-4 accent-lavender-500 cursor-pointer"
+                      />
                       <span>#{i + 1} {r.student.last_name} {r.student.first_name}</span>
                       <span className="text-gray-400 font-normal">{r.student.last_kana} {r.student.first_kana}</span>
+                      {!r.likelyApplication && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-600">
+                          申込外？
+                        </span>
+                      )}
                       <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold ${
                         r.applicationType === 'new' ? 'bg-mint-50 text-mint-600' :
                         r.applicationType === 'renewal' ? 'bg-blue-50 text-blue-500' :
@@ -580,18 +617,15 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                   </div>
                 ))}
               </div>
-              {parsedRows.length > 3 && (
-                <p className="text-xs text-gray-400">…他 {parsedRows.length - 3} 件</p>
-              )}
-              {parsedRows.some((r) => r.addressMismatch) && (
+              {parsedRows.some((r) => r.addressMismatch && !excludedIndices.has(parsedRows.indexOf(r))) && (
                 <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  ⚠ 住所が一致しない件が {parsedRows.filter((r) => r.addressMismatch).length} 件あります。インポート後、備考欄に記録されます。
+                  ⚠ 住所が一致しない件が {parsedRows.filter((r, i) => r.addressMismatch && !excludedIndices.has(i)).length} 件あります。インポート後、備考欄に記録されます。
                 </div>
               )}
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setStep('mapping')} className="btn-secondary flex-1">戻る</button>
-                <button onClick={handleImport} disabled={importing} className="btn-primary flex-1">
-                  {importing ? 'インポート中…' : `${parsedRows.length} 件をインポート（受講者＋申込）`}
+                <button onClick={handleImport} disabled={importing || importCount === 0} className="btn-primary flex-1">
+                  {importing ? 'インポート中…' : `${importCount} 件をインポート（受講者＋申込）`}
                 </button>
               </div>
             </>

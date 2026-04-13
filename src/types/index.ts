@@ -164,6 +164,9 @@ export interface ElectronAPI {
     update: (id: number, input: EnrollmentInput) => Promise<Enrollment>
     delete: (id: number) => Promise<boolean>
   }
+  print: {
+    html: (html: string) => Promise<void>
+  }
 }
 
 declare global {

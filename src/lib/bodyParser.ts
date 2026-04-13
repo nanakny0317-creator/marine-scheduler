@@ -390,6 +390,20 @@ export function parseMailwiseBody(body: string): ParsedBody {
   return result
 }
 
+/**
+ * 本文が申込メールらしいかを判定する。
+ * 差出人・郵便番号・メニュー・住所フィールドのいずれかがあれば申込と見なす。
+ * 返信メールや通知メールはこれらを含まないため false になる。
+ */
+export function isLikelyApplication(body: string): boolean {
+  const hasSender  = /差出人\s*[：:]/.test(body)
+  const hasName    = /氏名\s*[：:]/.test(body)
+  const hasPostal  = /〒\s*\d{3}/.test(body)
+  const hasMenu    = /メニュー\s*[：:]|更新講習|失効再交付/.test(body)
+  const hasAddress = /住所[12１２]\s*[：:]/.test(body)
+  return hasSender || hasName || hasPostal || hasMenu || hasAddress
+}
+
 /** ParsedBody → StudentInput に変換（受講者フィールドのみ抽出） */
 import type { StudentInput } from '../types'
 export function parsedBodyToStudent(p: ParsedBody): Partial<StudentInput> {

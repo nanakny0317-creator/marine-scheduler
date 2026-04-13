@@ -1,5 +1,7 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import path from 'path'
+import { writeFileSync, unlinkSync } from 'fs'
+import { tmpdir } from 'os'
 import { initDb, closeDb } from './db/index'
 import { registerStudentHandlers } from './handlers/studentHandlers'
 import { registerEnrollmentHandlers } from './handlers/enrollmentHandlers'
@@ -38,6 +40,42 @@ function createWindow() {
     return { action: 'deny' }
   })
 }
+
+// ── 印刷ハンドラー（PDF生成 → システムPDFビューアで開く）──
+ipcMain.handle('print:html', async (_event, html: string) => {
+  const ts = Date.now()
+  const tmpHtmlPath = path.join(tmpdir(), `receipt-${ts}.html`)
+  const tmpPdfPath  = path.join(tmpdir(), `receipt-${ts}.pdf`)
+  writeFileSync(tmpHtmlPath, html, 'utf-8')
+
+  // A4幅（210mm = 794px @ 96DPI）で非表示レンダリング
+  const renderWin = new BrowserWindow({
+    show: false,
+    width: 680,
+    height: 990,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  })
+
+  await renderWin.loadFile(tmpHtmlPath)
+
+  // CSS @page の margin/size をそのまま使ってPDF生成
+  const pdfBuffer = await renderWin.webContents.printToPDF({
+    pageSize: 'A4',
+    printBackground: false,
+    preferCSSPageSize: true,
+  })
+
+  renderWin.close()
+  try { unlinkSync(tmpHtmlPath) } catch { /* ignore */ }
+
+  writeFileSync(tmpPdfPath, pdfBuffer)
+
+  // システムの既定PDFビューアで開く（Edge/Acrobat等）
+  await shell.openPath(tmpPdfPath)
+
+  // 2分後に一時ファイルを削除
+  setTimeout(() => { try { unlinkSync(tmpPdfPath) } catch { /* ignore */ } }, 120_000)
+})
 
 app.whenReady().then(async () => {
   try {
