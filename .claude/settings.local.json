@@ -17,7 +17,10 @@
       "Read(//c/Users/nanak/Documents/**)",
       "Bash(powershell.exe:*)",
       "Bash(n\\\\\")",
-      "Bash(taskkill /F /IM \"my-scheduler.exe\")"
+      "Bash(taskkill /F /IM \"my-scheduler.exe\")",
+      "Bash(python *)",
+      "Bash(pip install *)",
+      "Bash(taskkill /F /IM \"marine-scheduler.exe\")"
     ]
   }
 }

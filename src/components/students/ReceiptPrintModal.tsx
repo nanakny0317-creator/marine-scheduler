@@ -78,6 +78,7 @@ export default function ReceiptPrintModal({ items, onClose }: Props) {
   <p class="ki-empty">&nbsp;</p>
 
   <table>
+    <colgroup><col class="col-left"><col class="col-right"></colgroup>
     <thead>
       <tr><th>操縦免許証の番号</th><th>申請者の氏名</th></tr>
     </thead>
@@ -99,26 +100,26 @@ export default function ReceiptPrintModal({ items, onClose }: Props) {
 <meta charset="UTF-8">
 <title>操縦免許証受領書</title>
 <style>
-  @page { size: A4 portrait; margin: 12.7mm 15mm 20mm 15mm; }
+  @page { size: A4 portrait; margin: 14mm 10mm 19mm 10mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'MS Gothic', 'ＭＳ ゴシック', 'Hiragino Kaku Gothic Pro', sans-serif;
-    font-size: 10.5pt;
+    font-size: 11pt;
     color: #000;
   }
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
 
   /* 番号行（右揃え・下線）*/
-  p.num       { text-align: right; line-height: 1.5; font-size: 10.5pt; }
-  p.num-empty { line-height: 1.5; font-size: 10.5pt; }
+  p.num       { text-align: right; line-height: 1.5; font-size: 11pt; }
+  p.num-empty { line-height: 1.5; font-size: 11pt; }
 
-  /* タイトル（中央・20pt）*/
-  p.title       { text-align: center; font-size: 20pt; line-height: 1.4; }
+  /* タイトル（中央・20pt・太字）*/
+  p.title       { text-align: center; font-size: 20pt; font-weight: bold; line-height: 1.4; }
   p.title-empty { font-size: 20pt; line-height: 1.4; }
 
-  /* 日付（右揃え・下線）*/
-  p.date { text-align: right; line-height: 1.5; font-size: 10.5pt; }
+  /* 日付（右揃え）*/
+  p.date { text-align: right; line-height: 1.5; font-size: 11pt; }
 
   /* 宛先＋差出人ブロック */
   .addressee-block {
@@ -129,37 +130,42 @@ export default function ReceiptPrintModal({ items, onClose }: Props) {
     margin-bottom: 2pt;
     overflow: hidden;
   }
-  .addressee { font-size: 18pt; line-height: 1.4; white-space: nowrap; }
-  .sender    { font-size: 10.5pt; line-height: 1.8; text-align: right; white-space: nowrap; }
+  .addressee { font-size: 14pt; font-weight: bold; line-height: 1.6; white-space: nowrap; }
+  .sender    { font-size: 11pt; line-height: 1.8; text-align: right; white-space: nowrap; }
 
   /* 本文・記 */
-  p.body-text { line-height: 1.5; font-size: 10.5pt; }
-  p.ki        { text-align: center; line-height: 1.5; font-size: 10.5pt; }
-  p.ki-empty  { line-height: 1.5; font-size: 10.5pt; }
+  p.body-text { line-height: 1.5; font-size: 11pt; }
+  p.ki        { text-align: center; line-height: 1.5; font-size: 11pt; }
+  p.ki-empty  { line-height: 1.5; font-size: 11pt; }
 
   /* 表 */
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  col { width: 50%; }
+  col.col-left  { width: 52%; }
+  col.col-right { width: 48%; }
 
   thead th {
     border: 1px solid #000;
     text-align: center;
     font-weight: normal;
-    font-size: 10.5pt;
-    height: 9.3mm;
+    font-size: 11pt;
+    height: 7.7mm;
     padding: 0;
   }
   tbody td {
     border: 1px solid #000;
     padding: 0 6pt;
-    height: 9.3mm;
+    height: 14.3mm;
     font-size: 13pt;
     vertical-align: middle;
+    text-align: center;
+  }
+  tbody td:first-child {
+    letter-spacing: 0.1em;
   }
   tfoot td {
     border: 1px solid #000;
-    height: 9.3mm;
-    font-size: 10.5pt;
+    height: 10.6mm;
+    font-size: 11pt;
     text-align: right;
     padding-right: 8pt;
   }

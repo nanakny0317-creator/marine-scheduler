@@ -349,9 +349,11 @@ export function parseMailwiseBody(body: string): ParsedBody {
         result.current_license = value || null
         break
 
-      case '免許番号':
-        result.license_number = value || null
+      case '免許番号': {
+        const digits = value.replace(/[^0-9]/g, '')
+        result.license_number = digits || null
         break
+      }
 
       case '特殊小型実技講習/試験':
       case '特殊小型実技':

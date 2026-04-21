@@ -8,7 +8,9 @@ import MemberBasicInfoModal from './MemberBasicInfoModal'
 import CsvImportModal from './CsvImportModal'
 import ScheduleItemDetailModal from './ScheduleItemDetailModal'
 import ReceiptPrintModal from './ReceiptPrintModal'
+import MultiReceiptSelectModal from './MultiReceiptSelectModal'
 import { useSession, TABS } from '../../contexts/SessionContext'
+import type { SessionItem } from '../../contexts/SessionContext'
 
 const TYPE_LABEL: Record<string, string> = {
   new: '受講申請', renewal: '更新講習', lapsed: '失効再交付',
@@ -30,7 +32,7 @@ function getAppType(enrollment: Enrollment): string {
 
 export default function SessionView() {
   // activeTab はコンテキスト管理（サイドバーのフィルタと共有）
-  const { selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
+  const { sessions, selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
 
   const [viewStudent, setViewStudent] = useState<Student | null>(null)
   const [editStudent, setEditStudent] = useState<Student | null>(null)
@@ -38,6 +40,8 @@ export default function SessionView() {
   const [detailItem, setDetailItem] = useState<{ student: Student; enrollment: Enrollment } | null>(null)
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set())
   const [showReceipt, setShowReceipt] = useState(false)
+  const [showMultiSelect, setShowMultiSelect] = useState(false)
+  const [multiReceiptItems, setMultiReceiptItems] = useState<SessionItem[]>([])
 
   // sessions はコンテキスト側で activeTab フィルタ済みのため、items をそのまま使う
   const filteredItems = selectedSession?.items ?? []
@@ -103,6 +107,12 @@ export default function SessionView() {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setShowMultiSelect(true)}
+          className="btn-secondary text-sm shrink-0"
+        >
+          日程を選んで受領書印刷
+        </button>
         <button
           onClick={() => setShowCsvImport(true)}
           className="btn-secondary text-sm shrink-0"
@@ -266,6 +276,7 @@ export default function SessionView() {
             setEditStudent(viewStudent)
             setViewStudent(null)
           }}
+          onDeleted={() => { setViewStudent(null); reload() }}
         />
       )}
 
@@ -288,11 +299,31 @@ export default function SessionView() {
         />
       )}
 
-      {/* 受領書印刷モーダル */}
+      {/* 受領書印刷モーダル（単一日程・チェック選択） */}
       {showReceipt && (
         <ReceiptPrintModal
           items={checkedItems}
           onClose={() => setShowReceipt(false)}
+        />
+      )}
+
+      {/* 日程選択モーダル */}
+      {showMultiSelect && (
+        <MultiReceiptSelectModal
+          sessions={sessions}
+          onConfirm={(items) => {
+            setMultiReceiptItems(items)
+            setShowMultiSelect(false)
+          }}
+          onClose={() => setShowMultiSelect(false)}
+        />
+      )}
+
+      {/* 受領書印刷モーダル（複数日程まとめ） */}
+      {multiReceiptItems.length > 0 && (
+        <ReceiptPrintModal
+          items={multiReceiptItems}
+          onClose={() => setMultiReceiptItems([])}
         />
       )}
     </div>

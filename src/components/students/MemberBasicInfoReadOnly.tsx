@@ -93,12 +93,13 @@ function Row({ label, value }: { label: string; value: string }) {
 
 interface Props {
   student: Student
+  licenseNumber?: string | null
   /** 外側ラッパー用（インライン表示時の余白など） */
   className?: string
 }
 
 /** 会員基本情報の閲覧表示（モーダル・会員一覧メインなどで共通利用） */
-export default function MemberBasicInfoReadOnly({ student, className = '' }: Props) {
+export default function MemberBasicInfoReadOnly({ student, licenseNumber, className = '' }: Props) {
   return (
     <div className={`space-y-5 ${className}`}>
       <section>
@@ -108,6 +109,9 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
         <div className="rounded-xl border border-lavender-100 bg-lavender-50/30 px-4 py-1">
           <Row label="受講者番号" value={dash(student.student_code)} />
           <Row label="氏名" value={`${student.last_name} ${student.first_name}`} />
+          {licenseNumber != null && (
+            <Row label="免許番号" value={dash(licenseNumber)} />
+          )}
           <Row
             label="フリガナ"
             value={
