@@ -73,6 +73,7 @@ function Field({
 
 const EMPTY: StudentInput = {
   student_code: null,
+  license_number: null,
   last_name: '',
   first_name: '',
   last_kana: '',
@@ -239,21 +240,34 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
           className="p-6 space-y-5"
           onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
         >
-          {/* 受講者番号 */}
-          <div>
-            <label className="field-label">
-              受講者番号
-              <span className="ml-1.5 text-gray-400 font-normal text-[11px]">（6桁・自動採番。旧システムの番号も入力可）</span>
-            </label>
-            <input
-              type="text"
-              value={form.student_code ?? ''}
-              onChange={(e) => set('student_code', e.target.value || null)}
-              onKeyDown={handleKeyDown}
-              placeholder="000001"
-              maxLength={20}
-              className="field-input w-40"
-            />
+          {/* 受講者番号・免許番号 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="field-label">
+                受講者番号
+                <span className="ml-1.5 text-gray-400 font-normal text-[11px]">（自動採番）</span>
+              </label>
+              <input
+                type="text"
+                value={form.student_code ?? ''}
+                onChange={(e) => set('student_code', e.target.value || null)}
+                onKeyDown={handleKeyDown}
+                placeholder="000001"
+                maxLength={20}
+                className="field-input"
+              />
+            </div>
+            <div>
+              <label className="field-label">免許番号</label>
+              <input
+                type="text"
+                value={form.license_number ?? ''}
+                onChange={(e) => set('license_number', e.target.value || null)}
+                onKeyDown={handleKeyDown}
+                placeholder="例：0300160004901"
+                className="field-input"
+              />
+            </div>
           </div>
 
           {/* 氏名 */}

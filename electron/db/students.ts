@@ -19,6 +19,7 @@ function toStudent(row: Row): Student {
   return {
     id: Number(row.id),
     student_code: row.student_code ? String(row.student_code) : null,
+    license_number: row.license_number ? String(row.license_number) : null,
     last_name: String(row.last_name ?? ''),
     first_name: String(row.first_name ?? ''),
     last_kana: row.last_kana ? String(row.last_kana) : null,
@@ -74,10 +75,11 @@ export function listStudents(params: StudentSearchParams = {}): Student[] {
       `SELECT * FROM students
        WHERE (last_name LIKE ? OR first_name LIKE ?
           OR last_kana LIKE ? OR first_kana LIKE ?
-          OR email LIKE ? OR phone LIKE ? OR mobile LIKE ?)
+          OR email LIKE ? OR phone LIKE ? OR mobile LIKE ?
+          OR student_code LIKE ?)
        ${typeClause}
        ORDER BY ${col} ${dir}`,
-      [like, like, like, like, like, like, like, ...typeParams]
+      [like, like, like, like, like, like, like, like, ...typeParams]
     ).map(toStudent)
   }
 
@@ -101,14 +103,15 @@ export function createStudent(input: StudentInput): Student {
   const code = processedInput.student_code?.trim() || nextStudentCode()
   const id = run(
     `INSERT INTO students
-       (student_code, last_name, first_name, last_kana, first_kana, birth_date, gender,
+       (student_code, license_number, last_name, first_name, last_kana, first_kana, birth_date, gender,
         postal_code, prefecture, city, address1, address2,
         phone, mobile, email, note,
         created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
              datetime('now','localtime'), datetime('now','localtime'))`,
     [
       code,
+      processedInput.license_number ?? null,
       processedInput.last_name, processedInput.first_name,
       processedInput.last_kana ?? null, processedInput.first_kana ?? null,
       processedInput.birth_date ?? null, processedInput.gender ?? null,
@@ -128,7 +131,7 @@ export function updateStudent(id: number, input: StudentInput): Student {
   processedInput.first_kana = toKatakana(input.first_kana)
   run(
     `UPDATE students SET
-       student_code=?,
+       student_code=?, license_number=?,
        last_name=?, first_name=?, last_kana=?, first_kana=?,
        birth_date=?, gender=?,
        postal_code=?, prefecture=?, city=?, address1=?, address2=?,
@@ -137,6 +140,7 @@ export function updateStudent(id: number, input: StudentInput): Student {
      WHERE id=?`,
     [
       processedInput.student_code ?? null,
+      processedInput.license_number ?? null,
       processedInput.last_name, processedInput.first_name,
       processedInput.last_kana ?? null, processedInput.first_kana ?? null,
       processedInput.birth_date ?? null, processedInput.gender ?? null,

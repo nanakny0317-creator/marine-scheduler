@@ -11,13 +11,8 @@ interface Props {
   onClose: () => void
 }
 
-function getLicenseNumber(enrollment: Enrollment): string {
-  try {
-    const extra = JSON.parse(enrollment.extra_json) as Record<string, unknown>
-    return typeof extra.license_number === 'string' ? extra.license_number : ''
-  } catch {
-    return ''
-  }
+function getLicenseNumber(student: Student): string {
+  return student.license_number?.replace(/^第/, '') ?? ''
 }
 
 function toReiwa(year: number): number {
@@ -46,10 +41,8 @@ export default function ReceiptPrintModal({ items, onClose }: Props) {
     const pageHtml = pages.map((page) => {
       const rows = Array.from({ length: 10 }, (_, i) => {
         const item = page[i]
-        if (!item) {
-          return `<tr><td>&nbsp;</td><td>&nbsp;</td></tr>`
-        }
-        const licenseNo = getLicenseNumber(item.enrollment)
+        if (!item) return `<tr><td>&nbsp;</td><td>&nbsp;</td></tr>`
+        const licenseNo = getLicenseNumber(item.student)
         const name = `${item.student.last_name}　${item.student.first_name}`
         return `<tr><td>${licenseNo}</td><td>${name}</td></tr>`
       }).join('\n')
@@ -58,12 +51,9 @@ export default function ReceiptPrintModal({ items, onClose }: Props) {
 <div class="page">
   <p class="num"><u>番号&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</u></p>
   <p class="num-empty">&nbsp;</p>
-
   <p class="title">操縦免許証受領書</p>
   <p class="title-empty">&nbsp;</p>
-
   <p class="date"><u>令和&emsp;${reiwaYear}&emsp;年&emsp;${month}&emsp;月&emsp;${day}&emsp;日</u></p>
-
   <div class="addressee-block">
     <span class="addressee">近畿運輸局長殿</span>
     <div class="sender">
@@ -72,24 +62,14 @@ export default function ReceiptPrintModal({ items, onClose }: Props) {
       <div>氏　　名　海事代理士　栗田　勉</div>
     </div>
   </div>
-
   <p class="body-text">下記の操縦免許証を受領しました。</p>
   <p class="ki">記</p>
   <p class="ki-empty">&nbsp;</p>
-
   <table>
     <colgroup><col class="col-left"><col class="col-right"></colgroup>
-    <thead>
-      <tr><th>操縦免許証の番号</th><th>申請者の氏名</th></tr>
-    </thead>
-    <tbody>
-      ${rows}
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="2" style="text-align:right;padding-right:8pt;">計　${total}　部</td>
-      </tr>
-    </tfoot>
+    <thead><tr><th>操縦免許証の番号</th><th>申請者の氏名</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="2" style="text-align:right;padding-right:8pt;">計　${total}　部</td></tr></tfoot>
   </table>
 </div>`
     }).join('\n')
@@ -102,88 +82,37 @@ export default function ReceiptPrintModal({ items, onClose }: Props) {
 <style>
   @page { size: A4 portrait; margin: 14mm 10mm 19mm 10mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'MS Gothic', 'ＭＳ ゴシック', 'Hiragino Kaku Gothic Pro', sans-serif;
-    font-size: 11pt;
-    color: #000;
-  }
+  body { font-family: 'MS Gothic','ＭＳ ゴシック','Hiragino Kaku Gothic Pro',sans-serif; font-size: 11pt; color: #000; }
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
-
-  /* 番号行（右揃え・下線）*/
   p.num       { text-align: right; line-height: 1.5; font-size: 11pt; }
   p.num-empty { line-height: 1.5; font-size: 11pt; }
-
-  /* タイトル（中央・20pt・太字）*/
   p.title       { text-align: center; font-size: 20pt; font-weight: bold; line-height: 1.4; }
   p.title-empty { font-size: 20pt; line-height: 1.4; }
-
-  /* 日付（右揃え）*/
   p.date { text-align: right; line-height: 1.5; font-size: 11pt; }
-
-  /* 宛先＋差出人ブロック */
-  .addressee-block {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-top: 2pt;
-    margin-bottom: 2pt;
-    overflow: hidden;
-  }
+  .addressee-block { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2pt; margin-bottom: 2pt; overflow: hidden; }
   .addressee { font-size: 14pt; font-weight: bold; line-height: 1.6; white-space: nowrap; }
   .sender    { font-size: 11pt; line-height: 1.8; text-align: right; white-space: nowrap; }
-
-  /* 本文・記 */
   p.body-text { line-height: 1.5; font-size: 11pt; }
   p.ki        { text-align: center; line-height: 1.5; font-size: 11pt; }
   p.ki-empty  { line-height: 1.5; font-size: 11pt; }
-
-  /* 表 */
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   col.col-left  { width: 52%; }
   col.col-right { width: 48%; }
-
-  thead th {
-    border: 1px solid #000;
-    text-align: center;
-    font-weight: normal;
-    font-size: 11pt;
-    height: 7.7mm;
-    padding: 0;
-  }
-  tbody td {
-    border: 1px solid #000;
-    padding: 0 6pt;
-    height: 14.3mm;
-    font-size: 13pt;
-    vertical-align: middle;
-    text-align: center;
-  }
-  tbody td:first-child {
-    letter-spacing: 0.1em;
-  }
-  tfoot td {
-    border: 1px solid #000;
-    height: 10.6mm;
-    font-size: 11pt;
-    text-align: right;
-    padding-right: 8pt;
-  }
+  thead th { border: 1px solid #000; text-align: center; font-weight: normal; font-size: 11pt; height: 7.7mm; padding: 0; }
+  tbody td { border: 1px solid #000; padding: 0 6pt; height: 14.3mm; font-size: 13pt; vertical-align: middle; text-align: center; }
+  tbody td:first-child { letter-spacing: 0.1em; }
+  tfoot td { border: 1px solid #000; height: 10.6mm; font-size: 11pt; }
 </style>
 </head>
-<body>
-${pageHtml}
-</body>
+<body>${pageHtml}</body>
 </html>`
 
     try {
       await window.api.print.html(html)
     } catch (e) {
-      // キャンセルは無視、それ以外はアラート
       const msg = e instanceof Error ? e.message : String(e)
-      if (!msg.includes('cancel')) {
-        alert(`印刷に失敗しました: ${msg}`)
-      }
+      if (!msg.includes('cancel')) alert(`印刷に失敗しました: ${msg}`)
     }
   }
 
@@ -242,7 +171,7 @@ ${pageHtml}
             </p>
             <div className="rounded-xl border border-lavender-100 divide-y divide-gray-50 overflow-hidden">
               {items.map(({ student, enrollment }, i) => {
-                const licenseNo = getLicenseNumber(enrollment)
+                const licenseNo = getLicenseNumber(student)
                 return (
                   <div key={enrollment.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                     <span className="text-gray-300 text-xs w-5 text-right">{i + 1}</span>
@@ -258,9 +187,9 @@ ${pageHtml}
                 )
               })}
             </div>
-            {items.some(({ enrollment }) => !getLicenseNumber(enrollment)) && (
+            {items.some(({ student }) => !getLicenseNumber(student)) && (
               <p className="text-xs text-orange-500 mt-2">
-                ※ 免許番号未登録の方は空欄で印刷されます。申込詳細から登録できます。
+                ※ 免許番号未登録の方は空欄で印刷されます。会員情報から登録できます。
               </p>
             )}
           </div>

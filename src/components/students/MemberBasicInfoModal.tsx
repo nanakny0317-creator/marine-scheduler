@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { Student } from '../../types'
-import { enrollmentsApi, studentsApi } from '../../lib/api'
+import { studentsApi } from '../../lib/api'
 import MemberBasicInfoReadOnly from './MemberBasicInfoReadOnly'
 
 interface Props {
@@ -11,7 +11,6 @@ interface Props {
 }
 
 export default function MemberBasicInfoModal({ student, onClose, onEdit, onDeleted }: Props) {
-  const [licenseNumber, setLicenseNumber] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   const handleDelete = async () => {
@@ -20,21 +19,6 @@ export default function MemberBasicInfoModal({ student, onClose, onEdit, onDelet
     await studentsApi.delete(student.id)
     onDeleted?.()
   }
-
-  useEffect(() => {
-    enrollmentsApi.list(student.id).then(enrollments => {
-      for (let i = enrollments.length - 1; i >= 0; i--) {
-        try {
-          const extra = JSON.parse(enrollments[i].extra_json) as Record<string, unknown>
-          if (typeof extra.license_number === 'string' && extra.license_number) {
-            setLicenseNumber(extra.license_number)
-            return
-          }
-        } catch { /* ignore */ }
-      }
-      setLicenseNumber('')
-    })
-  }, [student.id])
 
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
@@ -58,7 +42,7 @@ export default function MemberBasicInfoModal({ student, onClose, onEdit, onDelet
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          <MemberBasicInfoReadOnly student={student} licenseNumber={licenseNumber} />
+          <MemberBasicInfoReadOnly student={student} />
         </div>
 
         <div className="shrink-0 px-6 py-4 border-t border-lavender-100 flex items-center justify-between gap-3">

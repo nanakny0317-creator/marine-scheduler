@@ -2,6 +2,7 @@
 export interface Student {
   id: number
   student_code: string | null
+  license_number: string | null
   last_name: string
   first_name: string
   last_kana: string | null

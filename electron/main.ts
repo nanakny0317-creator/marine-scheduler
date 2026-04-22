@@ -1,7 +1,6 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import path from 'path'
-import { writeFileSync, unlinkSync } from 'fs'
-import { tmpdir } from 'os'
+import { writeFileSync } from 'fs'
 import { initDb, closeDb } from './db/index'
 import { registerStudentHandlers } from './handlers/studentHandlers'
 import { registerEnrollmentHandlers } from './handlers/enrollmentHandlers'
@@ -41,14 +40,14 @@ function createWindow() {
   })
 }
 
-// ── 印刷ハンドラー（PDF生成 → システムPDFビューアで開く）──
-ipcMain.handle('print:html', async (_event, html: string) => {
-  const ts = Date.now()
-  const tmpHtmlPath = path.join(tmpdir(), `receipt-${ts}.html`)
-  const tmpPdfPath  = path.join(tmpdir(), `receipt-${ts}.pdf`)
-  writeFileSync(tmpHtmlPath, html, 'utf-8')
+// 出力先ディレクトリ（DBと同じ場所に合わせる）
+function getOutputPath() {
+  const dir = isDev ? process.cwd() : app.getPath('userData')
+  return path.join(dir, 'receipt.pdf')
+}
 
-  // A4幅（210mm = 794px @ 96DPI）で非表示レンダリング
+// ── 印刷ハンドラー（HTML → PDF → システムPDFビューアで開く）──
+ipcMain.handle('print:html', async (_event, html: string) => {
   const renderWin = new BrowserWindow({
     show: false,
     width: 680,
@@ -56,9 +55,10 @@ ipcMain.handle('print:html', async (_event, html: string) => {
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   })
 
-  await renderWin.loadFile(tmpHtmlPath)
+  // data URL で直接ロード（一時HTMLファイル不要）
+  const base64Html = Buffer.from(html, 'utf-8').toString('base64')
+  await renderWin.loadURL(`data:text/html;charset=utf-8;base64,${base64Html}`)
 
-  // CSS @page の margin/size をそのまま使ってPDF生成
   const pdfBuffer = await renderWin.webContents.printToPDF({
     pageSize: 'A4',
     printBackground: false,
@@ -66,15 +66,12 @@ ipcMain.handle('print:html', async (_event, html: string) => {
   })
 
   renderWin.close()
-  try { unlinkSync(tmpHtmlPath) } catch { /* ignore */ }
 
-  writeFileSync(tmpPdfPath, pdfBuffer)
+  // DBと同じディレクトリに固定名で上書き保存（tempフォルダ不使用）
+  const pdfPath = getOutputPath()
+  writeFileSync(pdfPath, pdfBuffer)
 
-  // システムの既定PDFビューアで開く（Edge/Acrobat等）
-  await shell.openPath(tmpPdfPath)
-
-  // 2分後に一時ファイルを削除
-  setTimeout(() => { try { unlinkSync(tmpPdfPath) } catch { /* ignore */ } }, 120_000)
+  await shell.openPath(pdfPath)
 })
 
 app.whenReady().then(async () => {

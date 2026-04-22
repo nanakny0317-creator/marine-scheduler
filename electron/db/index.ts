@@ -56,6 +56,14 @@ export async function initDb(): Promise<Database> {
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_student_code ON students(student_code) WHERE student_code IS NOT NULL'
   )
 
+  // マイグレーション: license_number カラムが存在しない場合は追加
+  if (tableInfo.length > 0) {
+    const cols = tableInfo[0].values.map((row) => row[1] as string)
+    if (!cols.includes('license_number')) {
+      db.run('ALTER TABLE students ADD COLUMN license_number TEXT')
+    }
+  }
+
   // マイグレーション: venues カラム追加
   const venueInfo = db.exec("PRAGMA table_info(venues)")
   if (venueInfo.length > 0) {

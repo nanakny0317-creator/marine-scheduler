@@ -10,8 +10,9 @@ PRAGMA foreign_keys = ON;
 -- 受講者基本情報
 CREATE TABLE IF NOT EXISTS students (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  student_code TEXT,          -- 受講者番号（6桁ゼロ埋め連番。旧システムの番号も入れられる）
-  last_name    TEXT NOT NULL,
+  student_code   TEXT,          -- 受講者番号（6桁ゼロ埋め連番。旧システムの番号も入れられる）
+  license_number TEXT,          -- 操縦免許証番号
+  last_name      TEXT NOT NULL,
   first_name   TEXT NOT NULL,
   last_kana   TEXT,
   first_kana  TEXT,
