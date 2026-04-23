@@ -187,6 +187,7 @@ export function listAllWithStudents(
        e.updated_at  AS e_updated_at,
        s.id          AS s_id,
        s.student_code,
+       s.license_number,
        s.last_name,  s.first_name,
        s.last_kana,  s.first_kana,
        s.birth_date, s.gender,
@@ -222,7 +223,8 @@ export function listAllWithStudents(
     } satisfies Enrollment,
     student: {
       id:           Number(row.s_id),
-      student_code: row.student_code ? String(row.student_code) : null,
+      student_code:   row.student_code   ? String(row.student_code)   : null,
+      license_number: row.license_number ? String(row.license_number) : null,
       last_name:    String(row.last_name  ?? ''),
       first_name:  String(row.first_name ?? ''),
       last_kana:   row.last_kana  ? String(row.last_kana)  : null,

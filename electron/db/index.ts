@@ -390,9 +390,12 @@ export function queryOne(sql: string, params: SqlParam[] = []): Row | null {
 export function run(sql: string, params: SqlParam[] = []): number {
   const d = getDb()
   d.run(sql, params)
+  // last_insert_rowid() を save() より先に取得する
+  // save() が db.export() を呼ぶと last_insert_rowid がリセットされるため
+  const id = d.exec('SELECT last_insert_rowid() as id')[0]?.values[0]?.[0] as number ?? 0
   // トランザクション中は save() しない（db.export() が WAL と干渉するため）
   if (!inTransaction) save()
-  return d.exec('SELECT last_insert_rowid() as id')[0]?.values[0]?.[0] as number ?? 0
+  return id
 }
 
 /** トランザクション */

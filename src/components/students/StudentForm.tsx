@@ -179,6 +179,8 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   }
 
   const handleDupResolve = async (action: 'merge' | 'defer' | 'new', targetId?: number) => {
+    // await の前に candidates を取り出す（setDupResult(null) 後に参照すると null になる可能性がある）
+    const candidates = dupResult?.candidates ?? []
     setDupResult(null)
     setSaving(true)
     try {
@@ -191,7 +193,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
           ...form,
           note: form.note ? `${notePrefix}\n${form.note}` : notePrefix,
         })
-        for (const c of dupResult!.candidates) {
+        for (const c of candidates) {
           await pendingReviewsApi.create({
             student_id: saved.id,
             candidate_id: c.student.id,
@@ -204,6 +206,9 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         const saved = await studentsApi.create(form)
         onSaved(saved)
       }
+    } catch (e) {
+      console.error('保存エラー:', e)
+      alert(`保存エラー: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
       setSaving(false)
     }
