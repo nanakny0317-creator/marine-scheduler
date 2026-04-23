@@ -31,10 +31,43 @@ export interface StudentSearchParams {
   applicationType?: ApplicationType | 'all'
 }
 
+export interface DuplicateCandidate {
+  student: Student
+  score: number
+  reasons: string[]
+  confidence: 'high' | 'medium' | 'low'
+  hint?: string
+}
+
 export interface DuplicateCheckResult {
   hasDuplicate: boolean
-  byName: Student[]
-  byAddress: Student[]
+  candidates: DuplicateCandidate[]
+  byName: Student[]      // backward compat
+  byAddress: Student[]   // backward compat
+}
+
+export interface PendingReview {
+  id: number
+  student_id: number
+  candidate_id: number
+  match_reasons: string   // JSON array string
+  match_score: number
+  status: 'pending' | 'resolved'
+  resolution: 'merged' | 'different' | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PendingReviewWithStudents extends PendingReview {
+  student: Student
+  candidate: Student
+}
+
+export interface PendingReviewInput {
+  student_id: number
+  candidate_id: number
+  match_reasons: string
+  match_score: number
 }
 
 export type ApplicationType = 'new' | 'renewal' | 'lapsed'
@@ -136,6 +169,18 @@ export interface Venue {
 
 export type VenueInput = Omit<Venue, 'id' | 'created_at' | 'updated_at'>
 
+export type DupImportAction = 'merge' | 'defer' | 'new'
+
+export interface DupImportRow {
+  student: StudentInput
+  enrollment: Omit<EnrollmentInput, 'student_id'>
+  dupAction?: DupImportAction
+  mergeTargetId?: number
+  dupCandidateIds?: number[]
+  dupMatchReasons?: string
+  dupMatchScore?: number
+}
+
 // ===== IPC API =====
 export interface ElectronAPI {
   venues: {
@@ -154,6 +199,7 @@ export interface ElectronAPI {
     checkDuplicate: (input: StudentInput, excludeId?: number) => Promise<DuplicateCheckResult>
     import: (rows: StudentInput[]) => Promise<{ inserted: number; skipped: number }>
     nextCode: () => Promise<string>
+    migrateKana: () => Promise<boolean>
   }
   enrollments: {
     create: (input: EnrollmentInput) => Promise<Enrollment>
@@ -161,12 +207,24 @@ export interface ElectronAPI {
     importBatch: (
       rows: Array<{ student: StudentInput; enrollment: Omit<EnrollmentInput, 'student_id'> }>
     ) => Promise<{ inserted: number; skipped: number }>
+    importWithDup: (rows: DupImportRow[]) => Promise<{ inserted: number; skipped: number }>
     listAll: (applicationType?: string) => Promise<Array<{ enrollment: Enrollment; student: Student }>>
     update: (id: number, input: EnrollmentInput) => Promise<Enrollment>
     delete: (id: number) => Promise<boolean>
   }
+  pendingReviews: {
+    list: () => Promise<PendingReviewWithStudents[]>
+    create: (input: PendingReviewInput) => Promise<PendingReview>
+    resolve: (id: number, resolution: 'merged' | 'different') => Promise<boolean>
+    merge: (id: number, keepStudentId: number) => Promise<boolean>
+  }
   print: {
     html: (html: string) => Promise<void>
+  }
+  dev: {
+    counts: () => Promise<{ students: number; enrollments: number; pendingReviews: number }>
+    resetAll: () => Promise<boolean>
+    seed: () => Promise<{ students: number; enrollments: number; pendingReviews: number }>
   }
 }
 

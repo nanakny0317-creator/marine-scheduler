@@ -5,6 +5,7 @@ import type {
   StudentInput,
   StudentSearchParams,
   DuplicateCheckResult,
+  DuplicateCandidate,
 } from '../../src/types'
 
 // ひらがなをカタカナに変換
@@ -159,25 +160,122 @@ export function deleteStudent(id: number): void {
   run('DELETE FROM students WHERE id = ?', [id])
 }
 
-// -------- 重複チェック --------
+// -------- 重複チェック（スコアリング方式）--------
 export function checkDuplicate(input: StudentInput, excludeId?: number): DuplicateCheckResult {
   const exc = excludeId ? ` AND id != ${Number(excludeId)}` : ''
+  const candidateMap = new Map<number, { student: Student; score: number; reasons: string[] }>()
 
-  const byName = query(
-    `SELECT * FROM students WHERE last_name=? AND first_name=?${exc}`,
-    [input.last_name, input.first_name]
-  ).map(toStudent)
+  const addCandidates = (students: Student[], points: number, reason: string) => {
+    for (const s of students) {
+      const existing = candidateMap.get(s.id)
+      if (existing) {
+        existing.score += points
+        if (!existing.reasons.includes(reason)) existing.reasons.push(reason)
+      } else {
+        candidateMap.set(s.id, { student: s, score: points, reasons: [reason] })
+      }
+    }
+  }
 
-  const byAddress =
-    input.postal_code && input.address1
-      ? query(
-          `SELECT * FROM students WHERE postal_code=? AND address1=?${exc}`,
-          [input.postal_code, input.address1]
-        ).map(toStudent)
-      : []
+  // 同姓同名（40点）
+  if (input.last_name && input.first_name) {
+    addCandidates(
+      query(`SELECT * FROM students WHERE last_name=? AND first_name=?${exc}`,
+        [input.last_name, input.first_name]).map(toStudent),
+      40, '同姓同名'
+    )
+  }
+
+  // 同フリガナ（20点）
+  if (input.last_kana && input.first_kana) {
+    addCandidates(
+      query(`SELECT * FROM students WHERE last_kana=? AND first_kana=?${exc}`,
+        [input.last_kana, input.first_kana]).map(toStudent),
+      20, '同フリガナ'
+    )
+  }
+
+  // 生年月日一致（30点）
+  if (input.birth_date) {
+    addCandidates(
+      query(`SELECT * FROM students WHERE birth_date=?${exc}`, [input.birth_date]).map(toStudent),
+      30, '生年月日一致'
+    )
+  }
+
+  // 免許番号一致（65点：非常に強い指標）
+  if (input.license_number?.trim()) {
+    addCandidates(
+      query(`SELECT * FROM students WHERE license_number=? AND license_number IS NOT NULL${exc}`,
+        [input.license_number]).map(toStudent),
+      65, '免許番号一致'
+    )
+  }
+
+  // メール一致（15点）
+  if (input.email?.trim()) {
+    addCandidates(
+      query(`SELECT * FROM students WHERE email=?${exc}`, [input.email]).map(toStudent),
+      15, 'メール一致'
+    )
+  }
+
+  // 電話番号一致（10点）
+  const phones = [input.phone, input.mobile]
+    .map(p => p?.replace(/[-\s]/g, '').trim())
+    .filter((p): p is string => !!p && p.length >= 10)
+  for (const p of [...new Set(phones)]) {
+    addCandidates(
+      query(
+        `SELECT * FROM students WHERE replace(replace(phone,'-',''),' ','')=? OR replace(replace(mobile,'-',''),' ','')=?${exc}`,
+        [p, p]
+      ).map(toStudent),
+      10, '電話番号一致'
+    )
+  }
+
+  // 同住所（20点）
+  const byAddress = (input.postal_code && input.address1)
+    ? query(`SELECT * FROM students WHERE postal_code=? AND address1=?${exc}`,
+        [input.postal_code, input.address1]).map(toStudent)
+    : []
+  addCandidates(byAddress, 20, '同住所')
+
+  // 後方互換用 byName
+  const byName = (input.last_name && input.first_name)
+    ? query(`SELECT * FROM students WHERE last_name=? AND first_name=?${exc}`,
+        [input.last_name, input.first_name]).map(toStudent)
+    : []
+
+  // スコア35以上のみ候補として返す
+  const candidates: DuplicateCandidate[] = Array.from(candidateMap.values())
+    .filter(c => c.score >= 35)
+    .sort((a, b) => b.score - a.score)
+    .map(({ student, score, reasons }) => {
+      const hasKana     = reasons.includes('同フリガナ')
+      const hasBirth    = reasons.includes('生年月日一致')
+      const hasSameName = reasons.includes('同姓同名')
+
+      // フリガナ＋生年月日が一致しているのに漢字名が異なる → 旧字体・異体字の可能性
+      let hint: string | undefined
+      if (hasKana && hasBirth && !hasSameName) {
+        const inputName = `${input.last_name}${input.first_name}`
+        const candidateName = `${student.last_name}${student.first_name}`
+        hint = `フリガナと生年月日は一致していますが、漢字が異なります（入力：${inputName} ／ 既存：${candidateName}）。旧字体・異体字からの変更（例：髙→高、齊→斉、邊→辺、濱→浜、國→国、澤→沢）の可能性があります。`
+      }
+
+      return {
+        student,
+        score,
+        reasons,
+        confidence: score >= 65 ? 'high' : score >= 40 ? 'medium' : 'low' as const,
+        hint,
+      }
+    })
 
   return {
-    hasDuplicate: byName.length > 0 || byAddress.length > 0,
+    hasDuplicate: candidates.length > 0,
+    candidates,
     byName,
     byAddress,
   }

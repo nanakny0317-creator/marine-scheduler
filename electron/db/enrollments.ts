@@ -1,6 +1,7 @@
 import { query, queryOne, run, transaction, Row } from './index'
-import { createStudent } from './students'
-import type { Enrollment, EnrollmentInput, Student, StudentInput } from '../../src/types'
+import { createStudent, updateStudent } from './students'
+import { createPendingReview } from './pending_reviews'
+import type { Enrollment, EnrollmentInput, Student, StudentInput, DupImportRow } from '../../src/types'
 
 type SqlParam = string | number | null | Uint8Array
 
@@ -110,6 +111,50 @@ export function importWithEnrollments(
       }
     }
   })
+
+  return { inserted, skipped }
+}
+
+/**
+ * 重複対応付きインポート（merge / defer / new の3種）
+ */
+export function importWithDupHandling(rows: DupImportRow[]): { inserted: number; skipped: number } {
+  let inserted = 0
+  let skipped = 0
+
+  for (const { student, enrollment, dupAction, mergeTargetId, dupCandidateIds, dupMatchReasons, dupMatchScore } of rows) {
+    if (!student.last_name?.trim() && !student.first_name?.trim()) { skipped++; continue }
+    try {
+      if (dupAction === 'merge' && mergeTargetId) {
+        // 既存会員を更新して申込を紐付け
+        updateStudent(mergeTargetId, student)
+        createEnrollment({ ...enrollment, student_id: mergeTargetId })
+      } else if (dupAction === 'defer') {
+        // 新規作成＋備考に要確認記載＋pending_review
+        const notePrefix = '【要確認】重複の可能性あり'
+        const s = createStudent({
+          ...student,
+          note: student.note ? `${notePrefix}\n${student.note}` : notePrefix,
+        })
+        createEnrollment({ ...enrollment, student_id: s.id })
+        for (const candidateId of (dupCandidateIds ?? [])) {
+          createPendingReview({
+            student_id: s.id,
+            candidate_id: candidateId,
+            match_reasons: dupMatchReasons ?? '[]',
+            match_score: dupMatchScore ?? 0,
+          })
+        }
+      } else {
+        // 通常新規作成
+        const s = createStudent(student)
+        createEnrollment({ ...enrollment, student_id: s.id })
+      }
+      inserted++
+    } catch {
+      skipped++
+    }
+  }
 
   return { inserted, skipped }
 }

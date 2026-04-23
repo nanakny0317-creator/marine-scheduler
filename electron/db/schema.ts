@@ -60,6 +60,20 @@ CREATE TABLE IF NOT EXISTS renewals (
   updated_at          TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+-- 重複保留レビュー
+CREATE TABLE IF NOT EXISTS pending_reviews (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id     INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  candidate_id   INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  match_reasons  TEXT NOT NULL DEFAULT '[]',
+  match_score    INTEGER NOT NULL DEFAULT 0,
+  status         TEXT NOT NULL DEFAULT 'pending'
+                 CHECK(status IN ('pending','resolved')),
+  resolution     TEXT CHECK(resolution IN ('merged','different')),
+  created_at     TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  updated_at     TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 -- 会場マスター
 CREATE TABLE IF NOT EXISTS venues (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,6 +107,13 @@ CREATE TRIGGER IF NOT EXISTS renewals_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE renewals SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
+  END;
+
+CREATE TRIGGER IF NOT EXISTS pending_reviews_updated_at
+  AFTER UPDATE ON pending_reviews
+  FOR EACH ROW
+  BEGIN
+    UPDATE pending_reviews SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
   END;
 
 CREATE TRIGGER IF NOT EXISTS venues_updated_at

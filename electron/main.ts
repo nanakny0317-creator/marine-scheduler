@@ -5,6 +5,8 @@ import { initDb, closeDb } from './db/index'
 import { registerStudentHandlers } from './handlers/studentHandlers'
 import { registerEnrollmentHandlers } from './handlers/enrollmentHandlers'
 import { registerVenueHandlers } from './handlers/venueHandlers'
+import { registerPendingReviewHandlers } from './handlers/pendingReviewHandlers'
+import { registerDevHandlers } from './handlers/devHandlers'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -85,6 +87,8 @@ app.whenReady().then(async () => {
   registerStudentHandlers()
   registerEnrollmentHandlers()
   registerVenueHandlers()
+  registerPendingReviewHandlers()
+  if (isDev) registerDevHandlers()
   createWindow()
 
   app.on('activate', () => {

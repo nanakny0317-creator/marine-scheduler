@@ -6,6 +6,8 @@ import type {
   Student, StudentInput, StudentSearchParams, DuplicateCheckResult,
   Enrollment, EnrollmentInput,
   Venue, VenueInput,
+  PendingReview, PendingReviewInput, PendingReviewWithStudents,
+  DupImportRow,
 } from '../types'
 
 export const venuesApi = {
@@ -66,6 +68,9 @@ export const enrollmentsApi = {
   ): Promise<{ inserted: number; skipped: number }> =>
     window.api.enrollments.importBatch(rows),
 
+  importWithDup: (rows: DupImportRow[]): Promise<{ inserted: number; skipped: number }> =>
+    window.api.enrollments.importWithDup(rows),
+
   listAll: (applicationType?: string): Promise<Array<{ enrollment: Enrollment; student: Student }>> =>
     window.api.enrollments.listAll(applicationType),
 
@@ -74,6 +79,29 @@ export const enrollmentsApi = {
 
   delete: (id: number): Promise<boolean> =>
     window.api.enrollments.delete(id),
+}
+
+export const pendingReviewsApi = {
+  list: (): Promise<PendingReviewWithStudents[]> =>
+    window.api.pendingReviews.list(),
+
+  create: (input: PendingReviewInput): Promise<PendingReview> =>
+    window.api.pendingReviews.create(input),
+
+  resolve: (id: number, resolution: 'merged' | 'different'): Promise<boolean> =>
+    window.api.pendingReviews.resolve(id, resolution),
+
+  merge: (id: number, keepStudentId: number): Promise<boolean> =>
+    window.api.pendingReviews.merge(id, keepStudentId),
+}
+
+export const devApi = {
+  counts: (): Promise<{ students: number; enrollments: number; pendingReviews: number }> =>
+    window.api.dev.counts(),
+  resetAll: (): Promise<boolean> =>
+    window.api.dev.resetAll(),
+  seed: (): Promise<{ students: number; enrollments: number; pendingReviews: number }> =>
+    window.api.dev.seed(),
 }
 
 /**

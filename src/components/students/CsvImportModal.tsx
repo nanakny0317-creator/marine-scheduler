@@ -9,8 +9,8 @@
  */
 import { useRef, useState } from 'react'
 import Papa from 'papaparse'
-import type { ApplicationType, StudentInput, EnrollmentInput } from '../../types'
-import { studentsApi, enrollmentsApi, fetchAddressByZip } from '../../lib/api'
+import type { ApplicationType, StudentInput, EnrollmentInput, DuplicateCheckResult, DupImportRow } from '../../types'
+import { studentsApi, enrollmentsApi, pendingReviewsApi, fetchAddressByZip } from '../../lib/api'
 import {
   parseMailwiseBody,
   parsedBodyToStudent,
@@ -47,6 +47,7 @@ type Step = 'select' | 'mapping' | 'preview' | 'done'
 type Mode = 'mailwise' | 'normal'
 
 type AddressChoice = 'body' | 'zip' | 'later'
+type DupChoice = 'merge' | 'defer' | 'new'
 
 interface ParsedRow {
   parsed: ParsedBody
@@ -84,6 +85,8 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
   const [parsing, setParsing] = useState(false)
   const [importing, setImporting] = useState(false)
   const [addressChoices, setAddressChoices] = useState<Record<number, AddressChoice>>({})
+  const [dupResults, setDupResults] = useState<Record<number, DuplicateCheckResult>>({})
+  const [dupChoices, setDupChoices] = useState<Record<number, { action: DupChoice; targetId?: number }>>({})
   const [excludedIndices, setExcludedIndices] = useState<Set<number>>(new Set())
   const [previewTab, setPreviewTab] = useState<ApplicationType | 'all'>('all')
   const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(null)
@@ -235,6 +238,8 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
       }
 
       const student: StudentInput = {
+        student_code: null,
+        license_number: parsed.license_number ?? null,
         last_name: studentBase.last_name ?? '',
         first_name: studentBase.first_name ?? '',
         last_kana: studentBase.last_kana ?? null,
@@ -270,8 +275,19 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
       rows.push({ parsed, student, enrollment, addressMismatch, addressNote, zipAddress, bodyRawAddress, applicationType: parsed.application_type, likelyApplication })
     }
 
+    // 重複チェック（並列実行）
+    const dupResultsLocal: Record<number, DuplicateCheckResult> = {}
+    const dupChecks = rows.map((r, i) =>
+      studentsApi.checkDuplicate(r.student).then((dup) => {
+        if (dup.hasDuplicate) dupResultsLocal[i] = dup
+      })
+    )
+    await Promise.all(dupChecks)
+
     setParsedRows(rows)
     setAddressChoices({})
+    setDupResults(dupResultsLocal)
+    setDupChoices({})
     setExcludedIndices(autoExcluded)
     setParsing(false)
     setStep('preview')
@@ -306,25 +322,56 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
     setImporting(true)
     try {
       if (mode === 'mailwise') {
-        const resolvedRows = parsedRows
+        const resolvedRows: DupImportRow[] = parsedRows
           .map((r, i) => ({ r, i }))
           .filter(({ i }) => !excludedIndices.has(i))
           .map(({ r, i }) => {
-          if (!r.addressMismatch) return { student: r.student, enrollment: r.enrollment }
-          const choice = addressChoices[i] ?? 'body'
-          let addr: { prefecture: string | null; city: string | null; address1: string | null; note: string | null }
-          if (choice === 'zip' && r.zipAddress) {
-            addr = { ...r.zipAddress, note: null }
-          } else if (choice === 'later') {
-            addr = { prefecture: r.student.prefecture, city: r.student.city, address1: r.student.address1, note: '住所要確認（郵便番号と本文住所が一致しません）' }
-          } else {
-            // 'body': 本文住所をregexで分割
-            const split = splitBodyAddress(r.bodyRawAddress ?? '')
-            addr = { prefecture: split.prefecture, city: split.city, address1: split.street, note: null }
+          // 住所解決
+          let student = r.student
+          if (r.addressMismatch) {
+            const choice = addressChoices[i] ?? 'body'
+            let addr: { prefecture: string | null; city: string | null; address1: string | null }
+            if (choice === 'zip' && r.zipAddress) {
+              addr = { ...r.zipAddress }
+            } else if (choice === 'later') {
+              addr = { prefecture: r.student.prefecture, city: r.student.city, address1: r.student.address1 }
+            } else {
+              const split = splitBodyAddress(r.bodyRawAddress ?? '')
+              addr = { prefecture: split.prefecture, city: split.city, address1: split.street }
+            }
+            student = { ...r.student, ...addr }
           }
-          return { student: { ...r.student, ...addr }, enrollment: r.enrollment }
+
+          // 重複解決
+          const dup = dupResults[i]
+          const dupChoice = dupChoices[i]
+          if (dup?.hasDuplicate && dupChoice) {
+            const top = dup.candidates[0]
+            return {
+              student,
+              enrollment: r.enrollment,
+              dupAction: dupChoice.action,
+              mergeTargetId: dupChoice.action === 'merge' ? dupChoice.targetId : undefined,
+              dupCandidateIds: dup.candidates.map(c => c.student.id),
+              dupMatchReasons: JSON.stringify(top?.reasons ?? []),
+              dupMatchScore: top?.score ?? 0,
+            }
+          }
+          if (dup?.hasDuplicate && !dupChoice) {
+            // 未選択 → デフォルトで後で対応
+            const top = dup.candidates[0]
+            return {
+              student,
+              enrollment: r.enrollment,
+              dupAction: 'defer' as const,
+              dupCandidateIds: dup.candidates.map(c => c.student.id),
+              dupMatchReasons: JSON.stringify(top?.reasons ?? []),
+              dupMatchScore: top?.score ?? 0,
+            }
+          }
+          return { student, enrollment: r.enrollment }
         })
-        const res = await enrollmentsApi.importBatch(resolvedRows)
+        const res = await enrollmentsApi.importWithDup(resolvedRows)
         setResult(res)
       } else {
         if (!mapping.last_name || !mapping.first_name) {
@@ -519,8 +566,19 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                 各行のチェックで取り込む/除外するを選べます。全 {parsedRows.length} 件中 <span className="text-lavender-500 font-medium">{importCount} 件</span>をインポートします。
               </p>
               <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-                {visibleRows.map(({ r, i }) => (
-                  <div key={i} className={`card p-3 space-y-1 ${excludedIndices.has(i) ? 'opacity-50' : ''}`}>
+                {visibleRows.map(({ r, i }) => {
+                  const dup = dupResults[i]
+                  const dupChoice = dupChoices[i]
+                  const hasDup = !!dup?.hasDuplicate && !excludedIndices.has(i)
+                  const topCandidate = dup?.candidates[0]
+                  return (
+                  <div key={i} className={[
+                    'card p-3 space-y-1',
+                    excludedIndices.has(i) ? 'opacity-50' : '',
+                    hasDup && !dupChoice ? 'border-2 border-amber-300 bg-amber-50/30' : '',
+                    hasDup && dupChoice?.action === 'merge' ? 'border-2 border-lavender-300 bg-lavender-50/30' : '',
+                    hasDup && dupChoice?.action === 'defer' ? 'border-2 border-amber-300' : '',
+                  ].join(' ')}>
                     <p className="text-xs font-semibold text-lavender-400 mb-2 flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -535,6 +593,15 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                           申込外？
                         </span>
                       )}
+                      {hasDup && (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                          topCandidate?.confidence === 'high'
+                            ? 'bg-red-100 text-red-600 border-red-200'
+                            : 'bg-amber-100 text-amber-600 border-amber-200'
+                        }`}>
+                          ⚠ 重複候補あり
+                        </span>
+                      )}
                       <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold ${
                         r.applicationType === 'new' ? 'bg-mint-50 text-mint-600' :
                         r.applicationType === 'renewal' ? 'bg-blue-50 text-blue-500' :
@@ -543,6 +610,58 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                         {typeLabel[r.applicationType]}
                       </span>
                     </p>
+
+                    {/* 重複候補の表示と選択 */}
+                    {hasDup && (
+                      <div className="mb-1 space-y-1.5">
+                        <div className="text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 space-y-2">
+                          <div>
+                            <p className="font-semibold text-amber-700 mb-1">重複の可能性がある会員</p>
+                            {dup.candidates.slice(0, 2).map((c) => (
+                              <p key={c.student.id} className="text-gray-600 mb-0.5">
+                                <span className="font-medium">{c.student.last_name} {c.student.first_name}</span>
+                                <span className="text-gray-400 ml-1">（{c.reasons.join('・')}）</span>
+                              </p>
+                            ))}
+                          </div>
+                          <div className="flex gap-1.5 flex-wrap">
+                            {([
+                              { key: 'merge', label: `統合（${topCandidate?.student.last_name ?? '既存'}を更新）`, targetId: topCandidate?.student.id },
+                              { key: 'defer', label: '後で対応' },
+                              { key: 'new',   label: '別会員として登録' },
+                            ] as { key: DupChoice; label: string; targetId?: number }[]).map(({ key, label, targetId }) => (
+                              <button
+                                key={key}
+                                onClick={() => setDupChoices(prev => ({ ...prev, [i]: { action: key, targetId } }))}
+                                className={`px-2 py-1 rounded-md text-xs border transition ${
+                                  dupChoice?.action === key
+                                    ? 'bg-lavender-500 text-white border-lavender-500 font-semibold'
+                                    : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          {!dupChoice && (
+                            <p className="text-amber-600 text-[10px]">未選択 → インポート時に自動的に「後で対応」として処理されます</p>
+                          )}
+                        </div>
+
+                        {/* 旧字体・異体字ヒント */}
+                        {dup.candidates.some(c => c.hint) && (
+                          <div className="flex gap-2 items-start bg-sky-50 border border-sky-200 rounded-lg px-3 py-2">
+                            <span className="text-sky-400 shrink-0">💡</span>
+                            <div className="text-xs text-sky-700">
+                              <p className="font-semibold">旧字体・異体字からの変更の可能性があります</p>
+                              <p className="text-sky-600 mt-0.5">
+                                {dup.candidates.find(c => c.hint)?.hint}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {r.addressMismatch && (() => {
                       const choice = addressChoices[i] ?? 'body'
                       const bodyS = splitBodyAddress(r.bodyRawAddress ?? '')
@@ -615,11 +734,17 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                       <Item label="お支払方法" value={r.parsed.payment_method} />
                     </div>
                   </div>
-                ))}
+                )
+                })}
               </div>
               {parsedRows.some((r) => r.addressMismatch && !excludedIndices.has(parsedRows.indexOf(r))) && (
                 <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  ⚠ 住所が一致しない件が {parsedRows.filter((r, i) => r.addressMismatch && !excludedIndices.has(i)).length} 件あります。インポート後、備考欄に記録されます。
+                  ⚠ 住所が一致しない件が {parsedRows.filter((r, i) => r.addressMismatch && !excludedIndices.has(i)).length} 件あります。
+                </div>
+              )}
+              {Object.keys(dupResults).filter(i => !excludedIndices.has(Number(i))).length > 0 && (
+                <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  ⚠ 重複候補が {Object.keys(dupResults).filter(i => !excludedIndices.has(Number(i))).length} 件あります。未選択の場合は「後で対応」として処理されます。
                 </div>
               )}
               <div className="flex gap-3 pt-2">

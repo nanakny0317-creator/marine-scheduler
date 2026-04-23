@@ -6,7 +6,8 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import type { Student, StudentInput, DuplicateCheckResult } from '../../types'
-import { studentsApi, fetchAddressByZip } from '../../lib/api'
+import { studentsApi, pendingReviewsApi, fetchAddressByZip } from '../../lib/api'
+import DuplicateResolutionModal from './DuplicateResolutionModal'
 
 // コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
 interface FieldProps {
@@ -149,24 +150,60 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     return Object.keys(e).length === 0
   }
 
-  // 保存
+  // 保存（重複なし or 確認済み）
   const handleSubmit = async () => {
     if (!validate()) return
     setSaving(true)
 
-    // 重複チェック
     const dup = await studentsApi.checkDuplicate(form, student?.id)
-    if (dup.hasDuplicate && !dupResult) {
+    setSaving(false)
+
+    if (dup.hasDuplicate) {
       setDupResult(dup)
-      setSaving(false)
       return
     }
 
+    await doSave()
+  }
+
+  const doSave = async () => {
+    setSaving(true)
     try {
       const saved = student
         ? await studentsApi.update(student.id, form)
         : await studentsApi.create(form)
       onSaved(saved)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDupResolve = async (action: 'merge' | 'defer' | 'new', targetId?: number) => {
+    setDupResult(null)
+    setSaving(true)
+    try {
+      if (action === 'merge' && targetId) {
+        const saved = await studentsApi.update(targetId, form)
+        onSaved(saved)
+      } else if (action === 'defer') {
+        const notePrefix = '【要確認】重複の可能性あり'
+        const saved = await studentsApi.create({
+          ...form,
+          note: form.note ? `${notePrefix}\n${form.note}` : notePrefix,
+        })
+        for (const c of dupResult!.candidates) {
+          await pendingReviewsApi.create({
+            student_id: saved.id,
+            candidate_id: c.student.id,
+            match_reasons: JSON.stringify(c.reasons),
+            match_score: c.score,
+          })
+        }
+        onSaved(saved)
+      } else {
+        const saved = await studentsApi.create(form)
+        onSaved(saved)
+      }
     } finally {
       setSaving(false)
     }
@@ -199,6 +236,15 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   })
 
   return (
+    <>
+    {dupResult?.hasDuplicate && (
+      <DuplicateResolutionModal
+        candidates={dupResult.candidates}
+        newStudent={form}
+        onResolve={handleDupResolve}
+        onCancel={() => setDupResult(null)}
+      />
+    )}
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[55] p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* ヘッダー */}
@@ -214,26 +260,6 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
             ✕
           </button>
         </div>
-
-        {/* 重複警告 */}
-        {dupResult?.hasDuplicate && (
-          <div className="mx-6 mt-4 p-3 bg-peach-50 border border-peach-200 rounded-lg text-sm">
-            <p className="font-semibold text-peach-500 mb-1">⚠ 重複の可能性があります</p>
-            {dupResult.byName.length > 0 && (
-              <p className="text-gray-600">
-                同姓同名：{dupResult.byName.map((s) => `${s.last_name} ${s.first_name}`).join('、')}
-              </p>
-            )}
-            {dupResult.byAddress.length > 0 && (
-              <p className="text-gray-600">
-                同住所：{dupResult.byAddress.map((s) => `${s.last_name} ${s.first_name}`).join('、')}
-              </p>
-            )}
-            <p className="text-xs text-gray-400 mt-1">
-              このまま保存するには再度「保存」を押してください。
-            </p>
-          </div>
-        )}
 
         {/* フォーム本体 */}
         <form
@@ -397,5 +423,6 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         </form>
       </div>
     </div>
+    </>
   )
 }

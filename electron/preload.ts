@@ -24,12 +24,24 @@ const api = {
     create: (input: unknown) => ipcRenderer.invoke('enrollments:create', input),
     list: (studentId: number) => ipcRenderer.invoke('enrollments:list', studentId),
     importBatch: (rows: unknown[]) => ipcRenderer.invoke('enrollments:importBatch', rows),
+    importWithDup: (rows: unknown[]) => ipcRenderer.invoke('enrollments:importWithDup', rows),
     listAll: (applicationType?: string) => ipcRenderer.invoke('enrollments:listAll', applicationType),
     update: (id: number, input: unknown) => ipcRenderer.invoke('enrollments:update', id, input),
     delete: (id: number) => ipcRenderer.invoke('enrollments:delete', id),
   },
+  pendingReviews: {
+    list: () => ipcRenderer.invoke('pendingReviews:list'),
+    create: (input: unknown) => ipcRenderer.invoke('pendingReviews:create', input),
+    resolve: (id: number, resolution: string) => ipcRenderer.invoke('pendingReviews:resolve', id, resolution),
+    merge: (id: number, keepStudentId: number) => ipcRenderer.invoke('pendingReviews:merge', id, keepStudentId),
+  },
   print: {
     html: (html: string) => ipcRenderer.invoke('print:html', html),
+  },
+  dev: {
+    counts: () => ipcRenderer.invoke('dev:counts'),
+    resetAll: () => ipcRenderer.invoke('dev:resetAll'),
+    seed: () => ipcRenderer.invoke('dev:seed'),
   },
 }
 
