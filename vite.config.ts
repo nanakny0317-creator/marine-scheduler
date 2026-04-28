@@ -6,38 +6,46 @@ import { resolve } from 'path'
 
 const external = ['sql.js', 'fs', 'path', 'electron']
 
+// ELECTRON_MODE=browser のとき Electron プラグインをスキップ（Dev Container / UI 開発用）
+const isElectronMode = process.env.ELECTRON_MODE !== 'browser'
+
 export default defineConfig({
+  server: {
+    host: true, // コンテナ外からのポートフォワードを許可
+  },
   plugins: [
     react(),
-    electron([
-      {
-        // メインプロセス: ビルド後に Electron を自動起動
-        entry: 'electron/main.ts',
-        onstart(options) {
-          options.startup()
-        },
-        vite: {
-          build: {
-            outDir: 'dist-electron',
-            rollupOptions: { external },
-          },
-        },
-      },
-      {
-        // プリロード: ビルド後にレンダラーをリロード
-        entry: 'electron/preload.ts',
-        onstart(options) {
-          options.reload()
-        },
-        vite: {
-          build: {
-            outDir: 'dist-electron',
-            rollupOptions: { external },
-          },
-        },
-      },
-    ]),
-    renderer(),
+    ...(isElectronMode
+      ? [
+          electron([
+            {
+              entry: 'electron/main.ts',
+              onstart(options) {
+                options.startup()
+              },
+              vite: {
+                build: {
+                  outDir: 'dist-electron',
+                  rollupOptions: { external },
+                },
+              },
+            },
+            {
+              entry: 'electron/preload.ts',
+              onstart(options) {
+                options.reload()
+              },
+              vite: {
+                build: {
+                  outDir: 'dist-electron',
+                  rollupOptions: { external },
+                },
+              },
+            },
+          ]),
+          renderer(),
+        ]
+      : []),
   ],
   resolve: {
     alias: {

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - node_modules:/workspace/node_modules  # ホストの Windows ビルドと混在しないよう分離
+    command: sleep infinity
+    env_file: db.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - marine-net
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: db.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro  # 初回起動時に自動実行
+    ports:
+      - "5432:5432"  # ホストから DBeaver 等で直接接続可
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - marine-net
+
+volumes:
+  postgres_data:    # DBデータは名前付きボリュームで永続化
+  node_modules:     # コンテナ内 node_modules（ホストと分離）
+
+networks:
+  marine-net:
+    driver: bridge
