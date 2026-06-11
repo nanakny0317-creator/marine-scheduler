@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ApplicationType, Enrollment, EnrollmentInput } from '../../types'
 import { enrollmentsApi } from '../../lib/api'
+
+// ── 定数 ────────────────────────────────────────────────────
 
 const APP_TYPE_OPTIONS: { value: ApplicationType; label: string }[] = [
   { value: 'new',     label: '受講申請' },
@@ -21,67 +23,126 @@ const TYPE_ACTIVE_CLASS: Record<ApplicationType, string> = {
   lapsed:  'bg-orange-50 border-orange-300 text-orange-700',
 }
 
-// extra_json から各フィールドを読み出す
-function readExtra(enrollment: Enrollment | null): {
+const LESSON_TYPES = ['一般学科', '上級学科', '実技', '学科']
+
+const MENU_STORAGE_KEY = 'enrollmentMenuOptions'
+const DEFAULT_MENUS = [
+  '1級小型船舶操縦士',
+  '2級小型船舶操縦士',
+  '特殊小型船舶操縦士',
+  '1級アップグレードメニュー',
+  '2級アップグレードメニュー',
+]
+
+// ── 型 ───────────────────────────────────────────────────────
+
+interface CourseSession {
+  date: string
+  venue: string
+  time: string
+  lessonType: string
+}
+
+const EMPTY_SESSION: CourseSession = { date: '', venue: '', time: '', lessonType: '' }
+
+// ── メニュー管理 ──────────────────────────────────────────────
+
+function loadMenus(): string[] {
+  try {
+    const saved = localStorage.getItem(MENU_STORAGE_KEY)
+    if (saved) {
+      const parsed = JSON.parse(saved) as unknown
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[]
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_MENUS
+}
+
+function persistMenus(menus: string[]) {
+  localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(menus))
+}
+
+// ── readExtra ─────────────────────────────────────────────────
+
+interface ExtraResult {
   applicationType: ApplicationType
-  courseDates: string[]       // 受講申請用（複数日）
-  renewalCourseDate: string   // 更新・失効用（単一日）
+  courseSessions: CourseSession[]
+  renewalCourseDate: string
   courseLocation: string
   courseTime: string
   examDate: string
   examLocation: string
   examStartTime: string
-} {
+}
+
+function readExtra(enrollment: Enrollment | null): ExtraResult {
   if (!enrollment) {
     return {
       applicationType: 'new',
-      courseDates: [''],
+      courseSessions: [{ ...EMPTY_SESSION }],
       renewalCourseDate: '',
-      courseLocation: '',
-      courseTime: '',
-      examDate: '',
-      examLocation: '',
-      examStartTime: '',
+      courseLocation: '', courseTime: '',
+      examDate: '', examLocation: '', examStartTime: '',
     }
   }
 
   let extra: Record<string, unknown> = {}
-  try { extra = JSON.parse(enrollment.extra_json) as Record<string, unknown> } catch {}
+  try { extra = JSON.parse(enrollment.extra_json) as Record<string, unknown> } catch { /* ignore */ }
 
-  const at = ((): ApplicationType => {
+  const at: ApplicationType = (() => {
     const v = extra.application_type
     return v === 'renewal' || v === 'lapsed' ? v : 'new'
   })()
 
-  const courseLocation = (typeof extra.course_location === 'string' ? extra.course_location : enrollment.venue) ?? ''
-  const courseTime = typeof extra.course_time === 'string' ? extra.course_time : ''
-
   if (at === 'new') {
-    const rawDates = extra.course_dates
-    const courseDates: string[] = Array.isArray(rawDates) && rawDates.length > 0
-      ? (rawDates as string[])
-      : enrollment.course_date ? [enrollment.course_date] : ['']
+    let courseSessions: CourseSession[]
+    const rawSessions = extra.course_sessions
+
+    if (Array.isArray(rawSessions) && rawSessions.length > 0) {
+      courseSessions = (rawSessions as Record<string, string>[]).map(s => ({
+        date:       s.date       ?? '',
+        venue:      s.venue      ?? '',
+        time:       s.time       ?? '',
+        lessonType: s.lessonType ?? '',
+      }))
+    } else {
+      // 旧フォーマット（course_dates + グローバル venue/time）からマイグレーション
+      const rawDates = extra.course_dates
+      const dates: string[] = Array.isArray(rawDates) && rawDates.length > 0
+        ? rawDates as string[]
+        : enrollment.course_date ? [enrollment.course_date] : ['']
+      const defaultVenue = typeof extra.course_location === 'string'
+        ? extra.course_location : (enrollment.venue ?? '')
+      const defaultTime = typeof extra.course_time === 'string' ? extra.course_time : ''
+      courseSessions = dates.map(d => ({ date: d, venue: defaultVenue, time: defaultTime, lessonType: '' }))
+    }
+
     return {
       applicationType: 'new',
-      courseDates,
+      courseSessions: courseSessions.length > 0 ? courseSessions : [{ ...EMPTY_SESSION }],
       renewalCourseDate: '',
-      courseLocation,
-      courseTime,
+      courseLocation: '', courseTime: '',
       examDate:      typeof extra.exam_date       === 'string' ? extra.exam_date       : '',
       examLocation:  typeof extra.exam_location   === 'string' ? extra.exam_location   : '',
       examStartTime: typeof extra.exam_start_time === 'string' ? extra.exam_start_time : '',
     }
-  } else {
-    return {
-      applicationType: at,
-      courseDates: [''],
-      renewalCourseDate: enrollment.course_date ?? '',
-      courseLocation,
-      courseTime,
-      examDate: '', examLocation: '', examStartTime: '',
-    }
+  }
+
+  // 更新・失効
+  const courseLocation = (typeof extra.course_location === 'string'
+    ? extra.course_location : enrollment.venue) ?? ''
+  const courseTime = typeof extra.course_time === 'string' ? extra.course_time : ''
+
+  return {
+    applicationType: at,
+    courseSessions: [{ ...EMPTY_SESSION }],
+    renewalCourseDate: enrollment.course_date ?? '',
+    courseLocation, courseTime,
+    examDate: '', examLocation: '', examStartTime: '',
   }
 }
+
+// ── コンポーネント ────────────────────────────────────────────
 
 interface Props {
   studentId: number
@@ -91,26 +152,31 @@ interface Props {
 }
 
 export default function EnrollmentFormModal({ studentId, enrollment, onClose, onSaved }: Props) {
-  const isNew = !enrollment
+  const isCreating = !enrollment
 
   // 共通
   const [applicationType, setApplicationType] = useState<ApplicationType>('new')
-  const [menu, setMenu]       = useState('')
-  const [status, setStatus]   = useState<Enrollment['status']>('pending')
-  const [note, setNote]       = useState('')
+  const [menu,   setMenu]   = useState('')
+  const [status, setStatus] = useState<Enrollment['status']>('pending')
+  const [note,   setNote]   = useState('')
 
   // 受講申請専用
-  const [courseDates,    setCourseDates]    = useState<string[]>([''])
+  const [courseSessions, setCourseSessions] = useState<CourseSession[]>([{ ...EMPTY_SESSION }])
   const [examDate,       setExamDate]       = useState('')
   const [examLocation,   setExamLocation]   = useState('')
   const [examStartTime,  setExamStartTime]  = useState('')
 
   // 更新・失効専用
   const [renewalCourseDate, setRenewalCourseDate] = useState('')
+  const [courseLocation,    setCourseLocation]    = useState('')
+  const [courseTime,        setCourseTime]        = useState('')
 
-  // 共通（場所・時間）
-  const [courseLocation, setCourseLocation] = useState('')
-  const [courseTime,     setCourseTime]     = useState('')
+  // メニュー管理
+  const [menuOptions,   setMenuOptions]   = useState<string[]>(loadMenus)
+  const [showAddMenu,   setShowAddMenu]   = useState(false)
+  const [newMenuName,   setNewMenuName]   = useState('')
+  const [showMenuMgr,   setShowMenuMgr]   = useState(false)
+  const newMenuRef = useRef<HTMLInputElement>(null)
 
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState('')
@@ -118,7 +184,7 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
   useEffect(() => {
     const ex = readExtra(enrollment)
     setApplicationType(ex.applicationType)
-    setCourseDates(ex.courseDates)
+    setCourseSessions(ex.courseSessions)
     setRenewalCourseDate(ex.renewalCourseDate)
     setCourseLocation(ex.courseLocation)
     setCourseTime(ex.courseTime)
@@ -131,22 +197,47 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
     setError('')
   }, [enrollment])
 
-  // 種別切り替え時：種別固有フィールドのみリセット
+  useEffect(() => {
+    if (showAddMenu) setTimeout(() => newMenuRef.current?.focus(), 50)
+  }, [showAddMenu])
+
+  // 種別切り替え
   const handleTypeChange = (t: ApplicationType) => {
     setApplicationType(t)
     if (t === 'new') {
-      setCourseDates([''])
+      setCourseSessions([{ ...EMPTY_SESSION }])
       setExamDate(''); setExamLocation(''); setExamStartTime('')
     } else {
       setRenewalCourseDate('')
     }
   }
 
-  // 受講申請の複数日操作
-  const addDate    = () => setCourseDates((d) => [...d, ''])
-  const removeDate = (i: number) => setCourseDates((d) => d.filter((_, idx) => idx !== i))
-  const updateDate = (i: number, v: string) =>
-    setCourseDates((d) => d.map((x, idx) => (idx === i ? v : x)))
+  // セッション操作
+  const addSession    = () => setCourseSessions(s => [...s, { ...EMPTY_SESSION }])
+  const removeSession = (i: number) => setCourseSessions(s => s.filter((_, idx) => idx !== i))
+  const updateSession = (i: number, field: keyof CourseSession, value: string) =>
+    setCourseSessions(s => s.map((sess, idx) => idx === i ? { ...sess, [field]: value } : sess))
+
+  // メニュー追加
+  const handleAddMenu = () => {
+    const name = newMenuName.trim()
+    if (!name) return
+    if (menuOptions.includes(name)) { setMenu(name); setShowAddMenu(false); setNewMenuName(''); return }
+    const updated = [...menuOptions, name]
+    setMenuOptions(updated)
+    persistMenus(updated)
+    setMenu(name)
+    setNewMenuName('')
+    setShowAddMenu(false)
+  }
+
+  // メニュー削除
+  const handleDeleteMenu = (name: string) => {
+    const updated = menuOptions.filter(m => m !== name)
+    setMenuOptions(updated)
+    persistMenus(updated)
+    if (menu === name) setMenu('')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -156,30 +247,33 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
 
     try {
       let prevExtra: Record<string, unknown> = {}
-      try { prevExtra = JSON.parse(enrollment?.extra_json ?? '{}') as Record<string, unknown> } catch {}
+      try { prevExtra = JSON.parse(enrollment?.extra_json ?? '{}') as Record<string, unknown> } catch { /* ignore */ }
 
       const extra: Record<string, unknown> = { ...prevExtra, application_type: applicationType }
 
-      // 講習地・講習時間（共通）
-      if (courseLocation.trim()) extra.course_location = courseLocation.trim()
-      else delete extra.course_location
-      if (courseTime.trim()) extra.course_time = courseTime.trim()
-      else delete extra.course_time
-
       let primaryCourseDate: string | null = null
+      let primaryVenue: string | null      = null
 
       if (applicationType === 'new') {
-        const valid = courseDates.filter((d) => d.trim())
-        extra.course_dates = valid
-        primaryCourseDate  = valid[0] ?? null
-        if (examDate.trim())      extra.exam_date       = examDate.trim(); else delete extra.exam_date
-        if (examLocation.trim())  extra.exam_location   = examLocation.trim(); else delete extra.exam_location
+        const valid = courseSessions.filter(s => s.date.trim())
+        extra.course_sessions = valid
+        extra.course_dates    = valid.map(s => s.date)   // CalendarModal 後方互換
+        primaryCourseDate     = valid[0]?.date ?? null
+        primaryVenue          = valid[0]?.venue.trim() || null
+        // 後方互換（旧コードが読む場合）
+        extra.course_location = valid[0]?.venue.trim() || undefined
+        extra.course_time     = valid[0]?.time.trim()  || undefined
+
+        if (examDate.trim())      extra.exam_date       = examDate.trim();       else delete extra.exam_date
+        if (examLocation.trim())  extra.exam_location   = examLocation.trim();   else delete extra.exam_location
         if (examStartTime.trim()) extra.exam_start_time = examStartTime.trim(); else delete extra.exam_start_time
-        // 更新・失効系フィールドを削除
         delete extra.course_dates_renewal
       } else {
         primaryCourseDate = renewalCourseDate.trim() || null
-        // 受講申請系フィールドを削除
+        primaryVenue      = courseLocation.trim() || null
+        if (courseLocation.trim()) extra.course_location = courseLocation.trim(); else delete extra.course_location
+        if (courseTime.trim())     extra.course_time     = courseTime.trim();     else delete extra.course_time
+        delete extra.course_sessions
         delete extra.course_dates
         delete extra.exam_date
         delete extra.exam_location
@@ -190,13 +284,13 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
         student_id:  studentId,
         menu:        applicationType === 'new' ? menu.trim() : '',
         course_date: primaryCourseDate,
-        venue:       courseLocation.trim() || null,
+        venue:       primaryVenue,
         status,
         extra_json:  JSON.stringify(extra),
         note:        note.trim() || null,
       }
 
-      if (isNew) {
+      if (isCreating) {
         await enrollmentsApi.create(body)
       } else {
         await enrollmentsApi.update(enrollment.id, body)
@@ -214,9 +308,11 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-lavender-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+
+        {/* ヘッダー */}
+        <div className="px-6 py-4 border-b border-lavender-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
           <h2 className="text-base font-semibold text-gray-700">
-            {isNew ? '申込を追加' : '申込・講習情報を編集'}
+            {isCreating ? '申込を追加' : '申込・講習情報を編集'}
           </h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none" tabIndex={-1}>
             ✕
@@ -228,7 +324,7 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
             <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
-          {/* ① 申込種別（最上部） */}
+          {/* ① 申込種別 */}
           <div>
             <label className="field-label">申込種別</label>
             <div className="flex gap-2">
@@ -250,156 +346,204 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
             </div>
           </div>
 
-          {/* ③-A 受講申請 専用フィールド */}
+          {/* ② 受講申請専用フィールド */}
           {isNewType && (
             <>
-              {/* メニュー（受講申請のみ） */}
+              {/* メニュー */}
               <div>
-                <label className="field-label">
-                  メニュー<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={menu}
-                  onChange={(e) => setMenu(e.target.value)}
-                  className="field-input"
-                  placeholder="例：アップグレードメニュー"
-                />
-              </div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="field-label mb-0">
+                    メニュー<span className="text-red-400 ml-0.5">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMenuMgr(m => !m)}
+                    className="text-xs text-lavender-400 hover:text-lavender-600"
+                  >
+                    メニュー管理
+                  </button>
+                </div>
 
-              <fieldset className="space-y-3">
-                <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide mb-2">講習</legend>
+                <div className="flex gap-2">
+                  <select
+                    value={menu}
+                    onChange={(e) => {
+                      if (e.target.value === '__add__') { setShowAddMenu(true); setMenu('') }
+                      else { setMenu(e.target.value); setShowAddMenu(false) }
+                    }}
+                    className="field-select flex-1"
+                  >
+                    <option value="">-- 選択してください --</option>
+                    {menuOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                    <option value="__add__">＋ 新しいメニューを追加...</option>
+                  </select>
+                </div>
 
-                {/* 講習日（複数可） */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="field-label mb-0">講習日</label>
-                    <button
-                      type="button"
-                      onClick={addDate}
-                      className="text-xs text-lavender-500 hover:text-lavender-700 font-medium flex items-center gap-0.5"
-                    >
-                      ＋ 日程を追加
-                    </button>
+                {/* 新メニュー入力 */}
+                {showAddMenu && (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      ref={newMenuRef}
+                      type="text"
+                      value={newMenuName}
+                      onChange={e => setNewMenuName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddMenu() } }}
+                      className="field-input flex-1"
+                      placeholder="メニュー名を入力"
+                    />
+                    <button type="button" onClick={handleAddMenu} className="btn-primary btn-sm">追加</button>
+                    <button type="button" onClick={() => { setShowAddMenu(false); setNewMenuName('') }} className="btn-secondary btn-sm">×</button>
                   </div>
-                  <div className="space-y-2">
-                    {courseDates.map((d, i) => (
-                      <div key={i} className="flex gap-2 items-center">
-                        <input
-                          type="date"
-                          value={d}
-                          onChange={(e) => updateDate(i, e.target.value)}
-                          className="field-input flex-1"
-                        />
-                        {courseDates.length > 1 && (
+                )}
+
+                {/* メニュー管理パネル */}
+                {showMenuMgr && (
+                  <div className="mt-2 border border-lavender-100 rounded-xl p-3 bg-lavender-50/30 max-h-44 overflow-y-auto">
+                    <p className="text-xs text-gray-400 mb-2">登録メニュー（×で削除）</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {menuOptions.map(m => (
+                        <span key={m} className="flex items-center gap-1 text-xs bg-white border border-lavender-100 rounded-full px-2.5 py-1">
+                          {m}
                           <button
                             type="button"
-                            onClick={() => removeDate(i)}
-                            className="text-gray-300 hover:text-red-400 text-base leading-none px-1"
+                            onClick={() => handleDeleteMenu(m)}
+                            className="text-gray-300 hover:text-red-400 leading-none ml-0.5"
                           >
-                            ✕
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 講習日程（複数・各行に会場・時刻・講習内容） */}
+              <fieldset>
+                <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide mb-2">講習日程</legend>
+                <div className="space-y-2">
+                  {courseSessions.map((session, i) => (
+                    <div key={i} className="border border-lavender-100 rounded-xl p-3 space-y-2 bg-lavender-50/20">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-lavender-500">日程 {i + 1}</span>
+                        {courseSessions.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeSession(i)}
+                            className="text-xs text-red-400 hover:text-red-600"
+                          >
+                            削除
                           </button>
                         )}
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="field-label">講習地</label>
-                    <input
-                      type="text"
-                      value={courseLocation}
-                      onChange={(e) => setCourseLocation(e.target.value)}
-                      className="field-input"
-                      placeholder="講習会場"
-                    />
-                  </div>
-                  <div>
-                    <label className="field-label">講習時間</label>
-                    <input
-                      type="text"
-                      value={courseTime}
-                      onChange={(e) => setCourseTime(e.target.value)}
-                      className="field-input"
-                      placeholder="例：09:00"
-                    />
-                  </div>
+                      {/* 日付 */}
+                      <div>
+                        <label className="field-label">日付</label>
+                        <input
+                          type="date"
+                          value={session.date}
+                          onChange={e => updateSession(i, 'date', e.target.value)}
+                          className="field-input"
+                        />
+                      </div>
+
+                      {/* 会場・時刻 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="field-label">会場</label>
+                          <input
+                            type="text"
+                            value={session.venue}
+                            onChange={e => updateSession(i, 'venue', e.target.value)}
+                            className="field-input"
+                            placeholder="講習会場"
+                          />
+                        </div>
+                        <div>
+                          <label className="field-label">開始時刻</label>
+                          <input
+                            type="text"
+                            value={session.time}
+                            onChange={e => updateSession(i, 'time', e.target.value)}
+                            className="field-input"
+                            placeholder="例：09:00"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 講習内容 */}
+                      <div>
+                        <label className="field-label">講習内容</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {LESSON_TYPES.map(lt => (
+                            <button
+                              key={lt}
+                              type="button"
+                              onClick={() => updateSession(i, 'lessonType', session.lessonType === lt ? '' : lt)}
+                              className={[
+                                'px-3 py-1 rounded-full text-xs font-medium border transition',
+                                session.lessonType === lt
+                                  ? 'bg-lavender-400 text-white border-lavender-400'
+                                  : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                              ].join(' ')}
+                            >
+                              {lt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* 日程追加ボタン */}
+                  <button
+                    type="button"
+                    onClick={addSession}
+                    className="w-full py-2 border border-dashed border-lavender-200 rounded-xl text-xs text-lavender-400 hover:border-lavender-400 hover:text-lavender-600 transition"
+                  >
+                    ＋ 日程を追加
+                  </button>
                 </div>
               </fieldset>
 
+              {/* 試験 */}
               <fieldset className="border border-lavender-100 rounded-xl p-4 space-y-3">
                 <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide px-1">試験</legend>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="field-label">試験日</label>
-                    <input
-                      type="date"
-                      value={examDate}
-                      onChange={(e) => setExamDate(e.target.value)}
-                      className="field-input"
-                    />
+                    <input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="field-input" />
                   </div>
                   <div>
                     <label className="field-label">試験開始時間</label>
-                    <input
-                      type="text"
-                      value={examStartTime}
-                      onChange={(e) => setExamStartTime(e.target.value)}
-                      className="field-input"
-                      placeholder="例：10:00"
-                    />
+                    <input type="text" value={examStartTime} onChange={e => setExamStartTime(e.target.value)} className="field-input" placeholder="例：10:00" />
                   </div>
                 </div>
                 <div>
                   <label className="field-label">試験地</label>
-                  <input
-                    type="text"
-                    value={examLocation}
-                    onChange={(e) => setExamLocation(e.target.value)}
-                    className="field-input"
-                    placeholder="試験会場"
-                  />
+                  <input type="text" value={examLocation} onChange={e => setExamLocation(e.target.value)} className="field-input" placeholder="試験会場" />
                 </div>
               </fieldset>
             </>
           )}
 
-          {/* ③-B 更新講習・失効再交付 専用フィールド */}
+          {/* ③ 更新講習・失効再交付専用フィールド */}
           {!isNewType && (
             <fieldset className="space-y-3">
               <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide mb-2">講習</legend>
               <div>
                 <label className="field-label">講習日</label>
-                <input
-                  type="date"
-                  value={renewalCourseDate}
-                  onChange={(e) => setRenewalCourseDate(e.target.value)}
-                  className="field-input"
-                />
+                <input type="date" value={renewalCourseDate} onChange={e => setRenewalCourseDate(e.target.value)} className="field-input" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="field-label">講習地</label>
-                  <input
-                    type="text"
-                    value={courseLocation}
-                    onChange={(e) => setCourseLocation(e.target.value)}
-                    className="field-input"
-                    placeholder="講習会場"
-                  />
+                  <input type="text" value={courseLocation} onChange={e => setCourseLocation(e.target.value)} className="field-input" placeholder="講習会場" />
                 </div>
                 <div>
                   <label className="field-label">講習時間</label>
-                  <input
-                    type="text"
-                    value={courseTime}
-                    onChange={(e) => setCourseTime(e.target.value)}
-                    className="field-input"
-                    placeholder="例：14:00"
-                  />
+                  <input type="text" value={courseTime} onChange={e => setCourseTime(e.target.value)} className="field-input" placeholder="例：14:00" />
                 </div>
               </div>
             </fieldset>
@@ -408,31 +552,18 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
           {/* ④ ステータス・備考（共通） */}
           <div>
             <label className="field-label">ステータス</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as Enrollment['status'])}
-              className="field-select"
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
+            <select value={status} onChange={e => setStatus(e.target.value as Enrollment['status'])} className="field-select">
+              {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
 
           <div>
             <label className="field-label">備考</label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="field-input min-h-[72px] resize-y"
-              rows={3}
-            />
+            <textarea value={note} onChange={e => setNote(e.target.value)} className="field-input min-h-[72px] resize-y" rows={3} />
           </div>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-lavender-100">
-            <button type="button" onClick={onClose} className="btn-secondary">
-              キャンセル
-            </button>
+            <button type="button" onClick={onClose} className="btn-secondary">キャンセル</button>
             <button type="submit" disabled={saving} className="btn-primary min-w-[88px]">
               {saving ? '保存中…' : '保存'}
             </button>

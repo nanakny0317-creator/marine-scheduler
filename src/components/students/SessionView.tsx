@@ -9,6 +9,7 @@ import CsvImportModal from './CsvImportModal'
 import ScheduleItemDetailModal from './ScheduleItemDetailModal'
 import ReceiptPrintModal from './ReceiptPrintModal'
 import MultiReceiptSelectModal from './MultiReceiptSelectModal'
+import CalendarModal from './CalendarModal'
 import { useSession, TABS } from '../../contexts/SessionContext'
 import type { SessionItem } from '../../contexts/SessionContext'
 
@@ -32,7 +33,7 @@ function getAppType(enrollment: Enrollment): string {
 
 export default function SessionView() {
   // activeTab はコンテキスト管理（サイドバーのフィルタと共有）
-  const { sessions, selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
+  const { allItems, sessions, selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
 
   const [viewStudent, setViewStudent] = useState<Student | null>(null)
   const [editStudent, setEditStudent] = useState<Student | null>(null)
@@ -42,6 +43,7 @@ export default function SessionView() {
   const [showReceipt, setShowReceipt] = useState(false)
   const [showMultiSelect, setShowMultiSelect] = useState(false)
   const [multiReceiptItems, setMultiReceiptItems] = useState<SessionItem[]>([])
+  const [showCalendar, setShowCalendar] = useState(false)
 
   // sessions はコンテキスト側で activeTab フィルタ済みのため、items をそのまま使う
   const filteredItems = selectedSession?.items ?? []
@@ -90,7 +92,7 @@ export default function SessionView() {
   return (
     <div className="flex flex-col h-full gap-3">
 
-      {/* タブ + CSVインポート */}
+      {/* タブ + ツールボタン */}
       <div className="flex items-center gap-4 shrink-0">
         <div className="flex gap-1 border-b border-lavender-100 flex-1">
           {TABS.map(({ key, label }) => (
@@ -107,6 +109,17 @@ export default function SessionView() {
             </button>
           ))}
         </div>
+        {/* カレンダービュー */}
+        <button
+          onClick={() => setShowCalendar(true)}
+          className="btn-secondary text-sm shrink-0 flex items-center gap-1.5"
+          title="月カレンダーで確認"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+            <path fillRule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clipRule="evenodd" />
+          </svg>
+          カレンダー
+        </button>
         <button
           onClick={() => setShowMultiSelect(true)}
           className="btn-secondary text-sm shrink-0"
@@ -324,6 +337,15 @@ export default function SessionView() {
         <ReceiptPrintModal
           items={multiReceiptItems}
           onClose={() => setMultiReceiptItems([])}
+        />
+      )}
+
+      {/* カレンダービュー */}
+      {showCalendar && (
+        <CalendarModal
+          allItems={allItems}
+          onClose={() => setShowCalendar(false)}
+          onUpdated={() => { reload() }}
         />
       )}
     </div>

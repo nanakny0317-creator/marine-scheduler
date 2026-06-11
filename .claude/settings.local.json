@@ -24,7 +24,9 @@
       "Bash(psql *)",
       "Bash(grep -E \"^pg$|^postgres$|@types/pg\")",
       "Bash(sudo npm *)",
-      "Bash(grep \"^pg$\")"
+      "Bash(grep \"^pg$\")",
+      "Bash(curl *)",
+      "Bash(pkill -f \"vite\")"
     ]
   }
 }

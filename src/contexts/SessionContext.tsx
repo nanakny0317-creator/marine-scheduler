@@ -44,6 +44,7 @@ function getAppType(enrollment: Enrollment): string {
 // ── コンテキスト ───────────────────────────────────────────
 
 interface SessionContextValue {
+  allItems: SessionItem[]        // タブフィルタなし全件
   sessions: SessionGroup[]       // activeTab でフィルタ済み
   loading: boolean
   selectedKey: string | null
@@ -117,6 +118,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SessionContext.Provider value={{
+      allItems,
       sessions, loading,
       selectedKey, setSelectedKey,
       selectedSession,

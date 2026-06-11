@@ -47,32 +47,53 @@ function getExtra(enrollment: Enrollment): Record<string, unknown> {
   try { return JSON.parse(enrollment.extra_json) as Record<string, unknown> } catch { return {} }
 }
 
+interface CourseSessionData {
+  date: string
+  venue: string
+  time: string
+  lessonType: string
+}
+
 /** 申込種別に応じた受講・申込情報の読み取り表示 */
 function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
-  const extra    = getExtra(enrollment)
-  const appType  = (extra.application_type as string) ?? 'new'
-  const isNew    = appType === 'new'
+  const extra   = getExtra(enrollment)
+  const appType = (extra.application_type as string) ?? 'new'
+  const isNew   = appType === 'new'
 
-  const courseLocation = (typeof extra.course_location === 'string' ? extra.course_location : enrollment.venue) ?? ''
-  const courseTime     = typeof extra.course_time     === 'string' ? extra.course_time     : ''
-  const examDate       = typeof extra.exam_date       === 'string' ? extra.exam_date       : ''
-  const examLocation   = typeof extra.exam_location   === 'string' ? extra.exam_location   : ''
-  const examStartTime  = typeof extra.exam_start_time === 'string' ? extra.exam_start_time : ''
+  const examDate      = typeof extra.exam_date       === 'string' ? extra.exam_date       : ''
+  const examLocation  = typeof extra.exam_location   === 'string' ? extra.exam_location   : ''
+  const examStartTime = typeof extra.exam_start_time === 'string' ? extra.exam_start_time : ''
 
-  // 受講申請の複数講習日
-  const courseDates: string[] = (() => {
+  // 受講申請：course_sessions（新形式）または旧形式から復元
+  const courseSessions: CourseSessionData[] = (() => {
     if (!isNew) return []
-    const raw = extra.course_dates
-    if (Array.isArray(raw) && raw.length > 0) return raw as string[]
-    return enrollment.course_date ? [enrollment.course_date] : []
+    const rawSessions = extra.course_sessions
+    if (Array.isArray(rawSessions) && rawSessions.length > 0) {
+      return (rawSessions as Record<string, string>[]).map(s => ({
+        date:       s.date       ?? '',
+        venue:      s.venue      ?? '',
+        time:       s.time       ?? '',
+        lessonType: s.lessonType ?? '',
+      }))
+    }
+    // 旧形式フォールバック
+    const rawDates = extra.course_dates
+    const dates: string[] = Array.isArray(rawDates) && rawDates.length > 0
+      ? rawDates as string[]
+      : enrollment.course_date ? [enrollment.course_date] : []
+    const defaultVenue = (typeof extra.course_location === 'string' ? extra.course_location : enrollment.venue) ?? ''
+    const defaultTime  = typeof extra.course_time === 'string' ? extra.course_time : ''
+    return dates.map(d => ({ date: d, venue: defaultVenue, time: defaultTime, lessonType: '' }))
   })()
 
-  // 更新・失効の単一講習日
-  const renewalDate = !isNew ? (enrollment.course_date ?? '') : ''
+  // 更新・失効
+  const renewalDate     = !isNew ? (enrollment.course_date ?? '') : ''
+  const courseLocation  = !isNew ? ((typeof extra.course_location === 'string' ? extra.course_location : enrollment.venue) ?? '') : ''
+  const courseTime      = !isNew ? (typeof extra.course_time === 'string' ? extra.course_time : '') : ''
 
   return (
     <div className="rounded-xl border border-lavender-100 px-4 py-1">
-      {/* 申込種別バッジ行 */}
+      {/* 申込種別バッジ */}
       <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50">
         <span className="text-gray-400 shrink-0">申込種別</span>
         <span>
@@ -82,32 +103,40 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
         </span>
       </div>
 
-      {/* メニューは受講申請のみ */}
+      {/* メニュー（受講申請のみ） */}
       {isNew && <Row label="メニュー" value={dash(enrollment.menu)} />}
 
-      {/* 受講申請：複数講習日 */}
+      {/* 受講申請：日程一覧（新形式） */}
       {isNew && (
         <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50">
-          <span className="text-gray-400 shrink-0">講習日</span>
-          <span className="text-gray-800">
-            {courseDates.length > 0 ? (
-              <span className="flex flex-col gap-0.5">
-                {courseDates.map((d, i) => (
-                  <span key={i}>{fmtDate(d) ?? '—'}</span>
-                ))}
-              </span>
-            ) : '—'}
-          </span>
+          <span className="text-gray-400 shrink-0 pt-0.5">講習日程</span>
+          <div className="space-y-1.5">
+            {courseSessions.length > 0 ? courseSessions.map((s, i) => (
+              <div key={i} className="text-gray-800">
+                <div className="font-medium">{fmtDate(s.date) ?? '—'}</div>
+                <div className="text-xs text-gray-400 flex flex-wrap gap-x-3 mt-0.5">
+                  {s.venue      && <span>📍 {s.venue}</span>}
+                  {s.time       && <span>🕐 {s.time}</span>}
+                  {s.lessonType && (
+                    <span className="inline-block px-1.5 py-0 rounded bg-lavender-50 text-lavender-500 border border-lavender-100 text-[10px] font-semibold">
+                      {s.lessonType}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )) : <span className="text-gray-800">—</span>}
+          </div>
         </div>
       )}
 
       {/* 更新・失効：単一講習日 */}
       {!isNew && (
-        <Row label="講習日" value={fmtDate(renewalDate) ?? '—'} />
+        <>
+          <Row label="講習日"   value={fmtDate(renewalDate) ?? '—'} />
+          <Row label="講習地"   value={dash(courseLocation)} />
+          <Row label="講習時間" value={dash(courseTime)} />
+        </>
       )}
-
-      <Row label="講習地"   value={dash(courseLocation)} />
-      <Row label="講習時間" value={dash(courseTime)} />
 
       {/* 受講申請のみ：試験情報 */}
       {isNew && (
@@ -118,7 +147,7 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
         </>
       )}
 
-      {/* ステータスバッジ行 */}
+      {/* ステータス */}
       <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50 last:border-0">
         <span className="text-gray-400 shrink-0">ステータス</span>
         <span>
