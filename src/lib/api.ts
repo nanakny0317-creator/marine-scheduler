@@ -6,6 +6,7 @@ import type {
   Student, StudentInput, StudentSearchParams, DuplicateCheckResult,
   Enrollment, EnrollmentInput,
   Venue, VenueInput,
+  ExamSession, ExamSessionInput,
   PendingReview, PendingReviewInput, PendingReviewWithStudents,
   DupImportRow,
 } from '../types'
@@ -79,6 +80,23 @@ export const enrollmentsApi = {
 
   delete: (id: number): Promise<boolean> =>
     window.api.enrollments.delete(id),
+}
+
+export const examSessionsApi = {
+  list: (): Promise<ExamSession[]> =>
+    window.api.examSessions.list(),
+
+  create: (input: ExamSessionInput): Promise<ExamSession> =>
+    window.api.examSessions.create(input),
+
+  update: (id: number, input: ExamSessionInput): Promise<ExamSession> =>
+    window.api.examSessions.update(id, input),
+
+  delete: (id: number): Promise<boolean> =>
+    window.api.examSessions.delete(id),
+
+  upsert: (rows: ExamSessionInput[]): Promise<{ inserted: number; updated: number }> =>
+    window.api.examSessions.upsert(rows),
 }
 
 export const pendingReviewsApi = {

@@ -12,6 +12,10 @@ const isElectronMode = process.env.ELECTRON_MODE !== 'browser'
 export default defineConfig({
   server: {
     host: true, // コンテナ外からのポートフォワードを許可
+    watch: {
+      usePolling: true,
+      interval: 500,
+    },
   },
   plugins: [
     react(),

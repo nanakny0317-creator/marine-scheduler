@@ -141,6 +141,16 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
       {/* 受講申請のみ：試験情報 */}
       {isNew && (
         <>
+          {(extra.exam_qual_type as string | undefined) && (
+            <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50">
+              <span className="text-gray-400 shrink-0">受験種別</span>
+              <span>
+                <span className="inline-block px-2 py-0.5 rounded border text-[11px] font-bold bg-lavender-50 text-lavender-600 border-lavender-200">
+                  {extra.exam_qual_type as string}
+                </span>
+              </span>
+            </div>
+          )}
           <Row label="試験日"       value={fmtDate(examDate) ?? '—'} />
           <Row label="試験地"       value={dash(examLocation)} />
           <Row label="試験開始時間" value={dash(examStartTime)} />

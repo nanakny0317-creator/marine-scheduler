@@ -3,8 +3,6 @@ import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
 import { enrollmentsApi } from '../../lib/api'
-import StudentForm from './StudentForm'
-import MemberBasicInfoModal from './MemberBasicInfoModal'
 import CsvImportModal from './CsvImportModal'
 import ScheduleItemDetailModal from './ScheduleItemDetailModal'
 import ReceiptPrintModal from './ReceiptPrintModal'
@@ -35,8 +33,6 @@ export default function SessionView() {
   // activeTab はコンテキスト管理（サイドバーのフィルタと共有）
   const { allItems, sessions, selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
 
-  const [viewStudent, setViewStudent] = useState<Student | null>(null)
-  const [editStudent, setEditStudent] = useState<Student | null>(null)
   const [showCsvImport, setShowCsvImport] = useState(false)
   const [detailItem, setDetailItem] = useState<{ student: Student; enrollment: Enrollment } | null>(null)
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set())
@@ -245,7 +241,7 @@ export default function SessionView() {
                   <div className="flex gap-1 shrink-0">
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setViewStudent(student) }}
+                      onClick={(e) => { e.stopPropagation(); setDetailItem({ student, enrollment }) }}
                       className="btn-secondary btn-sm"
                     >
                       基本情報
@@ -278,29 +274,6 @@ export default function SessionView() {
           enrollment={detailItem.enrollment}
           onClose={() => setDetailItem(null)}
           onUpdated={() => { reload() }}
-        />
-      )}
-
-      {viewStudent && (
-        <MemberBasicInfoModal
-          student={viewStudent}
-          onClose={() => setViewStudent(null)}
-          onEdit={() => {
-            setEditStudent(viewStudent)
-            setViewStudent(null)
-          }}
-          onDeleted={() => { setViewStudent(null); reload() }}
-        />
-      )}
-
-      {editStudent && (
-        <StudentForm
-          student={editStudent}
-          onSaved={() => {
-            setEditStudent(null)
-            reload()
-          }}
-          onCancel={() => setEditStudent(null)}
         />
       )}
 

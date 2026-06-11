@@ -43,7 +43,7 @@ function getSessionEntries(enrollment: Enrollment): SessionEntry[] {
       // 旧形式：course_dates + グローバル venue
       const dates: string[] = Array.isArray(extra.course_dates) ? extra.course_dates as string[] : []
       const venue = typeof extra.course_location === 'string' ? extra.course_location : (enrollment.venue ?? '')
-      return dates.filter(Boolean).map(d => ({ date: d, venue, lessonType: '' }))
+      if (dates.length > 0) return dates.filter(Boolean).map(d => ({ date: d, venue, lessonType: '' }))
     } catch { /* ignore */ }
     return enrollment.course_date ? [{ date: enrollment.course_date, venue: enrollment.venue ?? '', lessonType: '' }] : []
   }

@@ -74,6 +74,17 @@ CREATE TABLE IF NOT EXISTS pending_reviews (
   updated_at     TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+-- 試験日程マスター
+CREATE TABLE IF NOT EXISTS exam_sessions (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  exam_date          TEXT NOT NULL,
+  exam_location      TEXT NOT NULL,
+  qualification_type TEXT NOT NULL,
+  exam_id            TEXT NOT NULL,
+  created_at         TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  updated_at         TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 -- 会場マスター
 CREATE TABLE IF NOT EXISTS venues (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,6 +125,13 @@ CREATE TRIGGER IF NOT EXISTS pending_reviews_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE pending_reviews SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
+  END;
+
+CREATE TRIGGER IF NOT EXISTS exam_sessions_updated_at
+  AFTER UPDATE ON exam_sessions
+  FOR EACH ROW
+  BEGIN
+    UPDATE exam_sessions SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
   END;
 
 CREATE TRIGGER IF NOT EXISTS venues_updated_at

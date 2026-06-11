@@ -176,6 +176,20 @@ export default function HomePage() {
           onClick={() => navigate('/venues')}
         />
         <HomeButton
+          icon="📋"
+          title="試験日程管理"
+          desc={"試験IDの登録・\nExcelインポート"}
+          color="mint"
+          onClick={() => navigate('/exam-sessions')}
+        />
+        <HomeButton
+          icon="🎯"
+          title="印字位置設定"
+          desc={"OCRフォームの\n印字位置を調整"}
+          color="gray"
+          onClick={() => navigate('/calibration')}
+        />
+        <HomeButton
           icon="👤"
           title="会員一覧"
           desc={"会員情報と講習日程\nの確認・編集"}

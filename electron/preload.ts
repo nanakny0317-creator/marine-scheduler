@@ -35,6 +35,13 @@ const api = {
     resolve: (id: number, resolution: string) => ipcRenderer.invoke('pendingReviews:resolve', id, resolution),
     merge: (id: number, keepStudentId: number) => ipcRenderer.invoke('pendingReviews:merge', id, keepStudentId),
   },
+  examSessions: {
+    list:   () => ipcRenderer.invoke('examSessions:list'),
+    create: (input: unknown) => ipcRenderer.invoke('examSessions:create', input),
+    update: (id: number, input: unknown) => ipcRenderer.invoke('examSessions:update', id, input),
+    delete: (id: number) => ipcRenderer.invoke('examSessions:delete', id),
+    upsert: (rows: unknown[]) => ipcRenderer.invoke('examSessions:upsert', rows),
+  },
   print: {
     html: (html: string) => ipcRenderer.invoke('print:html', html),
   },

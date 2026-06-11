@@ -26,7 +26,17 @@
       "Bash(sudo npm *)",
       "Bash(grep \"^pg$\")",
       "Bash(curl *)",
-      "Bash(pkill -f \"vite\")"
+      "Bash(pkill -f \"vite\")",
+      "Bash(npm run *)",
+      "Bash(echo \"PID: $!\")",
+      "Skill(run)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('dependencies',{}\\).keys\\(\\)\\) + list\\(d.get\\('devDependencies',{}\\).keys\\(\\)\\)\\)\")",
+      "Bash(sudo apt-get install -y poppler-utils)",
+      "Bash(pdftoppm -r 120 -png /workspace/20260611_小型船舶操縦士国家試験申請書.pdf /tmp/pdf_page)",
+      "Bash(pdfinfo *)",
+      "Bash(pdftoppm -r 150 -png -f 1 -l 1 /workspace/20260611_小型船舶操縦士国家試験申請書.pdf /tmp/pdf_hires)",
+      "Bash(pdftoppm -r 150 -png /workspace/20260611_小型船舶操縦士国家試験申請書.pdf /workspace/public/pdf-pages/page)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

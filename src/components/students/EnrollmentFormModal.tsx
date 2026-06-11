@@ -24,6 +24,7 @@ const TYPE_ACTIVE_CLASS: Record<ApplicationType, string> = {
 }
 
 const LESSON_TYPES = ['一般学科', '上級学科', '実技', '学科']
+const EXAM_QUAL_TYPES = ['一級', '二級', '湖川', '二級若年', '特殊']
 
 const MENU_STORAGE_KEY = 'enrollmentMenuOptions'
 const DEFAULT_MENUS = [
@@ -73,6 +74,7 @@ interface ExtraResult {
   examDate: string
   examLocation: string
   examStartTime: string
+  examQualType: string
 }
 
 function readExtra(enrollment: Enrollment | null): ExtraResult {
@@ -82,7 +84,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       courseSessions: [{ ...EMPTY_SESSION }],
       renewalCourseDate: '',
       courseLocation: '', courseTime: '',
-      examDate: '', examLocation: '', examStartTime: '',
+      examDate: '', examLocation: '', examStartTime: '', examQualType: '',
     }
   }
 
@@ -122,9 +124,10 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       courseSessions: courseSessions.length > 0 ? courseSessions : [{ ...EMPTY_SESSION }],
       renewalCourseDate: '',
       courseLocation: '', courseTime: '',
-      examDate:      typeof extra.exam_date       === 'string' ? extra.exam_date       : '',
-      examLocation:  typeof extra.exam_location   === 'string' ? extra.exam_location   : '',
-      examStartTime: typeof extra.exam_start_time === 'string' ? extra.exam_start_time : '',
+      examDate:      typeof extra.exam_date         === 'string' ? extra.exam_date         : '',
+      examLocation:  typeof extra.exam_location     === 'string' ? extra.exam_location     : '',
+      examStartTime: typeof extra.exam_start_time   === 'string' ? extra.exam_start_time   : '',
+      examQualType:  typeof extra.exam_qual_type    === 'string' ? extra.exam_qual_type    : '',
     }
   }
 
@@ -138,7 +141,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     courseSessions: [{ ...EMPTY_SESSION }],
     renewalCourseDate: enrollment.course_date ?? '',
     courseLocation, courseTime,
-    examDate: '', examLocation: '', examStartTime: '',
+    examDate: '', examLocation: '', examStartTime: '', examQualType: '',
   }
 }
 
@@ -165,6 +168,7 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
   const [examDate,       setExamDate]       = useState('')
   const [examLocation,   setExamLocation]   = useState('')
   const [examStartTime,  setExamStartTime]  = useState('')
+  const [examQualType,   setExamQualType]   = useState('')
 
   // 更新・失効専用
   const [renewalCourseDate, setRenewalCourseDate] = useState('')
@@ -191,6 +195,7 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
     setExamDate(ex.examDate)
     setExamLocation(ex.examLocation)
     setExamStartTime(ex.examStartTime)
+    setExamQualType(ex.examQualType)
     setMenu(enrollment?.menu ?? '')
     setStatus(enrollment?.status ?? 'pending')
     setNote(enrollment?.note ?? '')
@@ -206,7 +211,7 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
     setApplicationType(t)
     if (t === 'new') {
       setCourseSessions([{ ...EMPTY_SESSION }])
-      setExamDate(''); setExamLocation(''); setExamStartTime('')
+      setExamDate(''); setExamLocation(''); setExamStartTime(''); setExamQualType('')
     } else {
       setRenewalCourseDate('')
     }
@@ -266,7 +271,8 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
 
         if (examDate.trim())      extra.exam_date       = examDate.trim();       else delete extra.exam_date
         if (examLocation.trim())  extra.exam_location   = examLocation.trim();   else delete extra.exam_location
-        if (examStartTime.trim()) extra.exam_start_time = examStartTime.trim(); else delete extra.exam_start_time
+        if (examStartTime.trim()) extra.exam_start_time = examStartTime.trim();  else delete extra.exam_start_time
+        if (examQualType.trim())  extra.exam_qual_type  = examQualType.trim();   else delete extra.exam_qual_type
         delete extra.course_dates_renewal
       } else {
         primaryCourseDate = renewalCourseDate.trim() || null
@@ -510,6 +516,29 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
               {/* 試験 */}
               <fieldset className="border border-lavender-100 rounded-xl p-4 space-y-3">
                 <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide px-1">試験</legend>
+
+                {/* 受験種別 */}
+                <div>
+                  <label className="field-label">受験種別</label>
+                  <div className="flex gap-2">
+                    {EXAM_QUAL_TYPES.map(q => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setExamQualType(examQualType === q ? '' : q)}
+                        className={[
+                          'flex-1 py-1.5 rounded-lg border text-sm font-medium transition',
+                          examQualType === q
+                            ? 'bg-lavender-400 text-white border-lavender-400'
+                            : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                        ].join(' ')}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="field-label">試験日</label>

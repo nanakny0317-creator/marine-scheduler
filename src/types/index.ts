@@ -154,6 +154,19 @@ export interface Renewal {
   updated_at: string
 }
 
+// ===== 試験日程マスター =====
+export interface ExamSession {
+  id: number
+  exam_date: string
+  exam_location: string
+  qualification_type: string
+  exam_id: string
+  created_at: string
+  updated_at: string
+}
+
+export type ExamSessionInput = Omit<ExamSession, 'id' | 'created_at' | 'updated_at'>
+
 // ===== 会場マスター =====
 export interface Venue {
   id: number
@@ -217,6 +230,13 @@ export interface ElectronAPI {
     create: (input: PendingReviewInput) => Promise<PendingReview>
     resolve: (id: number, resolution: 'merged' | 'different') => Promise<boolean>
     merge: (id: number, keepStudentId: number) => Promise<boolean>
+  }
+  examSessions: {
+    list:   () => Promise<ExamSession[]>
+    create: (input: ExamSessionInput) => Promise<ExamSession>
+    update: (id: number, input: ExamSessionInput) => Promise<ExamSession>
+    delete: (id: number) => Promise<boolean>
+    upsert: (rows: ExamSessionInput[]) => Promise<{ inserted: number; updated: number }>
   }
   print: {
     html: (html: string) => Promise<void>
