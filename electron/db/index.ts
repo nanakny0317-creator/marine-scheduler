@@ -337,6 +337,46 @@ export async function initDb(): Promise<Database> {
     }
   }
 
+  // マイグレーション: exam_sessions に exam_type カラムを追加
+  const examSessionInfo = db.exec("PRAGMA table_info(exam_sessions)")
+  if (examSessionInfo.length > 0) {
+    const cols = examSessionInfo[0].values.map((row) => row[1] as string)
+    if (!cols.includes('exam_type')) {
+      db.run("ALTER TABLE exam_sessions ADD COLUMN exam_type TEXT NOT NULL DEFAULT '学科+実技'")
+    }
+  }
+
+  // マイグレーション: exam_records テーブル新規作成
+  db.run(`
+    CREATE TABLE IF NOT EXISTS exam_records (
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id          INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      enrollment_id       INTEGER REFERENCES enrollments(id) ON DELETE SET NULL,
+      qualification_type  TEXT NOT NULL DEFAULT '',
+      shintai_cert        INTEGER NOT NULL DEFAULT 0,
+      shintai_valid_until TEXT,
+      gakka_session_id    INTEGER REFERENCES exam_sessions(id) ON DELETE SET NULL,
+      gakka_exam_number   TEXT,
+      gakka_result        TEXT CHECK(gakka_result IN ('合','免','否','不')),
+      gakka_result_date   TEXT,
+      jitsugi_session_id  INTEGER REFERENCES exam_sessions(id) ON DELETE SET NULL,
+      jitsugi_exam_number TEXT,
+      jitsugi_result      TEXT CHECK(jitsugi_result IN ('合','免','否','不')),
+      jitsugi_result_date TEXT,
+      note        TEXT,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `)
+  db.run(`
+    CREATE TRIGGER IF NOT EXISTS exam_records_updated_at
+      AFTER UPDATE ON exam_records
+      FOR EACH ROW
+      BEGIN
+        UPDATE exam_records SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
+      END
+  `)
+
   save()
 
   return db

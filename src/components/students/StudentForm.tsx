@@ -5,8 +5,15 @@
  * - 重複チェック
  */
 import { useEffect, useRef, useState } from 'react'
-import type { Student, StudentInput, DuplicateCheckResult } from '../../types'
-import { studentsApi, pendingReviewsApi, fetchAddressByZip } from '../../lib/api'
+import type {
+  Student, StudentInput, DuplicateCheckResult,
+  ApplicationType, ExamSession, ExamResult,
+} from '../../types'
+import {
+  studentsApi, pendingReviewsApi, fetchAddressByZip,
+  enrollmentsApi, examRecordsApi, examSessionsApi,
+} from '../../lib/api'
+import { NATIONALITIES } from '../../data/masterData'
 import DuplicateResolutionModal from './DuplicateResolutionModal'
 
 // コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
@@ -98,7 +105,42 @@ interface Props {
   onCancel: () => void
 }
 
+// ── 申込初期値 ───────────────────────────────────────────────────
+const EMPTY_ENROLLMENT = {
+  application_type: 'new' as ApplicationType,
+  menu: '',
+  course_date: '',
+  venue: '',
+  domicile: '',
+  nationality: '',
+}
+
+// ── 試験記録初期値 ────────────────────────────────────────────────
+const EMPTY_EXAM = {
+  qualification_type: '二級',
+  shintai_cert: false,
+  shintai_valid_until: '',
+  gakka_session_id: null as number | null,
+  gakka_exam_number: '',
+  gakka_result: null as ExamResult,
+  gakka_result_date: '',
+  jitsugi_session_id: null as number | null,
+  jitsugi_exam_number: '',
+  jitsugi_result: null as ExamResult,
+  jitsugi_result_date: '',
+}
+
+const QUAL_TYPES = ['一級', '二級', '特殊', '湖川']
+const APP_TYPES: { value: ApplicationType; label: string }[] = [
+  { value: 'new',     label: '受講申請' },
+  { value: 'renewal', label: '更新講習' },
+  { value: 'lapsed',  label: '失効再交付' },
+]
+const RESULTS: ExamResult[] = ['合', '免', '否', '不']
+
 export default function StudentForm({ student, onSaved, onCancel }: Props) {
+  const isNew = !student
+
   const [form, setForm] = useState<StudentInput>(
     student ? { ...student } : { ...EMPTY }
   )
@@ -107,6 +149,71 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   const [saving, setSaving] = useState(false)
   const [zipLoading, setZipLoading] = useState(false)
   const firstRef = useRef<HTMLInputElement>(null)
+
+  // ── 新規時のオプションセクション ──
+  const [showEnrollment, setShowEnrollment] = useState(false)
+  const [enrollmentForm, setEnrollmentForm] = useState({ ...EMPTY_ENROLLMENT })
+  const [showExam, setShowExam] = useState(false)
+  const [examForm, setExamForm] = useState({ ...EMPTY_EXAM })
+  const [examSessions, setExamSessions] = useState<ExamSession[]>([])
+  const [sessionsLoaded, setSessionsLoaded] = useState(false)
+
+  const openExamSection = async () => {
+    setShowExam(v => !v)
+    if (!sessionsLoaded) {
+      const list = await examSessionsApi.list()
+      setExamSessions(list)
+      setSessionsLoaded(true)
+    }
+  }
+
+  const setE = <K extends keyof typeof EMPTY_ENROLLMENT>(k: K, v: (typeof EMPTY_ENROLLMENT)[K]) =>
+    setEnrollmentForm(f => ({ ...f, [k]: v }))
+
+  const setX = <K extends keyof typeof EMPTY_EXAM>(k: K, v: (typeof EMPTY_EXAM)[K]) =>
+    setExamForm(f => ({ ...f, [k]: v }))
+
+  // 学科・実技それぞれに出せるセッション
+  const gakkaSessions  = examSessions.filter(s => s.exam_type !== '実技')
+  const jitsugiSessions = examSessions.filter(s => s.exam_type !== '学科')
+
+  // 学生保存後に申込・試験記録を追加作成
+  const saveOptional = async (studentId: number) => {
+    if (showEnrollment) {
+      const extra: Record<string, unknown> = {
+        application_type: enrollmentForm.application_type,
+      }
+      if (enrollmentForm.domicile)    extra.domicile    = enrollmentForm.domicile
+      if (enrollmentForm.nationality) extra.nationality = enrollmentForm.nationality
+      await enrollmentsApi.create({
+        student_id:  studentId,
+        menu:        enrollmentForm.application_type === 'new' ? enrollmentForm.menu : '',
+        course_date: enrollmentForm.course_date || null,
+        venue:       enrollmentForm.venue || null,
+        status:      'pending',
+        extra_json:  JSON.stringify(extra),
+        note:        null,
+      })
+    }
+    if (showExam) {
+      await examRecordsApi.create({
+        student_id:          studentId,
+        enrollment_id:       null,
+        qualification_type:  examForm.qualification_type,
+        shintai_cert:        examForm.shintai_cert,
+        shintai_valid_until: examForm.shintai_valid_until || null,
+        gakka_session_id:    examForm.gakka_session_id,
+        gakka_exam_number:   examForm.gakka_exam_number || null,
+        gakka_result:        examForm.gakka_result,
+        gakka_result_date:   examForm.gakka_result_date || null,
+        jitsugi_session_id:  examForm.jitsugi_session_id,
+        jitsugi_exam_number: examForm.jitsugi_exam_number || null,
+        jitsugi_result:      examForm.jitsugi_result,
+        jitsugi_result_date: examForm.jitsugi_result_date || null,
+        note:                null,
+      })
+    }
+  }
 
   useEffect(() => {
     firstRef.current?.focus()
@@ -172,6 +279,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
       const saved = student
         ? await studentsApi.update(student.id, form)
         : await studentsApi.create(form)
+      await saveOptional(saved.id)
       onSaved(saved)
     } finally {
       setSaving(false)
@@ -179,17 +287,16 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   }
 
   const handleDupResolve = async (action: 'merge' | 'defer' | 'new', targetId?: number) => {
-    // await の前に candidates を取り出す（setDupResult(null) 後に参照すると null になる可能性がある）
     const candidates = dupResult?.candidates ?? []
     setDupResult(null)
     setSaving(true)
     try {
+      let saved
       if (action === 'merge' && targetId) {
-        const saved = await studentsApi.update(targetId, form)
-        onSaved(saved)
+        saved = await studentsApi.update(targetId, form)
       } else if (action === 'defer') {
         const notePrefix = '【要確認】重複の可能性あり'
-        const saved = await studentsApi.create({
+        saved = await studentsApi.create({
           ...form,
           note: form.note ? `${notePrefix}\n${form.note}` : notePrefix,
         })
@@ -201,11 +308,11 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
             match_score: c.score,
           })
         }
-        onSaved(saved)
       } else {
-        const saved = await studentsApi.create(form)
-        onSaved(saved)
+        saved = await studentsApi.create(form)
       }
+      await saveOptional(saved.id)
+      onSaved(saved)
     } catch (e) {
       console.error('保存エラー:', e)
       alert(`保存エラー: ${e instanceof Error ? e.message : String(e)}`)
@@ -250,33 +357,37 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         onCancel={() => setDupResult(null)}
       />
     )}
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[55] p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* ヘッダー */}
-        <div className="sticky top-0 bg-white border-b border-lavender-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-base font-semibold text-gray-700">
+    <div className="fixed inset-0 z-[55] bg-white flex flex-col">
+        {/* sticky header */}
+        <div className="shrink-0 px-8 py-5 border-b border-lavender-100 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-700">
             {student ? '受講者を編集' : '受講者を追加'}
           </h2>
           <button
+            type="button"
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
             tabIndex={-1}
           >
             ✕
           </button>
         </div>
 
-        {/* フォーム本体 */}
+        {/* scrollable body */}
         <form
-          className="p-6 space-y-5"
+          id="student-form"
+          className="flex-1 overflow-y-auto"
           onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
         >
-          {/* 受講者番号・免許番号 */}
-          <div className="grid grid-cols-2 gap-3">
+        <div className="max-w-6xl mx-auto px-8 py-4 space-y-4">
+          {/* メイン情報グリッド */}
+          <div className="grid grid-cols-4 gap-x-4 gap-y-3">
+
+            {/* 行1: 番号系 + 生年月日 + 性別 */}
             <div>
               <label className="field-label">
                 受講者番号
-                <span className="ml-1.5 text-gray-400 font-normal text-[11px]">（自動採番）</span>
+                <span className="ml-1 text-gray-400 font-normal text-[11px]">（自動採番）</span>
               </label>
               <input
                 type="text"
@@ -299,116 +410,370 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
                 className="field-input"
               />
             </div>
-          </div>
+            <Field label="生年月日" type="date" {...f('birth_date')} />
+            <Field label="性別" {...f('gender')}>
+              <select
+                value={form.gender ?? ''}
+                onChange={(e) => set('gender', e.target.value as StudentInput['gender'] || null)}
+                onKeyDown={handleKeyDown}
+                className="field-select"
+              >
+                <option value="">選択してください</option>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+                <option value="other">その他</option>
+              </select>
+            </Field>
 
-          {/* 氏名 */}
-          <fieldset>
-            <legend className="text-xs font-semibold text-lavender-400 mb-2 uppercase tracking-wide">
-              氏名
-            </legend>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="姓" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
-              <Field label="名" required placeholder="太郎" {...f('first_name')} />
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              <Field label="せい（フリガナ）" placeholder="やまだ" {...f('last_kana')} />
-              <Field label="めい（フリガナ）" placeholder="たろう" {...f('first_kana')} />
-            </div>
-          </fieldset>
+            {/* 行2: 氏名 */}
+            <Field label="姓 *" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
+            <Field label="名 *" required placeholder="太郎" {...f('first_name')} />
+            <Field label="せい（フリガナ）" placeholder="やまだ" {...f('last_kana')} />
+            <Field label="めい（フリガナ）" placeholder="たろう" {...f('first_kana')} />
 
-          {/* 基本情報 */}
-          <fieldset>
-            <legend className="text-xs font-semibold text-lavender-400 mb-2 uppercase tracking-wide">
-              基本情報
-            </legend>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="生年月日" type="date" {...f('birth_date')} />
-              <Field label="性別" {...f('gender')}>
-                <select
-                  value={form.gender ?? ''}
-                  onChange={(e) =>
-                    set('gender', e.target.value as StudentInput['gender'] || null)
-                  }
-                  onKeyDown={handleKeyDown}
-                  className="field-select"
-                >
-                  <option value="">選択してください</option>
-                  <option value="male">男性</option>
-                  <option value="female">女性</option>
-                  <option value="other">その他</option>
-                </select>
-              </Field>
-            </div>
-          </fieldset>
-
-          {/* 住所 */}
-          <fieldset>
-            <legend className="text-xs font-semibold text-lavender-400 mb-2 uppercase tracking-wide">
-              住所
-            </legend>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-1">
-                <label className="field-label">郵便番号</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={form.postal_code ?? ''}
-                    onChange={(e) => set('postal_code', e.target.value)}
-                    onBlur={handleZipBlur}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') { e.preventDefault(); handleZipBlur() }
-                      else handleKeyDown(e)
-                    }}
-                    placeholder="1234567"
-                    maxLength={8}
-                    className="field-input pr-8"
-                  />
-                  {zipLoading && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-lavender-400 animate-pulse">
-                      検索中
-                    </span>
-                  )}
-                </div>
+            {/* 行3: 住所1 */}
+            <div>
+              <label className="field-label">郵便番号</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={form.postal_code ?? ''}
+                  onChange={(e) => set('postal_code', e.target.value)}
+                  onBlur={handleZipBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleZipBlur() }
+                    else handleKeyDown(e)
+                  }}
+                  placeholder="1234567"
+                  maxLength={8}
+                  className="field-input pr-8"
+                />
+                {zipLoading && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-lavender-400 animate-pulse">
+                    検索中
+                  </span>
+                )}
               </div>
-              <Field label="都道府県" placeholder="東京都" {...f('prefecture')} />
+            </div>
+            <Field label="都道府県" placeholder="東京都" {...f('prefecture')} />
+            <div className="col-span-2">
               <Field label="市区町村" placeholder="渋谷区" {...f('city')} />
             </div>
-            <div className="mt-2">
+
+            {/* 行4: 住所2 */}
+            <div className="col-span-3">
               <Field label="番地・建物名" placeholder="道玄坂1-2-3" {...f('address1')} />
             </div>
-            <div className="mt-2">
-              <Field label="住所2（マンション名等）" placeholder="" {...f('address2')} />
-            </div>
-          </fieldset>
+            <Field label="住所2（建物名等）" placeholder="" {...f('address2')} />
 
-          {/* 連絡先 */}
-          <fieldset>
-            <legend className="text-xs font-semibold text-lavender-400 mb-2 uppercase tracking-wide">
-              連絡先
-            </legend>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="電話番号" type="tel" placeholder="03-0000-0000" {...f('phone')} />
-              <Field label="携帯電話" type="tel" placeholder="090-0000-0000" {...f('mobile')} />
-            </div>
-            <div className="mt-2">
+            {/* 行5: 連絡先 */}
+            <Field label="電話番号" type="tel" placeholder="03-0000-0000" {...f('phone')} />
+            <Field label="携帯電話" type="tel" placeholder="090-0000-0000" {...f('mobile')} />
+            <div className="col-span-2">
               <Field label="メールアドレス" type="email" placeholder="taro@example.com" {...f('email')} />
             </div>
-          </fieldset>
 
-          {/* 備考 */}
-          <div>
-            <label className="field-label">備考</label>
-            <textarea
-              value={form.note ?? ''}
-              onChange={(e) => set('note', e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}
-              rows={2}
-              className="field-input resize-none"
-            />
+            {/* 行6: 備考 */}
+            <div className="col-span-4">
+              <label className="field-label">備考</label>
+              <textarea
+                value={form.note ?? ''}
+                onChange={(e) => set('note', e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}
+                rows={2}
+                className="field-input resize-none"
+              />
+            </div>
           </div>
 
-          {/* アクション */}
-          <div className="flex items-center justify-end gap-3 pt-2 border-t border-lavender-100">
+          {/* ── 新規時のオプションセクション ── */}
+          {isNew && (
+            <>
+              {/* 申込を一緒に登録 */}
+              <div className="border border-lavender-100 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowEnrollment(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-lavender-600 hover:bg-lavender-50/60 transition"
+                >
+                  <span>＋ 申込も一緒に登録する</span>
+                  <span className="text-gray-400 text-xs">{showEnrollment ? '▲ 閉じる' : '▼ 開く'}</span>
+                </button>
+                {showEnrollment && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-lavender-100 pt-3 bg-lavender-50/20">
+                    {/* 申込種別 */}
+                    <div>
+                      <label className="field-label">申込種別</label>
+                      <div className="flex gap-2">
+                        {APP_TYPES.map(o => (
+                          <button
+                            key={o.value}
+                            type="button"
+                            onClick={() => setE('application_type', o.value)}
+                            className={`flex-1 py-1.5 rounded-lg border text-sm font-medium transition ${
+                              enrollmentForm.application_type === o.value
+                                ? 'bg-lavender-400 text-white border-lavender-400'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
+                            }`}
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* メニュー（受講申請のみ） */}
+                    {enrollmentForm.application_type === 'new' && (
+                      <div>
+                        <label className="field-label">メニュー</label>
+                        <input
+                          type="text"
+                          value={enrollmentForm.menu}
+                          onChange={e => setE('menu', e.target.value)}
+                          placeholder="例：2級小型船舶操縦士"
+                          className="field-input"
+                        />
+                      </div>
+                    )}
+
+                    {/* 講習日・会場 */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="field-label">講習日</label>
+                        <input
+                          type="date"
+                          value={enrollmentForm.course_date}
+                          onChange={e => setE('course_date', e.target.value)}
+                          className="field-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="field-label">会場</label>
+                        <input
+                          type="text"
+                          value={enrollmentForm.venue}
+                          onChange={e => setE('venue', e.target.value)}
+                          placeholder="例：大阪会場"
+                          className="field-input"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 本籍・国籍 */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="field-label">本籍地（都道府県）</label>
+                        <input
+                          type="text"
+                          value={enrollmentForm.domicile}
+                          onChange={e => setE('domicile', e.target.value)}
+                          placeholder="例：大阪府"
+                          className="field-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="field-label">国籍</label>
+                        <select
+                          value={enrollmentForm.nationality}
+                          onChange={e => setE('nationality', e.target.value)}
+                          className="field-select"
+                        >
+                          <option value="">日本（省略可）</option>
+                          {NATIONALITIES.filter(n => n.code !== 1).map(n => (
+                            <option key={n.code} value={n.label}>{n.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 試験記録を一緒に登録 */}
+              <div className="border border-lavender-100 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={openExamSection}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-lavender-600 hover:bg-lavender-50/60 transition"
+                >
+                  <span>＋ 試験記録も一緒に登録する</span>
+                  <span className="text-gray-400 text-xs">{showExam ? '▲ 閉じる' : '▼ 開く'}</span>
+                </button>
+                {showExam && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-lavender-100 pt-3 bg-lavender-50/20">
+                    {/* 資格種別 */}
+                    <div>
+                      <label className="field-label">資格種別</label>
+                      <div className="flex gap-2">
+                        {QUAL_TYPES.map(q => (
+                          <button
+                            key={q}
+                            type="button"
+                            onClick={() => setX('qualification_type', q)}
+                            className={`flex-1 py-1.5 rounded-lg border text-sm font-medium transition ${
+                              examForm.qualification_type === q
+                                ? 'bg-lavender-400 text-white border-lavender-400'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
+                            }`}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 身体検査 */}
+                    <div>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={examForm.shintai_cert}
+                          onChange={e => setX('shintai_cert', e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm text-gray-700">身体検査証明書あり</span>
+                      </label>
+                      {examForm.shintai_cert && (
+                        <div className="mt-2">
+                          <label className="field-label">身体検査有効期限</label>
+                          <input
+                            type="date"
+                            value={examForm.shintai_valid_until}
+                            onChange={e => setX('shintai_valid_until', e.target.value)}
+                            className="field-input"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 学科試験 */}
+                    <fieldset className="border border-lavender-100 rounded-lg p-3 space-y-2">
+                      <legend className="text-xs font-semibold text-lavender-400 px-1">学科試験</legend>
+                      <div>
+                        <label className="field-label">試験日程</label>
+                        <select
+                          value={examForm.gakka_session_id ?? ''}
+                          onChange={e => setX('gakka_session_id', e.target.value ? Number(e.target.value) : null)}
+                          className="field-select"
+                        >
+                          <option value="">-- 未選択 --</option>
+                          {gakkaSessions.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.exam_date} {s.exam_location}（{s.qualification_type}・{s.exam_id}）
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="field-label">受験番号</label>
+                          <input
+                            type="text"
+                            value={examForm.gakka_exam_number}
+                            onChange={e => setX('gakka_exam_number', e.target.value)}
+                            className="field-input"
+                          />
+                        </div>
+                        <div>
+                          <label className="field-label">判定日</label>
+                          <input
+                            type="date"
+                            value={examForm.gakka_result_date}
+                            onChange={e => setX('gakka_result_date', e.target.value)}
+                            className="field-input"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="field-label">合否</label>
+                        <div className="flex gap-2">
+                          {RESULTS.map(r => (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => setX('gakka_result', examForm.gakka_result === r ? null : r)}
+                              className={`flex-1 py-1 rounded-lg border text-sm font-bold transition ${
+                                examForm.gakka_result === r
+                                  ? (r === '合' || r === '免') ? 'bg-mint-400 text-white border-mint-400' : 'bg-red-400 text-white border-red-400'
+                                  : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </fieldset>
+
+                    {/* 実技試験 */}
+                    <fieldset className="border border-lavender-100 rounded-lg p-3 space-y-2">
+                      <legend className="text-xs font-semibold text-lavender-400 px-1">実技試験</legend>
+                      <div>
+                        <label className="field-label">試験日程</label>
+                        <select
+                          value={examForm.jitsugi_session_id ?? ''}
+                          onChange={e => setX('jitsugi_session_id', e.target.value ? Number(e.target.value) : null)}
+                          className="field-select"
+                        >
+                          <option value="">-- 未選択 --</option>
+                          {jitsugiSessions.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.exam_date} {s.exam_location}（{s.qualification_type}・{s.exam_id}）
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="field-label">受験番号</label>
+                          <input
+                            type="text"
+                            value={examForm.jitsugi_exam_number}
+                            onChange={e => setX('jitsugi_exam_number', e.target.value)}
+                            className="field-input"
+                          />
+                        </div>
+                        <div>
+                          <label className="field-label">判定日</label>
+                          <input
+                            type="date"
+                            value={examForm.jitsugi_result_date}
+                            onChange={e => setX('jitsugi_result_date', e.target.value)}
+                            className="field-input"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="field-label">合否</label>
+                        <div className="flex gap-2">
+                          {RESULTS.map(r => (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => setX('jitsugi_result', examForm.jitsugi_result === r ? null : r)}
+                              className={`flex-1 py-1 rounded-lg border text-sm font-bold transition ${
+                                examForm.jitsugi_result === r
+                                  ? (r === '合' || r === '免') ? 'bg-mint-400 text-white border-mint-400' : 'bg-red-400 text-white border-red-400'
+                                  : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </fieldset>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+        </div>
+        </form>
+        {/* sticky footer */}
+        <div className="shrink-0 border-t border-lavender-100 bg-white">
+          <div className="max-w-6xl mx-auto px-8 py-5 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onCancel}
@@ -418,6 +783,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
             </button>
             <button
               type="submit"
+              form="student-form"
               disabled={saving}
               className="btn-primary min-w-[100px]"
               onKeyDown={(e) => handleKeyDown(e, true)}
@@ -425,8 +791,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
               {saving ? '保存中…' : student ? '更新する' : '追加する'}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
     </div>
     </>
   )

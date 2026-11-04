@@ -13,7 +13,7 @@ function fmtDate(d: string) {
 }
 
 function makeEmpty(): ExamSessionInput {
-  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '' }
+  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技' }
 }
 
 // ── 追加/編集フォームモーダル ─────────────────────────────────
@@ -112,6 +112,26 @@ function ExamSessionFormModal({ initial, editId, onSave, onCancel }: FormModalPr
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">試験区分</label>
+            <div className="flex gap-2">
+              {(['学科', '実技', '学科+実技'] as const).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => set('exam_type', t)}
+                  className={`flex-1 py-1.5 rounded-lg border text-sm font-medium transition ${
+                    form.exam_type === t
+                      ? 'bg-lavender-400 text-white border-lavender-400'
+                      : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -283,6 +303,7 @@ export default function ExamSessionsPage() {
           exam_location: currentLocation,
           qualification_type: qual,
           exam_id: examId,
+          exam_type: '学科+実技',
         })
       }
     }
@@ -393,6 +414,9 @@ export default function ExamSessionsPage() {
                       <span className="w-20 shrink-0 text-xs font-medium px-2 py-1 rounded bg-lavender-50 text-lavender-600 border border-lavender-100 text-center">
                         {s.qualification_type}
                       </span>
+                      <span className="text-xs font-medium px-2 py-0.5 rounded border bg-sky-50 text-sky-600 border-sky-200 shrink-0">
+                        {s.exam_type}
+                      </span>
                       <span className="text-sm text-gray-700 flex-1">{s.exam_location}</span>
                       <span className="font-mono text-sm text-gray-600 bg-gray-50 border border-gray-100 rounded px-2 py-0.5">
                         {s.exam_id}
@@ -425,7 +449,7 @@ export default function ExamSessionsPage() {
       {formOpen && (
         <ExamSessionFormModal
           initial={editTarget
-            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id }
+            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id, exam_type: editTarget.exam_type }
             : makeEmpty()
           }
           editId={editTarget?.id ?? null}

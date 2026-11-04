@@ -42,6 +42,12 @@ const api = {
     delete: (id: number) => ipcRenderer.invoke('examSessions:delete', id),
     upsert: (rows: unknown[]) => ipcRenderer.invoke('examSessions:upsert', rows),
   },
+  examRecords: {
+    list:   (studentId: number) => ipcRenderer.invoke('examRecords:list', studentId),
+    create: (input: unknown) => ipcRenderer.invoke('examRecords:create', input),
+    update: (id: number, input: unknown) => ipcRenderer.invoke('examRecords:update', id, input),
+    delete: (id: number) => ipcRenderer.invoke('examRecords:delete', id),
+  },
   print: {
     html: (html: string) => ipcRenderer.invoke('print:html', html),
   },

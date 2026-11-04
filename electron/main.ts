@@ -8,6 +8,7 @@ import { registerVenueHandlers } from './handlers/venueHandlers'
 import { registerPendingReviewHandlers } from './handlers/pendingReviewHandlers'
 import { registerDevHandlers } from './handlers/devHandlers'
 import { registerExamSessionHandlers } from './handlers/examSessionHandlers'
+import { registerExamRecordHandlers } from './handlers/examRecordHandlers'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -90,6 +91,7 @@ app.whenReady().then(async () => {
   registerVenueHandlers()
   registerPendingReviewHandlers()
   registerExamSessionHandlers()
+  registerExamRecordHandlers()
   if (isDev) registerDevHandlers()
   createWindow()
 

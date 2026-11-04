@@ -8,6 +8,7 @@ function toExamSession(row: Row): ExamSession {
     exam_location:      String(row.exam_location ?? ''),
     qualification_type: String(row.qualification_type ?? ''),
     exam_id:            String(row.exam_id ?? ''),
+    exam_type:          String(row.exam_type ?? '学科+実技') as '学科' | '実技' | '学科+実技',
     created_at:         String(row.created_at ?? ''),
     updated_at:         String(row.updated_at ?? ''),
   }
@@ -22,17 +23,17 @@ export function listExamSessions(): ExamSession[] {
 
 export function createExamSession(input: ExamSessionInput): ExamSession {
   const id = run(
-    `INSERT INTO exam_sessions (exam_date, exam_location, qualification_type, exam_id)
-     VALUES (?, ?, ?, ?)`,
-    [input.exam_date, input.exam_location, input.qualification_type, input.exam_id]
+    `INSERT INTO exam_sessions (exam_date, exam_location, qualification_type, exam_id, exam_type)
+     VALUES (?, ?, ?, ?, ?)`,
+    [input.exam_date, input.exam_location, input.qualification_type, input.exam_id, input.exam_type]
   )
   return query('SELECT * FROM exam_sessions WHERE id = ?', [id]).map(toExamSession)[0]
 }
 
 export function updateExamSession(id: number, input: ExamSessionInput): ExamSession {
   run(
-    `UPDATE exam_sessions SET exam_date=?, exam_location=?, qualification_type=?, exam_id=? WHERE id=?`,
-    [input.exam_date, input.exam_location, input.qualification_type, input.exam_id, id]
+    `UPDATE exam_sessions SET exam_date=?, exam_location=?, qualification_type=?, exam_id=?, exam_type=? WHERE id=?`,
+    [input.exam_date, input.exam_location, input.qualification_type, input.exam_id, input.exam_type, id]
   )
   return query('SELECT * FROM exam_sessions WHERE id = ?', [id]).map(toExamSession)[0]
 }
@@ -51,14 +52,14 @@ export function upsertExamSessions(rows: ExamSessionInput[]): { inserted: number
     )
     if (existing.length > 0) {
       run(
-        `UPDATE exam_sessions SET exam_id=? WHERE id=?`,
-        [row.exam_id, Number(existing[0].id)]
+        `UPDATE exam_sessions SET exam_id=?, exam_type=? WHERE id=?`,
+        [row.exam_id, row.exam_type, Number(existing[0].id)]
       )
       updated++
     } else {
       run(
-        `INSERT INTO exam_sessions (exam_date, exam_location, qualification_type, exam_id) VALUES (?, ?, ?, ?)`,
-        [row.exam_date, row.exam_location, row.qualification_type, row.exam_id]
+        `INSERT INTO exam_sessions (exam_date, exam_location, qualification_type, exam_id, exam_type) VALUES (?, ?, ?, ?, ?)`,
+        [row.exam_date, row.exam_location, row.qualification_type, row.exam_id, row.exam_type]
       )
       inserted++
     }

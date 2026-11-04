@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ApplicationType, Enrollment, EnrollmentInput } from '../../types'
 import { enrollmentsApi } from '../../lib/api'
+import { NATIONALITIES } from '../../data/masterData'
 
 // ── 定数 ────────────────────────────────────────────────────
 
@@ -75,6 +76,8 @@ interface ExtraResult {
   examLocation: string
   examStartTime: string
   examQualType: string
+  domicile: string
+  nationality: string
 }
 
 function readExtra(enrollment: Enrollment | null): ExtraResult {
@@ -85,6 +88,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       renewalCourseDate: '',
       courseLocation: '', courseTime: '',
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
+      domicile: '', nationality: '',
     }
   }
 
@@ -128,6 +132,8 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       examLocation:  typeof extra.exam_location     === 'string' ? extra.exam_location     : '',
       examStartTime: typeof extra.exam_start_time   === 'string' ? extra.exam_start_time   : '',
       examQualType:  typeof extra.exam_qual_type    === 'string' ? extra.exam_qual_type    : '',
+      domicile:     typeof extra.domicile    === 'string' ? extra.domicile    : '',
+      nationality:  typeof extra.nationality === 'string' ? extra.nationality : '',
     }
   }
 
@@ -142,6 +148,8 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     renewalCourseDate: enrollment.course_date ?? '',
     courseLocation, courseTime,
     examDate: '', examLocation: '', examStartTime: '', examQualType: '',
+    domicile:    typeof extra.domicile    === 'string' ? extra.domicile    : '',
+    nationality: typeof extra.nationality === 'string' ? extra.nationality : '',
   }
 }
 
@@ -175,6 +183,10 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
   const [courseLocation,    setCourseLocation]    = useState('')
   const [courseTime,        setCourseTime]        = useState('')
 
+  // 本籍・国籍（全種別共通）
+  const [domicile,   setDomicile]   = useState('')
+  const [nationality, setNationality] = useState('')
+
   // メニュー管理
   const [menuOptions,   setMenuOptions]   = useState<string[]>(loadMenus)
   const [showAddMenu,   setShowAddMenu]   = useState(false)
@@ -199,6 +211,8 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
     setMenu(enrollment?.menu ?? '')
     setStatus(enrollment?.status ?? 'pending')
     setNote(enrollment?.note ?? '')
+    setDomicile(ex.domicile)
+    setNationality(ex.nationality)
     setError('')
   }, [enrollment])
 
@@ -255,6 +269,8 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
       try { prevExtra = JSON.parse(enrollment?.extra_json ?? '{}') as Record<string, unknown> } catch { /* ignore */ }
 
       const extra: Record<string, unknown> = { ...prevExtra, application_type: applicationType }
+      if (domicile.trim())    extra.domicile    = domicile.trim();    else delete extra.domicile
+      if (nationality.trim()) extra.nationality = nationality.trim(); else delete extra.nationality
 
       let primaryCourseDate: string | null = null
       let primaryVenue: string | null      = null
@@ -312,20 +328,20 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
   const isNewType = applicationType === 'new'
 
   return (
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[60] bg-white flex flex-col">
 
-        {/* ヘッダー */}
-        <div className="px-6 py-4 border-b border-lavender-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 className="text-base font-semibold text-gray-700">
+        {/* sticky header */}
+        <div className="shrink-0 px-8 py-5 border-b border-lavender-100 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-700">
             {isCreating ? '申込を追加' : '申込・講習情報を編集'}
           </h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none" tabIndex={-1}>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none" tabIndex={-1}>
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form id="enrollment-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+        <div className="max-w-6xl mx-auto px-8 py-4 space-y-4">
           {error && (
             <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
@@ -578,27 +594,56 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
             </fieldset>
           )}
 
-          {/* ④ ステータス・備考（共通） */}
-          <div>
-            <label className="field-label">ステータス</label>
-            <select value={status} onChange={e => setStatus(e.target.value as Enrollment['status'])} className="field-select">
-              {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+          {/* ④ 本籍・国籍・ステータス（共通） */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="field-label">本籍地（都道府県）</label>
+              <input
+                type="text"
+                value={domicile}
+                onChange={e => setDomicile(e.target.value)}
+                className="field-input"
+                placeholder="例：大阪府"
+              />
+            </div>
+            <div>
+              <label className="field-label">国籍</label>
+              <select
+                value={nationality}
+                onChange={e => setNationality(e.target.value)}
+                className="field-select"
+              >
+                <option value="">日本（省略可）</option>
+                {NATIONALITIES.filter(n => n.code !== 1).map(n => (
+                  <option key={n.code} value={n.label}>{n.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="field-label">ステータス</label>
+              <select value={status} onChange={e => setStatus(e.target.value as Enrollment['status'])} className="field-select">
+                {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
           </div>
 
+          {/* ⑤ 備考 */}
           <div>
             <label className="field-label">備考</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)} className="field-input min-h-[72px] resize-y" rows={3} />
+            <textarea value={note} onChange={e => setNote(e.target.value)} className="field-input min-h-[60px] resize-y" rows={2} />
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-lavender-100">
+        </div>
+        </form>
+        {/* sticky footer */}
+        <div className="shrink-0 border-t border-lavender-100 bg-white">
+          <div className="max-w-6xl mx-auto px-8 py-5 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="btn-secondary">キャンセル</button>
-            <button type="submit" disabled={saving} className="btn-primary min-w-[88px]">
+            <button type="submit" form="enrollment-form" disabled={saving} className="btn-primary min-w-[88px]">
               {saving ? '保存中…' : '保存'}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
     </div>
   )
 }

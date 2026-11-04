@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import type { Enrollment, Student } from '../types'
-import { studentsApi, enrollmentsApi } from '../lib/api'
+import type { Enrollment, ExamRecord, ExamResult, ExamSession, Student } from '../types'
+import { studentsApi, enrollmentsApi, examRecordsApi, examSessionsApi } from '../lib/api'
 import StudentForm from '../components/students/StudentForm'
 import EnrollmentFormModal from '../components/students/EnrollmentFormModal'
+import ExamRecordFormModal from '../components/students/ExamRecordFormModal'
 import MemberBasicInfoReadOnly from '../components/students/MemberBasicInfoReadOnly'
 
 function formatDate(d: string | null) {
@@ -42,6 +43,80 @@ function appTypeLabel(e: Enrollment): string {
   }
 }
 
+function ResultBadge({ result }: { result: ExamResult }) {
+  if (!result) return <span className="text-gray-400 text-xs">未</span>
+  const cls = result === '合' || result === '免'
+    ? 'bg-mint-50 text-mint-600 border-mint-200'
+    : 'bg-red-50 text-red-500 border-red-200'
+  return <span className={`inline-block px-1.5 py-0 rounded border text-[11px] font-bold ${cls}`}>{result}</span>
+}
+
+function ExamRecordCard({ record, sessions, onEdit }: {
+  record: ExamRecord
+  sessions: ExamSession[]
+  onEdit: () => void
+}) {
+  const gakka = sessions.find(s => s.id === record.gakka_session_id)
+  const jitsugi = sessions.find(s => s.id === record.jitsugi_session_id)
+
+  const today = new Date().toISOString().slice(0, 10)
+  const shintaiExpired = record.shintai_valid_until && record.shintai_valid_until < today
+  const shintaiSoon = record.shintai_valid_until && !shintaiExpired &&
+    record.shintai_valid_until < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+  return (
+    <li className="rounded-xl border border-lavender-100 bg-lavender-50/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold text-lavender-600 bg-white px-2 py-0.5 rounded border border-lavender-100">
+          {record.qualification_type}
+        </span>
+        <button type="button" onClick={onEdit} className="btn-secondary btn-sm">編集</button>
+      </div>
+
+      <div className="text-sm space-y-1">
+        {/* 身体検査 */}
+        {record.shintai_cert && (
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400 text-xs w-16 shrink-0">身体検査</span>
+            {record.shintai_valid_until ? (
+              <span className={`text-xs font-medium ${
+                shintaiExpired ? 'text-red-500' : shintaiSoon ? 'text-orange-500' : 'text-mint-600'
+              }`}>
+                {record.shintai_valid_until} まで有効
+                {shintaiExpired ? '（期限切れ）' : shintaiSoon ? '（もうすぐ期限）' : ''}
+              </span>
+            ) : <span className="text-gray-600 text-xs">証明書あり</span>}
+          </div>
+        )}
+
+        {/* 学科 */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400 text-xs w-16 shrink-0">学科</span>
+          {gakka ? (
+            <span className="text-gray-700 text-xs">{gakka.exam_date} {gakka.exam_location}</span>
+          ) : <span className="text-gray-400 text-xs">未設定</span>}
+          {record.gakka_exam_number && (
+            <span className="text-gray-400 text-xs">受{record.gakka_exam_number}</span>
+          )}
+          <ResultBadge result={record.gakka_result} />
+        </div>
+
+        {/* 実技 */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400 text-xs w-16 shrink-0">実技</span>
+          {jitsugi ? (
+            <span className="text-gray-700 text-xs">{jitsugi.exam_date} {jitsugi.exam_location}</span>
+          ) : <span className="text-gray-400 text-xs">未設定</span>}
+          {record.jitsugi_exam_number && (
+            <span className="text-gray-400 text-xs">受{record.jitsugi_exam_number}</span>
+          )}
+          <ResultBadge result={record.jitsugi_result} />
+        </div>
+      </div>
+    </li>
+  )
+}
+
 export default function MembersPage() {
   const navigate = useNavigate()
   const [students, setStudents] = useState<Student[]>([])
@@ -52,10 +127,25 @@ export default function MembersPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [loadingEnrollments, setLoadingEnrollments] = useState(false)
 
+  const [examRecords, setExamRecords] = useState<ExamRecord[]>([])
+  const [examSessions, setExamSessions] = useState<ExamSession[]>([])
+  const [examRecordModal, setExamRecordModal] = useState<{ record: ExamRecord | null } | null>(null)
+
   const [memberToEdit, setMemberToEdit] = useState<Student | null>(null)
   const [enrollmentModal, setEnrollmentModal] = useState<{
     enrollment: Enrollment | null
   } | null>(null)
+
+  const [detailTab, setDetailTab] = useState<'basic' | 'enrollment' | 'exam'>('basic')
+
+  useEffect(() => {
+    setDetailTab('basic')
+  }, [selectedId])
+
+  // 試験日程は初回のみ取得
+  useEffect(() => {
+    examSessionsApi.list().then(setExamSessions).catch(() => {})
+  }, [])
 
   // 検索（デバウンス300ms）
   useEffect(() => {
@@ -87,9 +177,11 @@ export default function MembersPage() {
   useEffect(() => {
     if (selectedId == null) {
       setEnrollments([])
+      setExamRecords([])
       return
     }
     loadEnrollments(selectedId)
+    examRecordsApi.list(selectedId).then(setExamRecords).catch(() => {})
   }, [selectedId, loadEnrollments])
 
   const selected = selectedId != null ? students.find((s) => s.id === selectedId) ?? null : null
@@ -192,96 +284,135 @@ export default function MembersPage() {
               </div>
             ) : (
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-8">
 
-                  {/* 基本情報 */}
-                  <section>
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                      <h2 className="text-sm font-semibold text-gray-600">基本情報</h2>
-                      <button
-                        type="button"
-                        onClick={() => setMemberToEdit(selected)}
-                        className="btn-primary btn-sm shrink-0"
-                      >
-                        編集
-                      </button>
+                {/* タブバー */}
+                <div className="shrink-0 border-b border-lavender-100 px-4 flex gap-1 bg-white">
+                  {(
+                    [
+                      { key: 'basic',      label: '基本情報',  count: null },
+                      { key: 'enrollment', label: '受講履歴',  count: enrollments.length },
+                      { key: 'exam',       label: '試験記録',  count: examRecords.length },
+                    ] as const
+                  ).map(tab => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setDetailTab(tab.key)}
+                      className={[
+                        'px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap flex items-center gap-1.5',
+                        detailTab === tab.key
+                          ? 'border-lavender-400 text-lavender-600'
+                          : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200',
+                      ].join(' ')}
+                    >
+                      {tab.label}
+                      {tab.count != null && tab.count > 0 && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          detailTab === tab.key ? 'bg-lavender-100 text-lavender-600' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* コンテンツ */}
+                <div className="flex-1 overflow-y-auto min-h-0 p-4">
+
+                  {detailTab === 'basic' && (
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h2 className="text-sm font-semibold text-gray-600">基本情報</h2>
+                        <button type="button" onClick={() => setMemberToEdit(selected)} className="btn-primary btn-sm shrink-0">編集</button>
+                      </div>
+                      <MemberBasicInfoReadOnly student={selected} />
                     </div>
-                    <MemberBasicInfoReadOnly student={selected} />
-                  </section>
+                  )}
 
-                  {/* 受講履歴 */}
-                  <section className="border-t border-lavender-100 pt-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-gray-600">受講履歴</h3>
-                      <button
-                        type="button"
-                        onClick={() => setEnrollmentModal({ enrollment: null })}
-                        className="btn-primary btn-sm"
-                      >
-                        ＋ 申込を追加
-                      </button>
+                  {detailTab === 'enrollment' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-600">受講履歴</h3>
+                        <button type="button" onClick={() => setEnrollmentModal({ enrollment: null })} className="btn-primary btn-sm">＋ 申込を追加</button>
+                      </div>
+                      {loadingEnrollments ? (
+                        <p className="text-sm text-gray-400 py-6">読み込み中…</p>
+                      ) : enrollments.length === 0 ? (
+                        <p className="text-sm text-gray-400 py-6">申込がありません。「申込を追加」で講習日程を登録できます。</p>
+                      ) : (
+                        <ul className="space-y-3">
+                          {enrollments.map((e) => {
+                            const ct = courseTimeFromExtra(e)
+                            return (
+                              <li
+                                key={e.id}
+                                className="rounded-xl border border-lavender-100 bg-lavender-50/40 p-4"
+                              >
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                  <span className="text-xs font-bold text-lavender-600 bg-white px-2 py-0.5 rounded border border-lavender-100">
+                                    {appTypeLabel(e)}
+                                  </span>
+                                  {JSON.parse(e.extra_json ?? '{}').application_type === 'new' && e.menu && (
+                                    <span className="text-xs text-gray-400">{e.menu}</span>
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-700 space-y-1">
+                                  <div>
+                                    <span className="text-gray-400 text-xs mr-2">講習日</span>
+                                    {formatDate(e.course_date)}
+                                    {ct && <span className="ml-2 text-lavender-600 font-medium">{ct}</span>}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-400 text-xs mr-2">会　場</span>
+                                    {e.venue || '—'}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-400 text-xs mr-2">ステータス</span>
+                                    {e.status}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 mt-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEnrollmentModal({ enrollment: e })}
+                                    className="btn-secondary btn-sm"
+                                  >
+                                    日程・申込を編集
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteEnrollment(e)}
+                                    className="btn-danger btn-sm"
+                                  >
+                                    申込削除
+                                  </button>
+                                </div>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
                     </div>
+                  )}
 
-                    {loadingEnrollments ? (
-                      <p className="text-sm text-gray-400 py-6">読み込み中…</p>
-                    ) : enrollments.length === 0 ? (
-                      <p className="text-sm text-gray-400 py-6">
-                        申込がありません。「申込を追加」で講習日程を登録できます。
-                      </p>
-                    ) : (
-                      <ul className="space-y-3">
-                        {enrollments.map((e) => {
-                          const ct = courseTimeFromExtra(e)
-                          return (
-                            <li
-                              key={e.id}
-                              className="rounded-xl border border-lavender-100 bg-lavender-50/40 p-4"
-                            >
-                              <div className="flex flex-wrap items-center gap-2 mb-2">
-                                <span className="text-xs font-bold text-lavender-600 bg-white px-2 py-0.5 rounded border border-lavender-100">
-                                  {appTypeLabel(e)}
-                                </span>
-                                {JSON.parse(e.extra_json ?? '{}').application_type === 'new' && e.menu && (
-                                  <span className="text-xs text-gray-400">{e.menu}</span>
-                                )}
-                              </div>
-                              <div className="text-sm text-gray-700 space-y-1">
-                                <div>
-                                  <span className="text-gray-400 text-xs mr-2">講習日</span>
-                                  {formatDate(e.course_date)}
-                                  {ct && <span className="ml-2 text-lavender-600 font-medium">{ct}</span>}
-                                </div>
-                                <div>
-                                  <span className="text-gray-400 text-xs mr-2">会　場</span>
-                                  {e.venue || '—'}
-                                </div>
-                                <div>
-                                  <span className="text-gray-400 text-xs mr-2">ステータス</span>
-                                  {e.status}
-                                </div>
-                              </div>
-                              <div className="flex gap-2 mt-3">
-                                <button
-                                  type="button"
-                                  onClick={() => setEnrollmentModal({ enrollment: e })}
-                                  className="btn-secondary btn-sm"
-                                >
-                                  日程・申込を編集
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteEnrollment(e)}
-                                  className="btn-danger btn-sm"
-                                >
-                                  申込削除
-                                </button>
-                              </div>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    )}
-                  </section>
+                  {detailTab === 'exam' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-600">試験記録</h3>
+                        <button type="button" onClick={() => setExamRecordModal({ record: null })} className="btn-primary btn-sm">＋ 試験記録を追加</button>
+                      </div>
+                      {examRecords.length === 0 ? (
+                        <p className="text-sm text-gray-400 py-4">試験記録がありません。</p>
+                      ) : (
+                        <ul className="space-y-3">
+                          {examRecords.map(r => (
+                            <ExamRecordCard key={r.id} record={r} sessions={examSessions} onEdit={() => setExamRecordModal({ record: r })} />
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
 
                 </div>
               </div>
@@ -310,6 +441,21 @@ export default function MembersPage() {
           onSaved={() => {
             setEnrollmentModal(null)
             loadEnrollments(selected.id)
+          }}
+        />
+      )}
+
+      {examRecordModal && selected && (
+        <ExamRecordFormModal
+          studentId={selected.id}
+          record={examRecordModal.record}
+          examSessions={examSessions}
+          enrollments={enrollments}
+          onClose={() => setExamRecordModal(null)}
+          onSaved={async () => {
+            setExamRecordModal(null)
+            const updated = await examRecordsApi.list(selected.id)
+            setExamRecords(updated)
           }}
         />
       )}

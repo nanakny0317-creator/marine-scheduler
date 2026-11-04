@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
   exam_location      TEXT NOT NULL,
   qualification_type TEXT NOT NULL,
   exam_id            TEXT NOT NULL,
+  exam_type          TEXT NOT NULL DEFAULT '学科+実技',
   created_at         TEXT NOT NULL DEFAULT (datetime('now','localtime')),
   updated_at         TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
@@ -96,6 +97,31 @@ CREATE TABLE IF NOT EXISTS venues (
   active       INTEGER NOT NULL DEFAULT 1,
   created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime')),
   updated_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+-- 試験記録（学生ごとの受験履歴）
+CREATE TABLE IF NOT EXISTS exam_records (
+  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id          INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  enrollment_id       INTEGER REFERENCES enrollments(id) ON DELETE SET NULL,
+  qualification_type  TEXT NOT NULL DEFAULT '',
+
+  shintai_cert        INTEGER NOT NULL DEFAULT 0,
+  shintai_valid_until TEXT,
+
+  gakka_session_id    INTEGER REFERENCES exam_sessions(id) ON DELETE SET NULL,
+  gakka_exam_number   TEXT,
+  gakka_result        TEXT CHECK(gakka_result IN ('合','免','否','不')),
+  gakka_result_date   TEXT,
+
+  jitsugi_session_id  INTEGER REFERENCES exam_sessions(id) ON DELETE SET NULL,
+  jitsugi_exam_number TEXT,
+  jitsugi_result      TEXT CHECK(jitsugi_result IN ('合','免','否','不')),
+  jitsugi_result_date TEXT,
+
+  note        TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
 -- updated_at 自動更新トリガー
@@ -139,5 +165,12 @@ CREATE TRIGGER IF NOT EXISTS venues_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE venues SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
+  END;
+
+CREATE TRIGGER IF NOT EXISTS exam_records_updated_at
+  AFTER UPDATE ON exam_records
+  FOR EACH ROW
+  BEGIN
+    UPDATE exam_records SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
   END;
 `

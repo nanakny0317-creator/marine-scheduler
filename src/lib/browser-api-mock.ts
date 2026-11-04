@@ -8,6 +8,7 @@ import type {
   Enrollment, EnrollmentInput,
   Venue, VenueInput,
   ExamSession, ExamSessionInput,
+  ExamRecord, ExamRecordInput,
   DuplicateCheckResult, PendingReview, PendingReviewInput,
   PendingReviewWithStudents, DupImportRow,
 } from '../types'
@@ -17,6 +18,7 @@ let students: Student[] = []
 let enrollments: Enrollment[] = []
 let venues: Venue[] = []
 let examSessions: ExamSession[] = []
+let examRecords: ExamRecord[] = []
 let pendingReviews: PendingReviewWithStudents[] = []
 let nextId = 1
 
@@ -191,6 +193,27 @@ export const browserApiMock: ElectronAPI = {
     },
   },
 
+  examRecords: {
+    list: (studentId: number) =>
+      Promise.resolve(examRecords.filter(r => r.student_id === studentId)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))),
+    create: (input: ExamRecordInput) => {
+      const r: ExamRecord = { ...input, id: id(), created_at: now(), updated_at: now() }
+      examRecords.push(r)
+      return Promise.resolve(r)
+    },
+    update: (rid: number, input: ExamRecordInput) => {
+      const idx = examRecords.findIndex(r => r.id === rid)
+      if (idx < 0) throw new Error('not found')
+      examRecords[idx] = { ...examRecords[idx], ...input, updated_at: now() }
+      return Promise.resolve(examRecords[idx])
+    },
+    delete: (rid: number) => {
+      examRecords = examRecords.filter(r => r.id !== rid)
+      return Promise.resolve(true)
+    },
+  },
+
   print: {
     html: () => {
       console.warn('[browser-mock] print.html は未対応')
@@ -202,7 +225,7 @@ export const browserApiMock: ElectronAPI = {
     counts: () =>
       Promise.resolve({ students: students.length, enrollments: enrollments.length, pendingReviews: pendingReviews.length }),
     resetAll: () => {
-      students = []; enrollments = []; venues = []; examSessions = []; pendingReviews = []; nextId = 1
+      students = []; enrollments = []; venues = []; examSessions = []; examRecords = []; pendingReviews = []; nextId = 1
       return Promise.resolve(true)
     },
     seed: () => {

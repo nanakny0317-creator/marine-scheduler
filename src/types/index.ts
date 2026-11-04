@@ -161,11 +161,44 @@ export interface ExamSession {
   exam_location: string
   qualification_type: string
   exam_id: string
+  exam_type: '学科' | '実技' | '学科+実技'
   created_at: string
   updated_at: string
 }
 
 export type ExamSessionInput = Omit<ExamSession, 'id' | 'created_at' | 'updated_at'>
+
+// ===== 試験記録 =====
+export type ExamResult = '合' | '免' | '否' | '不' | null
+
+export interface ExamRecord {
+  id: number
+  student_id: number
+  enrollment_id: number | null
+  qualification_type: string
+
+  // 身体検査
+  shintai_cert: boolean
+  shintai_valid_until: string | null
+
+  // 学科試験
+  gakka_session_id: number | null
+  gakka_exam_number: string | null
+  gakka_result: ExamResult
+  gakka_result_date: string | null
+
+  // 実技試験
+  jitsugi_session_id: number | null
+  jitsugi_exam_number: string | null
+  jitsugi_result: ExamResult
+  jitsugi_result_date: string | null
+
+  note: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ExamRecordInput = Omit<ExamRecord, 'id' | 'created_at' | 'updated_at'>
 
 // ===== 会場マスター =====
 export interface Venue {
@@ -237,6 +270,12 @@ export interface ElectronAPI {
     update: (id: number, input: ExamSessionInput) => Promise<ExamSession>
     delete: (id: number) => Promise<boolean>
     upsert: (rows: ExamSessionInput[]) => Promise<{ inserted: number; updated: number }>
+  }
+  examRecords: {
+    list:   (studentId: number) => Promise<ExamRecord[]>
+    create: (input: ExamRecordInput) => Promise<ExamRecord>
+    update: (id: number, input: ExamRecordInput) => Promise<ExamRecord>
+    delete: (id: number) => Promise<boolean>
   }
   print: {
     html: (html: string) => Promise<void>
