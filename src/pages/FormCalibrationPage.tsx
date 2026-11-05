@@ -757,9 +757,41 @@ export default function FormCalibrationPage() {
             )}
           </div>
 
+          {/* 事前定義フォームの読み込み */}
+          <div className="px-4 py-3 border-t border-gray-200 shrink-0 space-y-2">
+            <p className="text-[10px] text-gray-400 font-semibold">書式レイアウトを読み込む</p>
+            <div className="flex gap-2">
+              {[
+                { label: '試験申請書',       file: 'shiken'  },
+                { label: '免許申請書',       file: 'menkyo'  },
+                { label: '更新申請書',       file: 'koshin'  },
+                { label: '失効再交付申請書', file: 'saikofu' },
+                { label: '訂正申請書',       file: 'teisei'  },
+              ].map(({ label, file }) => (
+                <button
+                  key={file}
+                  onClick={async () => {
+                    try {
+                      const res  = await fetch(`/form-layouts/${file}.json`)
+                      const data = await res.json() as FieldDef[]
+                      setFields(data)
+                      saveFields(data)
+                      alert(`${label}：${data.length} 件読み込みました`)
+                    } catch {
+                      alert('読み込みに失敗しました')
+                    }
+                  }}
+                  className="flex-1 py-1.5 text-[10px] border border-lavender-200 text-lavender-600 rounded hover:bg-lavender-50 leading-tight text-center"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* JSON エクスポート／インポート */}
           <div className="px-4 py-3 border-t border-gray-200 shrink-0 space-y-2">
-            <p className="text-[10px] text-gray-400">設定の保存・読み込み（JSONファイル）</p>
+            <p className="text-[10px] text-gray-400">手動保存・読み込み（JSONファイル）</p>
             <div className="flex gap-2">
               <button
                 onClick={() => {

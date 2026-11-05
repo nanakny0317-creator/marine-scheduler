@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ApplicationType, Enrollment, EnrollmentInput } from '../../types'
 import { enrollmentsApi } from '../../lib/api'
 import { NATIONALITIES } from '../../data/masterData'
+import Section from '../FormSection'
 
 // ── 定数 ────────────────────────────────────────────────────
 
@@ -346,291 +347,302 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
             <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
-          {/* ① 申込種別 */}
-          <div>
-            <label className="field-label">申込種別</label>
-            <div className="flex gap-2">
-              {APP_TYPE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleTypeChange(opt.value)}
-                  className={[
-                    'flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition',
-                    applicationType === opt.value
-                      ? TYPE_ACTIVE_CLASS[opt.value]
-                      : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300',
-                  ].join(' ')}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div className="grid grid-cols-2 gap-4 bg-lavender-50/30 -mx-2 p-2 rounded-2xl items-start">
 
-          {/* ② 受講申請専用フィールド */}
-          {isNewType && (
-            <>
-              {/* メニュー */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="field-label mb-0">
-                    メニュー<span className="text-red-400 ml-0.5">*</span>
-                  </label>
+            {/* ① 申込種別 */}
+            <Section step="1" title="申込種別" className="col-span-2">
+              <div className="flex gap-2">
+                {APP_TYPE_OPTIONS.map((opt) => (
                   <button
+                    key={opt.value}
                     type="button"
-                    onClick={() => setShowMenuMgr(m => !m)}
-                    className="text-xs text-lavender-400 hover:text-lavender-600"
+                    onClick={() => handleTypeChange(opt.value)}
+                    className={[
+                      'flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold border-2 transition',
+                      applicationType === opt.value
+                        ? TYPE_ACTIVE_CLASS[opt.value]
+                        : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300',
+                    ].join(' ')}
                   >
-                    メニュー管理
+                    {opt.label}
                   </button>
-                </div>
-
-                <div className="flex gap-2">
-                  <select
-                    value={menu}
-                    onChange={(e) => {
-                      if (e.target.value === '__add__') { setShowAddMenu(true); setMenu('') }
-                      else { setMenu(e.target.value); setShowAddMenu(false) }
-                    }}
-                    className="field-select flex-1"
-                  >
-                    <option value="">-- 選択してください --</option>
-                    {menuOptions.map(m => <option key={m} value={m}>{m}</option>)}
-                    <option value="__add__">＋ 新しいメニューを追加...</option>
-                  </select>
-                </div>
-
-                {/* 新メニュー入力 */}
-                {showAddMenu && (
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      ref={newMenuRef}
-                      type="text"
-                      value={newMenuName}
-                      onChange={e => setNewMenuName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddMenu() } }}
-                      className="field-input flex-1"
-                      placeholder="メニュー名を入力"
-                    />
-                    <button type="button" onClick={handleAddMenu} className="btn-primary btn-sm">追加</button>
-                    <button type="button" onClick={() => { setShowAddMenu(false); setNewMenuName('') }} className="btn-secondary btn-sm">×</button>
-                  </div>
-                )}
-
-                {/* メニュー管理パネル */}
-                {showMenuMgr && (
-                  <div className="mt-2 border border-lavender-100 rounded-xl p-3 bg-lavender-50/30 max-h-44 overflow-y-auto">
-                    <p className="text-xs text-gray-400 mb-2">登録メニュー（×で削除）</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {menuOptions.map(m => (
-                        <span key={m} className="flex items-center gap-1 text-xs bg-white border border-lavender-100 rounded-full px-2.5 py-1">
-                          {m}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMenu(m)}
-                            className="text-gray-300 hover:text-red-400 leading-none ml-0.5"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
+            </Section>
 
-              {/* 講習日程（複数・各行に会場・時刻・講習内容） */}
-              <fieldset>
-                <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide mb-2">講習日程</legend>
-                <div className="space-y-2">
-                  {courseSessions.map((session, i) => (
-                    <div key={i} className="border border-lavender-100 rounded-xl p-3 space-y-2 bg-lavender-50/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-lavender-500">日程 {i + 1}</span>
-                        {courseSessions.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeSession(i)}
-                            className="text-xs text-red-400 hover:text-red-600"
-                          >
-                            削除
-                          </button>
-                        )}
-                      </div>
+            {/* ── 左カラム ── */}
+            <div className="space-y-4">
+              {isNewType ? (
+                <>
+                  {/* ② 受講メニュー */}
+                  <Section
+                    step="2"
+                    title="受講メニュー"
+                    hint="* 必須"
+                    action={
+                      <button
+                        type="button"
+                        onClick={() => setShowMenuMgr(m => !m)}
+                        className="text-xs text-lavender-500 hover:text-lavender-700"
+                      >
+                        {showMenuMgr ? 'メニュー管理を閉じる' : 'メニュー管理'}
+                      </button>
+                    }
+                  >
+                    <select
+                      value={menu}
+                      onChange={(e) => {
+                        if (e.target.value === '__add__') { setShowAddMenu(true); setMenu('') }
+                        else { setMenu(e.target.value); setShowAddMenu(false) }
+                      }}
+                      className={`field-select ${error && !menu ? 'ring-2 ring-red-300 border-red-300' : ''}`}
+                    >
+                      <option value="">-- 選択してください --</option>
+                      {menuOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                      <option value="__add__">＋ 新しいメニューを追加...</option>
+                    </select>
 
-                      {/* 日付 */}
-                      <div>
-                        <label className="field-label">日付</label>
+                    {/* 新メニュー入力 */}
+                    {showAddMenu && (
+                      <div className="flex gap-2">
                         <input
-                          type="date"
-                          value={session.date}
-                          onChange={e => updateSession(i, 'date', e.target.value)}
-                          className="field-input"
+                          ref={newMenuRef}
+                          type="text"
+                          value={newMenuName}
+                          onChange={e => setNewMenuName(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddMenu() } }}
+                          className="field-input flex-1"
+                          placeholder="メニュー名を入力"
                         />
+                        <button type="button" onClick={handleAddMenu} className="btn-primary btn-sm">追加</button>
+                        <button type="button" onClick={() => { setShowAddMenu(false); setNewMenuName('') }} className="btn-secondary btn-sm">×</button>
                       </div>
+                    )}
 
-                      {/* 会場・時刻 */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="field-label">会場</label>
-                          <input
-                            type="text"
-                            value={session.venue}
-                            onChange={e => updateSession(i, 'venue', e.target.value)}
-                            className="field-input"
-                            placeholder="講習会場"
-                          />
-                        </div>
-                        <div>
-                          <label className="field-label">開始時刻</label>
-                          <input
-                            type="text"
-                            value={session.time}
-                            onChange={e => updateSession(i, 'time', e.target.value)}
-                            className="field-input"
-                            placeholder="例：09:00"
-                          />
-                        </div>
-                      </div>
-
-                      {/* 講習内容 */}
-                      <div>
-                        <label className="field-label">講習内容</label>
+                    {/* メニュー管理パネル */}
+                    {showMenuMgr && (
+                      <div className="border border-lavender-100 rounded-lg p-3 bg-lavender-50/30 max-h-36 overflow-y-auto">
+                        <p className="text-xs text-gray-400 mb-2">登録メニュー（×で削除）</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {LESSON_TYPES.map(lt => (
-                            <button
-                              key={lt}
-                              type="button"
-                              onClick={() => updateSession(i, 'lessonType', session.lessonType === lt ? '' : lt)}
-                              className={[
-                                'px-3 py-1 rounded-full text-xs font-medium border transition',
-                                session.lessonType === lt
-                                  ? 'bg-lavender-400 text-white border-lavender-400'
-                                  : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
-                              ].join(' ')}
-                            >
-                              {lt}
-                            </button>
+                          {menuOptions.map(m => (
+                            <span key={m} className="flex items-center gap-1 text-xs bg-white border border-lavender-100 rounded-full px-2.5 py-1">
+                              {m}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMenu(m)}
+                                className="text-gray-300 hover:text-red-400 leading-none ml-0.5"
+                              >
+                                ×
+                              </button>
+                            </span>
                           ))}
                         </div>
                       </div>
+                    )}
+                  </Section>
+
+                  {/* ③ 講習日程 */}
+                  <Section step="3" title="講習日程" hint={`${courseSessions.length}件`}>
+                    {courseSessions.map((session, i) => (
+                      <div key={i} className="rounded-lg border border-lavender-100 bg-lavender-50/20 p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-lavender-500">日程 {i + 1}</span>
+                          {courseSessions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeSession(i)}
+                              className="ml-auto text-xs text-red-400 hover:text-red-600"
+                            >
+                              削除
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-[1fr_1fr_6rem] gap-2">
+                          <div>
+                            <label className="field-label">日付</label>
+                            <input
+                              type="date"
+                              value={session.date}
+                              onChange={e => updateSession(i, 'date', e.target.value)}
+                              className="field-input"
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label">会場</label>
+                            <input
+                              type="text"
+                              value={session.venue}
+                              onChange={e => updateSession(i, 'venue', e.target.value)}
+                              className="field-input"
+                              placeholder="講習会場"
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label">開始時刻</label>
+                            <input
+                              type="text"
+                              value={session.time}
+                              onChange={e => updateSession(i, 'time', e.target.value)}
+                              className="field-input"
+                              placeholder="09:00"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 shrink-0">講習内容</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {LESSON_TYPES.map(lt => (
+                              <button
+                                key={lt}
+                                type="button"
+                                onClick={() => updateSession(i, 'lessonType', session.lessonType === lt ? '' : lt)}
+                                className={[
+                                  'px-3 py-0.5 rounded-full text-xs font-medium border transition',
+                                  session.lessonType === lt
+                                    ? 'bg-lavender-400 text-white border-lavender-400'
+                                    : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                                ].join(' ')}
+                              >
+                                {lt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={addSession}
+                      className="w-full py-2 border border-dashed border-lavender-200 rounded-lg text-xs text-lavender-400 hover:border-lavender-400 hover:text-lavender-600 transition"
+                    >
+                      ＋ 日程を追加
+                    </button>
+                  </Section>
+                </>
+              ) : (
+                /* ② 講習（更新・失効） */
+                <Section step="2" title="講習">
+                  <div>
+                    <label className="field-label">講習日</label>
+                    <input type="date" value={renewalCourseDate} onChange={e => setRenewalCourseDate(e.target.value)} className="field-input" />
+                  </div>
+                  <div className="grid grid-cols-[1fr_8rem] gap-3">
+                    <div>
+                      <label className="field-label">講習地</label>
+                      <input type="text" value={courseLocation} onChange={e => setCourseLocation(e.target.value)} className="field-input" placeholder="講習会場" />
                     </div>
-                  ))}
+                    <div>
+                      <label className="field-label">講習時間</label>
+                      <input type="text" value={courseTime} onChange={e => setCourseTime(e.target.value)} className="field-input" placeholder="14:00" />
+                    </div>
+                  </div>
+                </Section>
+              )}
+            </div>
 
-                  {/* 日程追加ボタン */}
-                  <button
-                    type="button"
-                    onClick={addSession}
-                    className="w-full py-2 border border-dashed border-lavender-200 rounded-xl text-xs text-lavender-400 hover:border-lavender-400 hover:text-lavender-600 transition"
-                  >
-                    ＋ 日程を追加
-                  </button>
+            {/* ── 右カラム ── */}
+            <div className="space-y-4">
+              {/* ④ 試験（受講申請のみ） */}
+              {isNewType && (
+                <Section step="4" title="試験">
+                  <div>
+                    <label className="field-label">受験種別</label>
+                    <div className="flex gap-1.5">
+                      {EXAM_QUAL_TYPES.map(q => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => setExamQualType(examQualType === q ? '' : q)}
+                          className={[
+                            'flex-1 py-1.5 rounded-lg border text-sm font-medium transition',
+                            examQualType === q
+                              ? 'bg-lavender-400 text-white border-lavender-400'
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                          ].join(' ')}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[1fr_6rem] gap-3">
+                    <div>
+                      <label className="field-label">試験日</label>
+                      <input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="field-input" />
+                    </div>
+                    <div>
+                      <label className="field-label">開始時間</label>
+                      <input type="text" value={examStartTime} onChange={e => setExamStartTime(e.target.value)} className="field-input" placeholder="10:00" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="field-label">試験地</label>
+                    <input type="text" value={examLocation} onChange={e => setExamLocation(e.target.value)} className="field-input" placeholder="試験会場" />
+                  </div>
+                </Section>
+              )}
+
+              {/* 申請者情報（本籍・国籍） */}
+              <Section step={isNewType ? '5' : '3'} title="申請者情報" hint="免許申請書に記載">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="field-label">本籍地（都道府県）</label>
+                    <input
+                      type="text"
+                      value={domicile}
+                      onChange={e => setDomicile(e.target.value)}
+                      className="field-input"
+                      placeholder="例：大阪府"
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label">国籍</label>
+                    <select
+                      value={nationality}
+                      onChange={e => setNationality(e.target.value)}
+                      className="field-select"
+                    >
+                      <option value="">日本（省略可）</option>
+                      {NATIONALITIES.filter(n => n.code !== 1).map(n => (
+                        <option key={n.code} value={n.label}>{n.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </fieldset>
+              </Section>
+            </div>
 
-              {/* 試験 */}
-              <fieldset className="border border-lavender-100 rounded-xl p-4 space-y-3">
-                <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide px-1">試験</legend>
-
-                {/* 受験種別 */}
+            {/* 管理：ステータス・備考 */}
+            <Section title="ステータス・備考" className="col-span-2">
+              <div className="grid grid-cols-[auto_1fr] gap-4 items-start">
                 <div>
-                  <label className="field-label">受験種別</label>
-                  <div className="flex gap-2">
-                    {EXAM_QUAL_TYPES.map(q => (
+                  <label className="field-label">ステータス</label>
+                  <div className="flex gap-1.5">
+                    {STATUS_OPTIONS.map(o => (
                       <button
-                        key={q}
+                        key={o.value}
                         type="button"
-                        onClick={() => setExamQualType(examQualType === q ? '' : q)}
+                        onClick={() => setStatus(o.value)}
                         className={[
-                          'flex-1 py-1.5 rounded-lg border text-sm font-medium transition',
-                          examQualType === q
-                            ? 'bg-lavender-400 text-white border-lavender-400'
+                          'px-3 py-1.5 rounded-lg border text-sm font-medium transition',
+                          status === o.value
+                            ? o.value === 'cancelled'
+                              ? 'bg-gray-400 text-white border-gray-400'
+                              : 'bg-lavender-400 text-white border-lavender-400'
                             : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
                         ].join(' ')}
                       >
-                        {q}
+                        {o.label}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="field-label">試験日</label>
-                    <input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="field-input" />
-                  </div>
-                  <div>
-                    <label className="field-label">試験開始時間</label>
-                    <input type="text" value={examStartTime} onChange={e => setExamStartTime(e.target.value)} className="field-input" placeholder="例：10:00" />
-                  </div>
-                </div>
                 <div>
-                  <label className="field-label">試験地</label>
-                  <input type="text" value={examLocation} onChange={e => setExamLocation(e.target.value)} className="field-input" placeholder="試験会場" />
-                </div>
-              </fieldset>
-            </>
-          )}
-
-          {/* ③ 更新講習・失効再交付専用フィールド */}
-          {!isNewType && (
-            <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-lavender-400 uppercase tracking-wide mb-2">講習</legend>
-              <div>
-                <label className="field-label">講習日</label>
-                <input type="date" value={renewalCourseDate} onChange={e => setRenewalCourseDate(e.target.value)} className="field-input" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">講習地</label>
-                  <input type="text" value={courseLocation} onChange={e => setCourseLocation(e.target.value)} className="field-input" placeholder="講習会場" />
-                </div>
-                <div>
-                  <label className="field-label">講習時間</label>
-                  <input type="text" value={courseTime} onChange={e => setCourseTime(e.target.value)} className="field-input" placeholder="例：14:00" />
+                  <label className="field-label">備考</label>
+                  <textarea value={note} onChange={e => setNote(e.target.value)} className="field-input resize-none" rows={2} placeholder="連絡事項・注意点など" />
                 </div>
               </div>
-            </fieldset>
-          )}
-
-          {/* ④ 本籍・国籍・ステータス（共通） */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="field-label">本籍地（都道府県）</label>
-              <input
-                type="text"
-                value={domicile}
-                onChange={e => setDomicile(e.target.value)}
-                className="field-input"
-                placeholder="例：大阪府"
-              />
-            </div>
-            <div>
-              <label className="field-label">国籍</label>
-              <select
-                value={nationality}
-                onChange={e => setNationality(e.target.value)}
-                className="field-select"
-              >
-                <option value="">日本（省略可）</option>
-                {NATIONALITIES.filter(n => n.code !== 1).map(n => (
-                  <option key={n.code} value={n.label}>{n.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="field-label">ステータス</label>
-              <select value={status} onChange={e => setStatus(e.target.value as Enrollment['status'])} className="field-select">
-                {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* ⑤ 備考 */}
-          <div>
-            <label className="field-label">備考</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)} className="field-input min-h-[60px] resize-y" rows={2} />
+            </Section>
           </div>
 
         </div>

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "cvt0001",
+    "key": "旧小文字",
+    "label": "旧小文字",
+    "page": 2,
+    "type": "chars",
+    "x": 72.43,
+    "y": 598.81,
+    "charWidth": 22.77,
+    "maxChars": 22,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0002",
+    "key": "旧カナ",
+    "label": "旧カナ",
+    "page": 2,
+    "type": "chars",
+    "x": 68.6,
+    "y": 576.01,
+    "charWidth": 22.52,
+    "maxChars": 22,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0003",
+    "key": "旧漢字",
+    "label": "旧漢字",
+    "page": 2,
+    "type": "chars",
+    "x": 70.03,
+    "y": 510.43,
+    "charWidth": 39.56,
+    "maxChars": 12,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0004",
+    "key": "旧本籍",
+    "label": "旧本籍",
+    "page": 2,
+    "type": "chars",
+    "x": 45.8,
+    "y": 379.02,
+    "charWidth": 36.71,
+    "maxChars": 3,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0007",
+    "key": "旧国籍_米国",
+    "label": "旧国籍_米国",
+    "page": 2,
+    "type": "chars",
+    "x": 81.29,
+    "y": 270.7,
+    "charWidth": 10.78,
+    "maxChars": 1,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0005",
+    "key": "旧国籍_韓国",
+    "label": "旧国籍_韓国",
+    "page": 2,
+    "type": "chars",
+    "x": 47.24,
+    "y": 270.48,
+    "charWidth": 10.78,
+    "maxChars": 1,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0006",
+    "key": "旧国籍_朝鮮",
+    "label": "旧国籍_朝鮮",
+    "page": 2,
+    "type": "chars",
+    "x": 64.5,
+    "y": 270.45,
+    "charWidth": 10.55,
+    "maxChars": 1,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0008",
+    "key": "旧国コード",
+    "label": "旧国コード",
+    "page": 2,
+    "type": "chars",
+    "x": 106.72,
+    "y": 262.28,
+    "charWidth": 17.27,
+    "maxChars": 3,
+    "fontSize": 7
+  }
+]

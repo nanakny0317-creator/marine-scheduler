@@ -23,6 +23,11 @@ CREATE TABLE IF NOT EXISTS students (
   city        TEXT,
   address1    TEXT,
   address2    TEXT,
+  mail_postal_code TEXT,        -- 送付先住所（申請住所と別の場合）
+  mail_prefecture  TEXT,
+  mail_city        TEXT,
+  mail_address1    TEXT,
+  mail_address2    TEXT,
   phone       TEXT,
   mobile      TEXT,
   email       TEXT,

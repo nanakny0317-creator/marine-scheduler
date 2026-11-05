@@ -143,6 +143,22 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
         </div>
       </section>
 
+      {[student.mail_postal_code, student.mail_prefecture, student.mail_city,
+        student.mail_address1, student.mail_address2].some((v) => v && v.trim()) && (
+        <section>
+          <h3 className="text-xs font-semibold text-amber-500 uppercase tracking-wide mb-2">
+            送付先住所（申請住所と別）
+          </h3>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/30 px-4 py-1">
+            <Row label="郵便番号" value={dash(student.mail_postal_code ?? null)} />
+            <Row label="都道府県" value={dash(student.mail_prefecture ?? null)} />
+            <Row label="市区町村" value={dash(student.mail_city ?? null)} />
+            <Row label="番地・建物" value={dash(student.mail_address1 ?? null)} />
+            <Row label="住所2" value={dash(student.mail_address2 ?? null)} />
+          </div>
+        </section>
+      )}
+
       <section>
         <h3 className="text-xs font-semibold text-lavender-400 uppercase tracking-wide mb-2">
           連絡先

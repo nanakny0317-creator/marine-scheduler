@@ -14,6 +14,12 @@ export interface Student {
   city: string | null
   address1: string | null
   address2: string | null
+  // 送付先住所（申請住所と別の場合のみ入力。すべて空なら申請住所へ送付）
+  mail_postal_code?: string | null
+  mail_prefecture?: string | null
+  mail_city?: string | null
+  mail_address1?: string | null
+  mail_address2?: string | null
   phone: string | null
   mobile: string | null
   email: string | null

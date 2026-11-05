@@ -6,6 +6,8 @@ import { enrollmentsApi } from '../../lib/api'
 import MemberBasicInfoReadOnly from './MemberBasicInfoReadOnly'
 import StudentForm from './StudentForm'
 import EnrollmentFormModal from './EnrollmentFormModal'
+import { printForm, type FieldDef } from '../../lib/formPrint'
+import { buildFormData } from '../../lib/formFieldMap'
 
 const TYPE_LABEL: Record<string, string> = {
   new: '受講申請', renewal: '更新講習', lapsed: '失効再交付',
@@ -181,11 +183,41 @@ interface Props {
   onUpdated: () => void
 }
 
+// 申込種別 → フォームレイアウトと説明
+const PRINT_FORM_MAP: Record<string, { layout: string; title: string; pageCount: number }> = {
+  new:     { layout: '/form-layouts/shiken.json',  title: '試験申請書',       pageCount: 1 },
+  renewal: { layout: '/form-layouts/koshin.json',  title: '更新申請書',       pageCount: 1 },
+  lapsed:  { layout: '/form-layouts/saikofu.json', title: '失効再交付申請書', pageCount: 1 },
+}
+
 export default function ScheduleItemDetailModal({ student, enrollment, onClose, onUpdated }: Props) {
   const [currentStudent,    setCurrentStudent]    = useState(student)
   const [currentEnrollment, setCurrentEnrollment] = useState(enrollment)
   const [editingStudent,    setEditingStudent]    = useState(false)
   const [editingEnrollment, setEditingEnrollment] = useState(false)
+  const [printing,          setPrinting]          = useState(false)
+
+  const appType = (() => {
+    try { return (JSON.parse(currentEnrollment.extra_json).application_type as string) ?? 'new' }
+    catch { return 'new' }
+  })()
+
+  const handlePrint = async () => {
+    const formDef = PRINT_FORM_MAP[appType]
+    if (!formDef) return
+    setPrinting(true)
+    try {
+      const res    = await fetch(formDef.layout)
+      const fields = await res.json() as FieldDef[]
+      const data   = buildFormData(currentStudent, currentEnrollment)
+      await printForm(fields, data, formDef.pageCount, formDef.title)
+    } catch (e) {
+      console.error('印刷エラー:', e)
+      alert(`印刷に失敗しました。\n${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setPrinting(false)
+    }
+  }
 
   const handleEnrollmentSaved = async () => {
     setEditingEnrollment(false)
@@ -251,7 +283,16 @@ export default function ScheduleItemDetailModal({ student, enrollment, onClose, 
           </div>
 
           {/* フッター */}
-          <div className="shrink-0 px-6 py-4 border-t border-lavender-100 flex justify-end">
+          <div className="shrink-0 px-6 py-4 border-t border-lavender-100 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={printing || !PRINT_FORM_MAP[appType]}
+              className="btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+              title={PRINT_FORM_MAP[appType] ? `${PRINT_FORM_MAP[appType].title}を印刷` : 'この申込種別は印刷未対応'}
+            >
+              {printing ? '⏳ 印刷中...' : '🖨 申請書印刷'}
+            </button>
             <button type="button" onClick={onClose} className="btn-secondary">閉じる</button>
           </div>
         </div>

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "cvt0001",
+    "key": "旧小文字",
+    "label": "旧小文字",
+    "page": 2,
+    "type": "chars",
+    "x": 74.94,
+    "y": 596.91,
+    "charWidth": 22.26,
+    "maxChars": 18,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0002",
+    "key": "旧小文字",
+    "label": "旧小文字",
+    "page": 2,
+    "type": "chars",
+    "x": 480.03,
+    "y": 595.47,
+    "charWidth": 22.26,
+    "maxChars": 4,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0003",
+    "key": "旧カナ",
+    "label": "旧カナ",
+    "page": 2,
+    "type": "chars",
+    "x": 70.88,
+    "y": 573.85,
+    "charWidth": 19.16,
+    "maxChars": 1,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0004",
+    "key": "旧カナ",
+    "label": "旧カナ",
+    "page": 2,
+    "type": "chars",
+    "x": 93.37,
+    "y": 573.85,
+    "charWidth": 22.52,
+    "maxChars": 21,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0005",
+    "key": "旧漢字",
+    "label": "旧漢字",
+    "page": 2,
+    "type": "chars",
+    "x": 72.29,
+    "y": 508.28,
+    "charWidth": 39.28,
+    "maxChars": 12,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0006",
+    "key": "旧本籍",
+    "label": "旧本籍",
+    "page": 2,
+    "type": "chars",
+    "x": 48.84,
+    "y": 377.61,
+    "charWidth": 36.4,
+    "maxChars": 3,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0007",
+    "key": "旧国籍_韓国",
+    "label": "旧国籍_韓国",
+    "page": 2,
+    "type": "chars",
+    "x": 50.76,
+    "y": 269.99,
+    "charWidth": 10.78,
+    "maxChars": 1,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0008",
+    "key": "旧国籍_朝鮮",
+    "label": "旧国籍_朝鮮",
+    "page": 2,
+    "type": "chars",
+    "x": 67.75,
+    "y": 269.99,
+    "charWidth": 10.52,
+    "maxChars": 1,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0009",
+    "key": "旧国籍_米国",
+    "label": "旧国籍_米国",
+    "page": 2,
+    "type": "chars",
+    "x": 84.28,
+    "y": 269.99,
+    "charWidth": 10.78,
+    "maxChars": 1,
+    "fontSize": 7
+  },
+  {
+    "id": "cvt0010",
+    "key": "旧国コード",
+    "label": "旧国コード",
+    "page": 2,
+    "type": "chars",
+    "x": 109.43,
+    "y": 261.34,
+    "charWidth": 16.76,
+    "maxChars": 3,
+    "fontSize": 7
+  }
+]

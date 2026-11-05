@@ -32,6 +32,11 @@ function toStudent(row: Row): Student {
     city: row.city ? String(row.city) : null,
     address1: row.address1 ? String(row.address1) : null,
     address2: row.address2 ? String(row.address2) : null,
+    mail_postal_code: row.mail_postal_code ? String(row.mail_postal_code) : null,
+    mail_prefecture: row.mail_prefecture ? String(row.mail_prefecture) : null,
+    mail_city: row.mail_city ? String(row.mail_city) : null,
+    mail_address1: row.mail_address1 ? String(row.mail_address1) : null,
+    mail_address2: row.mail_address2 ? String(row.mail_address2) : null,
     phone: row.phone ? String(row.phone) : null,
     mobile: row.mobile ? String(row.mobile) : null,
     email: row.email ? String(row.email) : null,
@@ -39,6 +44,14 @@ function toStudent(row: Row): Student {
     created_at: String(row.created_at ?? ''),
     updated_at: String(row.updated_at ?? ''),
   }
+}
+
+// 送付先住所パラメータ（空文字は NULL に揃える）
+function mailParams(input: StudentInput): (string | null)[] {
+  return [
+    input.mail_postal_code, input.mail_prefecture, input.mail_city,
+    input.mail_address1, input.mail_address2,
+  ].map((v) => (v && v.trim()) ? v.trim() : null)
 }
 
 // -------- 次の受講者番号を生成（000001 〜） --------
@@ -106,9 +119,10 @@ export function createStudent(input: StudentInput): Student {
     `INSERT INTO students
        (student_code, license_number, last_name, first_name, last_kana, first_kana, birth_date, gender,
         postal_code, prefecture, city, address1, address2,
+        mail_postal_code, mail_prefecture, mail_city, mail_address1, mail_address2,
         phone, mobile, email, note,
         created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
              datetime('now','localtime'), datetime('now','localtime'))`,
     [
       code,
@@ -118,6 +132,7 @@ export function createStudent(input: StudentInput): Student {
       processedInput.birth_date ?? null, processedInput.gender ?? null,
       processedInput.postal_code ?? null, processedInput.prefecture ?? null,
       processedInput.city ?? null, processedInput.address1 ?? null, processedInput.address2 ?? null,
+      ...mailParams(processedInput),
       processedInput.phone ?? null, processedInput.mobile ?? null,
       processedInput.email ?? null, processedInput.note ?? null,
     ]
@@ -136,6 +151,7 @@ export function updateStudent(id: number, input: StudentInput): Student {
        last_name=?, first_name=?, last_kana=?, first_kana=?,
        birth_date=?, gender=?,
        postal_code=?, prefecture=?, city=?, address1=?, address2=?,
+       mail_postal_code=?, mail_prefecture=?, mail_city=?, mail_address1=?, mail_address2=?,
        phone=?, mobile=?, email=?, note=?,
        updated_at=datetime('now','localtime')
      WHERE id=?`,
@@ -147,6 +163,7 @@ export function updateStudent(id: number, input: StudentInput): Student {
       processedInput.birth_date ?? null, processedInput.gender ?? null,
       processedInput.postal_code ?? null, processedInput.prefecture ?? null,
       processedInput.city ?? null, processedInput.address1 ?? null, processedInput.address2 ?? null,
+      ...mailParams(processedInput),
       processedInput.phone ?? null, processedInput.mobile ?? null,
       processedInput.email ?? null, processedInput.note ?? null,
       id,

@@ -64,6 +64,14 @@ export async function initDb(): Promise<Database> {
     }
   }
 
+  // マイグレーション: 送付先住所カラム
+  if (tableInfo.length > 0) {
+    const cols = tableInfo[0].values.map((row) => row[1] as string)
+    for (const c of ['mail_postal_code', 'mail_prefecture', 'mail_city', 'mail_address1', 'mail_address2']) {
+      if (!cols.includes(c)) db.run(`ALTER TABLE students ADD COLUMN ${c} TEXT`)
+    }
+  }
+
   // マイグレーション: pending_reviews テーブル（新規DB以外では SCHEMA_SQL の IF NOT EXISTS で作成済み）
   db.run(`
     CREATE TABLE IF NOT EXISTS pending_reviews (

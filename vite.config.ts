@@ -4,7 +4,7 @@ import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 import { resolve } from 'path'
 
-const external = ['sql.js', 'fs', 'path', 'electron']
+const external = ['sql.js', 'fs', 'path', 'electron', 'pg', 'pg-native']
 
 // ELECTRON_MODE=browser のとき Electron プラグインをスキップ（Dev Container / UI 開発用）
 const isElectronMode = process.env.ELECTRON_MODE !== 'browser'

@@ -15,6 +15,7 @@ import {
 } from '../../lib/api'
 import { NATIONALITIES } from '../../data/masterData'
 import DuplicateResolutionModal from './DuplicateResolutionModal'
+import Section from '../FormSection'
 
 // コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
 interface FieldProps {
@@ -93,6 +94,11 @@ const EMPTY: StudentInput = {
   city: '',
   address1: '',
   address2: '',
+  mail_postal_code: '',
+  mail_prefecture: '',
+  mail_city: '',
+  mail_address1: '',
+  mail_address2: '',
   phone: '',
   mobile: '',
   email: '',
@@ -131,6 +137,13 @@ const EMPTY_EXAM = {
 }
 
 const QUAL_TYPES = ['一級', '二級', '特殊', '湖川']
+
+// 住所欄のキー（申請住所 / 送付先住所）
+const ADDR_KEYS = {
+  main: { zip: 'postal_code', pref: 'prefecture', city: 'city', a1: 'address1', a2: 'address2' },
+  mail: { zip: 'mail_postal_code', pref: 'mail_prefecture', city: 'mail_city', a1: 'mail_address1', a2: 'mail_address2' },
+} as const satisfies Record<string, Record<string, keyof StudentInput>>
+const MAIL_KEYS = Object.values(ADDR_KEYS.mail)
 const APP_TYPES: { value: ApplicationType; label: string }[] = [
   { value: 'new',     label: '受講申請' },
   { value: 'renewal', label: '更新講習' },
@@ -147,7 +160,12 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   const [errors, setErrors] = useState<Partial<Record<keyof StudentInput, string>>>({})
   const [dupResult, setDupResult] = useState<DuplicateCheckResult | null>(null)
   const [saving, setSaving] = useState(false)
-  const [zipLoading, setZipLoading] = useState(false)
+  const [zipLoading, setZipLoading] = useState<'main' | 'mail' | null>(null)
+  // 送付先住所：既存データに入っていれば最初から有効
+  const [hasMail, setHasMail] = useState(
+    !!student && MAIL_KEYS.some((k) => (student[k] ?? '').trim() !== '')
+  )
+  const [addrTab, setAddrTab] = useState<'main' | 'mail'>('main')
   const firstRef = useRef<HTMLInputElement>(null)
 
   // ── 新規時のオプションセクション ──
@@ -231,22 +249,52 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     setErrors((e) => ({ ...e, [k]: undefined }))
   }
 
-  // 郵便番号 → 住所
-  const handleZipBlur = async () => {
-    const zip = form.postal_code?.replace(/[^0-9]/g, '') ?? ''
+  // 郵便番号 → 住所（申請住所 / 送付先住所 共通）
+  const handleZipBlur = async (kind: 'main' | 'mail' = 'main') => {
+    const keys = ADDR_KEYS[kind]
+    const zip = (form[keys.zip] as string | null | undefined)?.replace(/[^0-9]/g, '') ?? ''
     if (zip.length !== 7) return
-    setZipLoading(true)
+    setZipLoading(kind)
     const addr = await fetchAddressByZip(zip)
-    setZipLoading(false)
+    setZipLoading(null)
     if (addr) {
       setForm((f) => ({
         ...f,
-        prefecture: addr.prefecture,
-        city: addr.city,
-        address1: addr.address1,
+        [keys.pref]: addr.prefecture,
+        [keys.city]: addr.city,
+        [keys.a1]: addr.address1,
       }))
     }
   }
+
+  // 送付先の有効/無効切替
+  const toggleMail = (on: boolean) => {
+    // 送付先が入力済みのときは、外す前に確認（うっかり消し防止）
+    if (!on && MAIL_KEYS.some((k) => ((form[k] as string | null | undefined) ?? '').trim() !== '')) {
+      const ok = window.confirm(
+        '送付先住所が入力されています。\nチェックを外すと、保存時に送付先住所は削除されます。\n\nよろしいですか？'
+      )
+      if (!ok) return
+    }
+    setHasMail(on)
+    setAddrTab(on ? 'mail' : 'main')
+  }
+
+  // 申請住所を送付先へコピー（一部だけ違う場合の手間を省く）
+  const copyMainToMail = () => {
+    setForm((f) => ({
+      ...f,
+      mail_postal_code: f.postal_code,
+      mail_prefecture: f.prefecture,
+      mail_city: f.city,
+      mail_address1: f.address1,
+      mail_address2: f.address2,
+    }))
+  }
+
+  // 保存用データ：送付先が無効なら送付先欄は空で保存
+  const payload = (): StudentInput =>
+    hasMail ? form : { ...form, ...Object.fromEntries(MAIL_KEYS.map((k) => [k, null])) }
 
   // バリデーション
   const validate = (): boolean => {
@@ -277,8 +325,8 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     setSaving(true)
     try {
       const saved = student
-        ? await studentsApi.update(student.id, form)
-        : await studentsApi.create(form)
+        ? await studentsApi.update(student.id, payload())
+        : await studentsApi.create(payload())
       await saveOptional(saved.id)
       onSaved(saved)
     } finally {
@@ -293,11 +341,11 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     try {
       let saved
       if (action === 'merge' && targetId) {
-        saved = await studentsApi.update(targetId, form)
+        saved = await studentsApi.update(targetId, payload())
       } else if (action === 'defer') {
         const notePrefix = '【要確認】重複の可能性あり'
         saved = await studentsApi.create({
-          ...form,
+          ...payload(),
           note: form.note ? `${notePrefix}\n${form.note}` : notePrefix,
         })
         for (const c of candidates) {
@@ -309,7 +357,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
           })
         }
       } else {
-        saved = await studentsApi.create(form)
+        saved = await studentsApi.create(payload())
       }
       await saveOptional(saved.id)
       onSaved(saved)
@@ -380,110 +428,182 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
           onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
         >
         <div className="max-w-6xl mx-auto px-8 py-4 space-y-4">
-          {/* メイン情報グリッド */}
-          <div className="grid grid-cols-4 gap-x-4 gap-y-3">
+          {/* ── メイン情報：2カラムのセクションカード ── */}
+          <div className="grid grid-cols-2 gap-4 bg-lavender-50/30 -mx-2 p-2 rounded-2xl">
 
-            {/* 行1: 番号系 + 生年月日 + 性別 */}
-            <div>
-              <label className="field-label">
-                受講者番号
-                <span className="ml-1 text-gray-400 font-normal text-[11px]">（自動採番）</span>
-              </label>
-              <input
-                type="text"
-                value={form.student_code ?? ''}
-                onChange={(e) => set('student_code', e.target.value || null)}
-                onKeyDown={handleKeyDown}
-                placeholder="000001"
-                maxLength={20}
-                className="field-input"
-              />
-            </div>
-            <div>
-              <label className="field-label">免許番号</label>
-              <input
-                type="text"
-                value={form.license_number ?? ''}
-                onChange={(e) => set('license_number', e.target.value || null)}
-                onKeyDown={handleKeyDown}
-                placeholder="例：0300160004901"
-                className="field-input"
-              />
-            </div>
-            <Field label="生年月日" type="date" {...f('birth_date')} />
-            <Field label="性別" {...f('gender')}>
-              <select
-                value={form.gender ?? ''}
-                onChange={(e) => set('gender', e.target.value as StudentInput['gender'] || null)}
-                onKeyDown={handleKeyDown}
-                className="field-select"
-              >
-                <option value="">選択してください</option>
-                <option value="male">男性</option>
-                <option value="female">女性</option>
-                <option value="other">その他</option>
-              </select>
-            </Field>
-
-            {/* 行2: 氏名 */}
-            <Field label="姓 *" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
-            <Field label="名 *" required placeholder="太郎" {...f('first_name')} />
-            <Field label="せい（フリガナ）" placeholder="やまだ" {...f('last_kana')} />
-            <Field label="めい（フリガナ）" placeholder="たろう" {...f('first_kana')} />
-
-            {/* 行3: 住所1 */}
-            <div>
-              <label className="field-label">郵便番号</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={form.postal_code ?? ''}
-                  onChange={(e) => set('postal_code', e.target.value)}
-                  onBlur={handleZipBlur}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); handleZipBlur() }
-                    else handleKeyDown(e)
-                  }}
-                  placeholder="1234567"
-                  maxLength={8}
-                  className="field-input pr-8"
-                />
-                {zipLoading && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-lavender-400 animate-pulse">
-                    検索中
-                  </span>
-                )}
+            {/* ① 本人情報 */}
+            <Section step="1" title="本人情報" hint="* は必須">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="姓" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
+                <Field label="名" required placeholder="太郎" {...f('first_name')} />
               </div>
-            </div>
-            <Field label="都道府県" placeholder="東京都" {...f('prefecture')} />
-            <div className="col-span-2">
-              <Field label="市区町村" placeholder="渋谷区" {...f('city')} />
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="せい（ふりがな）" placeholder="やまだ" {...f('last_kana')} />
+                <Field label="めい（ふりがな）" placeholder="たろう" {...f('first_kana')} />
+              </div>
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-dashed border-lavender-100">
+                <Field label="生年月日" type="date" {...f('birth_date')} />
+                <Field label="性別" {...f('gender')}>
+                  <select
+                    value={form.gender ?? ''}
+                    onChange={(e) => set('gender', e.target.value as StudentInput['gender'] || null)}
+                    onKeyDown={handleKeyDown}
+                    className="field-select"
+                  >
+                    <option value="">選択してください</option>
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                    <option value="other">その他</option>
+                  </select>
+                </Field>
+              </div>
+            </Section>
 
-            {/* 行4: 住所2 */}
-            <div className="col-span-3">
-              <Field label="番地・建物名" placeholder="道玄坂1-2-3" {...f('address1')} />
-            </div>
-            <Field label="住所2（建物名等）" placeholder="" {...f('address2')} />
+            {/* ② 住所（免許申請用住所 / 送付先住所 をタブ切替） */}
+            <Section
+              step="2"
+              title="住所"
+              action={
+                <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hasMail}
+                    onChange={(e) => toggleMail(e.target.checked)}
+                    className="rounded"
+                    tabIndex={-1}
+                  />
+                  送付先が別
+                </label>
+              }
+            >
+              {hasMail && (
+                <div className="flex gap-1 -mt-1 border-b border-lavender-100">
+                  {([['main', '免許申請用住所'], ['mail', '送付先住所']] as const).map(([k, label]) => (
+                    <button
+                      key={k}
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setAddrTab(k)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg border-b-2 -mb-px transition ${
+                        addrTab === k
+                          ? k === 'mail'
+                            ? 'border-amber-400 text-amber-600 bg-amber-50'
+                            : 'border-lavender-400 text-lavender-600 bg-lavender-50'
+                          : 'border-transparent text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  {addrTab === 'mail' && (
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={copyMainToMail}
+                      className="ml-auto text-[11px] text-lavender-500 hover:text-lavender-700"
+                    >
+                      申請用住所をコピー
+                    </button>
+                  )}
+                </div>
+              )}
+              {(() => {
+                const kind = hasMail ? addrTab : 'main'
+                const k = ADDR_KEYS[kind]
+                return (
+                  <div key={kind} className={kind === 'mail' ? 'space-y-3 rounded-lg bg-amber-50/40 -mx-1 px-1 pb-1' : 'space-y-3'}>
+                    <div className="grid grid-cols-[10rem_1fr] gap-3">
+                      <div>
+                        <label className="field-label">郵便番号</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={(form[k.zip] as string | null | undefined) ?? ''}
+                            onChange={(e) => set(k.zip, e.target.value)}
+                            onBlur={() => handleZipBlur(kind)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleZipBlur(kind)
+                              handleKeyDown(e)
+                            }}
+                            placeholder="1234567"
+                            maxLength={8}
+                            className="field-input pr-12"
+                          />
+                          {zipLoading === kind && (
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-lavender-400 animate-pulse">
+                              検索中
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Field label="都道府県" placeholder="東京都" {...f(k.pref)} />
+                    </div>
+                    <Field label="市区町村" placeholder="渋谷区" {...f(k.city)} />
+                    <Field label="番地" placeholder="道玄坂1-2-3" {...f(k.a1)} />
+                    <Field label="建物名・部屋番号" placeholder="○○マンション 101" {...f(k.a2)} />
+                  </div>
+                )
+              })()}
+              {!hasMail && (
+                <p className="text-[11px] text-gray-400">書類はこの住所へ送付します。別の送付先がある場合は右上の「送付先が別」にチェック。</p>
+              )}
+            </Section>
 
-            {/* 行5: 連絡先 */}
-            <Field label="電話番号" type="tel" placeholder="03-0000-0000" {...f('phone')} />
-            <Field label="携帯電話" type="tel" placeholder="090-0000-0000" {...f('mobile')} />
-            <div className="col-span-2">
+            {/* ③ 連絡先 */}
+            <Section step="3" title="連絡先">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="電話番号" type="tel" placeholder="03-0000-0000" {...f('phone')} />
+                <Field label="携帯電話" type="tel" placeholder="090-0000-0000" {...f('mobile')} />
+              </div>
               <Field label="メールアドレス" type="email" placeholder="taro@example.com" {...f('email')} />
-            </div>
+            </Section>
 
-            {/* 行6: 備考 */}
-            <div className="col-span-4">
-              <label className="field-label">備考</label>
+            {/* ④ 管理番号 */}
+            <Section step="4" title="管理番号">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="field-label">
+                    受講者番号
+                    <span className="ml-1 text-gray-400 font-normal text-[11px]">（自動採番）</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.student_code ?? ''}
+                    onChange={(e) => set('student_code', e.target.value || null)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="000001"
+                    maxLength={20}
+                    className="field-input bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">
+                    免許番号
+                    <span className="ml-1 text-gray-400 font-normal text-[11px]">（お持ちの場合）</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.license_number ?? ''}
+                    onChange={(e) => set('license_number', e.target.value || null)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="例：0300160004901"
+                    className="field-input"
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* 備考 */}
+            <Section title="備考" className="col-span-2">
               <textarea
                 value={form.note ?? ''}
                 onChange={(e) => set('note', e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}
                 rows={2}
+                placeholder="連絡事項・注意点など"
                 className="field-input resize-none"
               />
-            </div>
+            </Section>
           </div>
 
           {/* ── 新規時のオプションセクション ── */}
