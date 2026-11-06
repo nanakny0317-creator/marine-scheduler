@@ -42,6 +42,18 @@ const api = {
     delete: (id: number) => ipcRenderer.invoke('examSessions:delete', id),
     upsert: (rows: unknown[]) => ipcRenderer.invoke('examSessions:upsert', rows),
   },
+  classrooms: {
+    list:   () => ipcRenderer.invoke('classrooms:list'),
+    create: (input: unknown) => ipcRenderer.invoke('classrooms:create', input),
+    update: (id: number, input: unknown) => ipcRenderer.invoke('classrooms:update', id, input),
+    delete: (id: number) => ipcRenderer.invoke('classrooms:delete', id),
+  },
+  renewalSessions: {
+    list:   () => ipcRenderer.invoke('renewalSessions:list'),
+    create: (input: unknown) => ipcRenderer.invoke('renewalSessions:create', input),
+    update: (id: number, input: unknown) => ipcRenderer.invoke('renewalSessions:update', id, input),
+    delete: (id: number) => ipcRenderer.invoke('renewalSessions:delete', id),
+  },
   examRecords: {
     list:   (studentId: number) => ipcRenderer.invoke('examRecords:list', studentId),
     create: (input: unknown) => ipcRenderer.invoke('examRecords:create', input),

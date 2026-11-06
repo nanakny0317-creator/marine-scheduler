@@ -7,6 +7,8 @@ import type {
   Enrollment, EnrollmentInput,
   Venue, VenueInput,
   ExamSession, ExamSessionInput,
+  RenewalSession, RenewalSessionInput,
+  Classroom, ClassroomInput,
   ExamRecord, ExamRecordInput,
   PendingReview, PendingReviewInput, PendingReviewWithStudents,
   DupImportRow,
@@ -98,6 +100,34 @@ export const examSessionsApi = {
 
   upsert: (rows: ExamSessionInput[]): Promise<{ inserted: number; updated: number }> =>
     window.api.examSessions.upsert(rows),
+}
+
+export const classroomsApi = {
+  list: (): Promise<Classroom[]> =>
+    window.api.classrooms.list(),
+
+  create: (input: ClassroomInput): Promise<Classroom> =>
+    window.api.classrooms.create(input),
+
+  update: (id: number, input: ClassroomInput): Promise<Classroom> =>
+    window.api.classrooms.update(id, input),
+
+  delete: (id: number): Promise<boolean> =>
+    window.api.classrooms.delete(id),
+}
+
+export const renewalSessionsApi = {
+  list: (): Promise<RenewalSession[]> =>
+    window.api.renewalSessions.list(),
+
+  create: (input: RenewalSessionInput): Promise<RenewalSession> =>
+    window.api.renewalSessions.create(input),
+
+  update: (id: number, input: RenewalSessionInput): Promise<RenewalSession> =>
+    window.api.renewalSessions.update(id, input),
+
+  delete: (id: number): Promise<boolean> =>
+    window.api.renewalSessions.delete(id),
 }
 
 export const examRecordsApi = {

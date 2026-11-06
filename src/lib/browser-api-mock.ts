@@ -8,6 +8,8 @@ import type {
   Enrollment, EnrollmentInput,
   Venue, VenueInput,
   ExamSession, ExamSessionInput,
+  RenewalSession, RenewalSessionInput,
+  Classroom, ClassroomInput,
   ExamRecord, ExamRecordInput,
   DuplicateCheckResult, PendingReview, PendingReviewInput,
   PendingReviewWithStudents, DupImportRow,
@@ -18,6 +20,8 @@ let students: Student[] = []
 let enrollments: Enrollment[] = []
 let venues: Venue[] = []
 let examSessions: ExamSession[] = []
+let renewalSessions: RenewalSession[] = []
+let classrooms: Classroom[] = []
 let examRecords: ExamRecord[] = []
 let pendingReviews: PendingReviewWithStudents[] = []
 let nextId = 1
@@ -182,7 +186,7 @@ export const browserApiMock: ElectronAPI = {
           s => s.exam_date === row.exam_date && s.exam_location === row.exam_location && s.qualification_type === row.qualification_type
         )
         if (idx !== -1) {
-          examSessions[idx] = { ...examSessions[idx], exam_id: row.exam_id, updated_at: now() }
+          examSessions[idx] = { ...examSessions[idx], exam_id: row.exam_id, gakka_venue: row.gakka_venue, jitsugi_venue: row.jitsugi_venue, updated_at: now() }
           updated++
         } else {
           examSessions.push({ ...row, id: id(), created_at: now(), updated_at: now() })
@@ -190,6 +194,44 @@ export const browserApiMock: ElectronAPI = {
         }
       }
       return Promise.resolve({ inserted, updated })
+    },
+  },
+
+  classrooms: {
+    list: () => Promise.resolve([...classrooms].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, 'ja'))),
+    create: (input: ClassroomInput) => {
+      const c: Classroom = { ...input, id: id(), created_at: now(), updated_at: now() }
+      classrooms.push(c)
+      return Promise.resolve(c)
+    },
+    update: (cid: number, input: ClassroomInput) => {
+      const idx = classrooms.findIndex(c => c.id === cid)
+      if (idx === -1) return Promise.reject(new Error('not found'))
+      classrooms[idx] = { ...classrooms[idx], ...input, updated_at: now() }
+      return Promise.resolve(classrooms[idx])
+    },
+    delete: (cid: number) => {
+      classrooms = classrooms.filter(c => c.id !== cid)
+      return Promise.resolve(true)
+    },
+  },
+
+  renewalSessions: {
+    list: () => Promise.resolve([...renewalSessions].sort((a, b) => a.course_date.localeCompare(b.course_date))),
+    create: (input: RenewalSessionInput) => {
+      const s: RenewalSession = { ...input, id: id(), created_at: now(), updated_at: now() }
+      renewalSessions.push(s)
+      return Promise.resolve(s)
+    },
+    update: (sid: number, input: RenewalSessionInput) => {
+      const idx = renewalSessions.findIndex(s => s.id === sid)
+      if (idx === -1) return Promise.reject(new Error('not found'))
+      renewalSessions[idx] = { ...renewalSessions[idx], ...input, updated_at: now() }
+      return Promise.resolve(renewalSessions[idx])
+    },
+    delete: (sid: number) => {
+      renewalSessions = renewalSessions.filter(s => s.id !== sid)
+      return Promise.resolve(true)
     },
   },
 

@@ -81,7 +81,7 @@ export type ApplicationType = 'new' | 'renewal' | 'lapsed'
 // ===== 本文解析結果 =====
 export interface ParsedBody {
   // 申込種別
-  application_type: ApplicationType  // new=受講申請 renewal=更新講習 lapsed=失効再交付
+  application_type: ApplicationType  // new=試験申請 renewal=更新講習 lapsed=失効再交付
 
   // 受講者フィールド
   full_name: string | null
@@ -102,17 +102,17 @@ export interface ParsedBody {
   menu: string | null
   course_date: string | null        // 講習日
   course_time: string | null        // 講習時間（例: "14:00"）
-  exam_date: string | null          // 試験日（受講申請のみ）
+  exam_date: string | null          // 試験日（試験申請のみ）
   venue: string | null              // 講習/試験会場
-  ruby_preference: boolean | null   // ルビ希望（受講申請のみ）
+  ruby_preference: boolean | null   // ルビ希望（試験申請のみ）
   domicile: string | null           // 本籍地
   nationality: string | null        // 国籍
   current_license: string | null    // 現有免許
   license_number: string | null     // 免許番号
   license_expiry: string | null     // 有効期限日（更新・失効）
-  special_small: string | null      // 特殊小型（受講申請のみ）
+  special_small: string | null      // 特殊小型（試験申請のみ）
   payment_method: string | null     // お支払方法
-  purpose: string | null            // 取得目的（受講申請のみ）
+  purpose: string | null            // 取得目的（試験申請のみ）
   delivery_method: string | null    // 送付方法（更新・失効）
   physical_exam: string | null      // 身体検査（更新・失効）
   record_change: string | null      // 記載事項変更（更新・失効）
@@ -168,11 +168,38 @@ export interface ExamSession {
   qualification_type: string
   exam_id: string
   exam_type: '学科' | '実技' | '学科+実技'
+  gakka_venue: string    // 学科試験会場
+  jitsugi_venue: string  // 実技試験会場
   created_at: string
   updated_at: string
 }
 
 export type ExamSessionInput = Omit<ExamSession, 'id' | 'created_at' | 'updated_at'>
+
+// ===== 授業会場マスター =====
+export interface Classroom {
+  id: number
+  name: string
+  note: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type ClassroomInput = Omit<Classroom, 'id' | 'created_at' | 'updated_at'>
+
+// ===== 更新講習日程マスター =====
+export interface RenewalSession {
+  id: number
+  course_date: string
+  location: string
+  start_time: string
+  note: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type RenewalSessionInput = Omit<RenewalSession, 'id' | 'created_at' | 'updated_at'>
 
 // ===== 試験記録 =====
 export type ExamResult = '合' | '免' | '否' | '不' | null
@@ -276,6 +303,18 @@ export interface ElectronAPI {
     update: (id: number, input: ExamSessionInput) => Promise<ExamSession>
     delete: (id: number) => Promise<boolean>
     upsert: (rows: ExamSessionInput[]) => Promise<{ inserted: number; updated: number }>
+  }
+  classrooms: {
+    list:   () => Promise<Classroom[]>
+    create: (input: ClassroomInput) => Promise<Classroom>
+    update: (id: number, input: ClassroomInput) => Promise<Classroom>
+    delete: (id: number) => Promise<boolean>
+  }
+  renewalSessions: {
+    list:   () => Promise<RenewalSession[]>
+    create: (input: RenewalSessionInput) => Promise<RenewalSession>
+    update: (id: number, input: RenewalSessionInput) => Promise<RenewalSession>
+    delete: (id: number) => Promise<boolean>
   }
   examRecords: {
     list:   (studentId: number) => Promise<ExamRecord[]>

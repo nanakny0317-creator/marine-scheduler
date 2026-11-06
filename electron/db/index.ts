@@ -96,6 +96,15 @@ export async function initDb(): Promise<Database> {
       END
   `)
 
+  // マイグレーション: exam_sessions に学科・実技会場カラム追加
+  const examSessInfo = db.exec("PRAGMA table_info(exam_sessions)")
+  if (examSessInfo.length > 0) {
+    const cols = examSessInfo[0].values.map((row) => row[1] as string)
+    for (const c of ['gakka_venue', 'jitsugi_venue']) {
+      if (!cols.includes(c)) db.run(`ALTER TABLE exam_sessions ADD COLUMN ${c} TEXT NOT NULL DEFAULT ''`)
+    }
+  }
+
   // マイグレーション: venues カラム追加
   const venueInfo = db.exec("PRAGMA table_info(venues)")
   if (venueInfo.length > 0) {
@@ -343,6 +352,22 @@ export async function initDb(): Promise<Database> {
         [v.region, v.prefecture, v.name, v.sort_order]
       )
     }
+  }
+
+  // 授業会場：0件の場合のみシード（出典: https://www.rivre.ne.jp/access/ ）
+  const CLASSROOM_SEED: { name: string; note: string }[] = [
+    { name: 'びわこ大津教室（マリーナクラブリブレ）',  note: '滋賀県大津市今堅田3-23-19 TEL 077-573-5656／1級・2級・湖川・特殊' },
+    { name: '大阪 岸和田教室（オーシャンマリン／阪南マリーナ）', note: '大阪府岸和田市地藏浜7 TEL 072-432-5944／1級・2級・特殊（学科はオーシャンマリン展示場）' },
+    { name: '大阪 摂津教室（フォース）',              note: '大阪府摂津市鳥飼和道1-7-7 TEL 072-697-8788／特殊（5月後半〜9月下旬）' },
+    { name: 'びわこ彦根教室（マリンショップオグリ）',  note: '滋賀県彦根市松原2-2-19 TEL 074-922-0851／1級・2級・特殊' },
+    { name: '大阪 茨木教室（リブレボーティング）',    note: '大阪府茨木市若草町9-1 TEL 072-624-9344／1級・2級・特殊（学科のみ）' },
+    { name: '大阪 千舟教室（大阪実技試験会場）',      note: '大阪市西淀川区大和田5丁目 大和田漁港内／1・2級の実技講習' },
+  ]
+  const classroomCount = db.exec('SELECT COUNT(*) FROM classrooms')
+  if ((classroomCount[0]?.values[0]?.[0] as number ?? 0) === 0) {
+    CLASSROOM_SEED.forEach((c, i) => {
+      db!.run('INSERT INTO classrooms (name, note, sort_order) VALUES (?, ?, ?)', [c.name, c.note, (i + 1) * 10])
+    })
   }
 
   // マイグレーション: exam_sessions に exam_type カラムを追加

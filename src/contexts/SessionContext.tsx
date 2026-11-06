@@ -12,7 +12,7 @@ export type Tab = ApplicationType | 'all'
 
 export const TABS: { key: Tab; label: string }[] = [
   { key: 'all',     label: '全件' },
-  { key: 'new',     label: '受講申請' },
+  { key: 'new',     label: '試験申請' },
   { key: 'renewal', label: '更新講習' },
   { key: 'lapsed',  label: '失効再交付' },
 ]

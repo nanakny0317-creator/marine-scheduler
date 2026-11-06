@@ -87,8 +87,31 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
   qualification_type TEXT NOT NULL,
   exam_id            TEXT NOT NULL,
   exam_type          TEXT NOT NULL DEFAULT '学科+実技',
+  gakka_venue        TEXT NOT NULL DEFAULT '',   -- 学科試験会場
+  jitsugi_venue      TEXT NOT NULL DEFAULT '',   -- 実技試験会場
   created_at         TEXT NOT NULL DEFAULT (datetime('now','localtime')),
   updated_at         TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+-- 授業会場マスター（試験申請の講習日程で使う教室）
+CREATE TABLE IF NOT EXISTS classrooms (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  name         TEXT NOT NULL,
+  note         TEXT,
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  updated_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+-- 更新講習日程マスター
+CREATE TABLE IF NOT EXISTS renewal_sessions (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  course_date  TEXT NOT NULL,
+  location     TEXT NOT NULL DEFAULT '',
+  start_time   TEXT NOT NULL DEFAULT '',
+  note         TEXT,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  updated_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
 -- 会場マスター
@@ -163,6 +186,20 @@ CREATE TRIGGER IF NOT EXISTS exam_sessions_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE exam_sessions SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
+  END;
+
+CREATE TRIGGER IF NOT EXISTS classrooms_updated_at
+  AFTER UPDATE ON classrooms
+  FOR EACH ROW
+  BEGIN
+    UPDATE classrooms SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
+  END;
+
+CREATE TRIGGER IF NOT EXISTS renewal_sessions_updated_at
+  AFTER UPDATE ON renewal_sessions
+  FOR EACH ROW
+  BEGIN
+    UPDATE renewal_sessions SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
   END;
 
 CREATE TRIGGER IF NOT EXISTS venues_updated_at

@@ -250,10 +250,10 @@ export default function VenueSettingsPage() {
       {/* ヘッダー */}
       <header className="bg-white/80 backdrop-blur border-b border-lavender-100 px-6 py-4 flex items-center gap-4 shrink-0">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/settings')}
           className="text-lavender-500 hover:text-lavender-700 text-sm font-medium flex items-center gap-1.5 transition"
         >
-          ← ホームへ戻る
+          ← 戻る
         </button>
         <span className="text-lavender-200">|</span>
         <h1 className="text-base font-bold text-gray-700">🏛️ 会場マスター管理</h1>

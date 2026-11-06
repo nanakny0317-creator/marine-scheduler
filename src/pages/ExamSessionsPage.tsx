@@ -6,14 +6,14 @@ import * as XLSX from 'xlsx'
 import type { ExamSession, ExamSessionInput } from '../types'
 import { examSessionsApi } from '../lib/api'
 
-const QUAL_TYPES = ['一級', '二級', '特殊']
+const QUAL_TYPES = ['一級', '二級', '特殊', '湖川']
 
 function fmtDate(d: string) {
   try { return format(new Date(d), 'yyyy年M月d日(E)', { locale: ja }) } catch { return d }
 }
 
 function makeEmpty(): ExamSessionInput {
-  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技' }
+  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技', gakka_venue: '', jitsugi_venue: '' }
 }
 
 // ── 追加/編集フォームモーダル ─────────────────────────────────
@@ -80,6 +80,29 @@ function ExamSessionFormModal({ initial, editId, onSave, onCancel }: FormModalPr
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">学科試験会場</label>
+              <input
+                type="text"
+                value={form.gakka_venue}
+                onChange={e => set('gakka_venue', e.target.value)}
+                placeholder="例：大手前センチュリービル"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">実技試験会場</label>
+              <input
+                type="text"
+                value={form.jitsugi_venue}
+                onChange={e => set('jitsugi_venue', e.target.value)}
+                placeholder="空欄＝学科と同じ"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
+              />
+            </div>
           </div>
 
           <div>
@@ -181,6 +204,7 @@ function ImportPreviewModal({ rows, onConfirm, onCancel }: ImportPreviewModalPro
                 <th className="text-left px-4 py-2.5 font-medium">試験地</th>
                 <th className="text-left px-4 py-2.5 font-medium">資格種別</th>
                 <th className="text-left px-4 py-2.5 font-medium">試験ID</th>
+                <th className="text-left px-4 py-2.5 font-medium">学科／実技会場</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -194,6 +218,10 @@ function ImportPreviewModal({ rows, onConfirm, onCancel }: ImportPreviewModalPro
                     </span>
                   </td>
                   <td className="px-4 py-2.5 font-mono text-gray-600">{r.exam_id || '—'}</td>
+                  <td className="px-4 py-2.5 text-xs text-gray-600">
+                    <div>学科：{r.gakka_venue || '—'}</div>
+                    {r.jitsugi_venue && <div>実技：{r.jitsugi_venue}</div>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -202,7 +230,7 @@ function ImportPreviewModal({ rows, onConfirm, onCancel }: ImportPreviewModalPro
 
         <div className="shrink-0 px-6 py-4 border-t border-lavender-100 flex items-center gap-3 bg-gray-50 rounded-b-2xl">
           <p className="flex-1 text-xs text-gray-400">
-            同じ「試験日・試験地・資格種別」の組み合わせがある場合は試験IDを上書き更新します。
+            同じ「試験日・試験地・資格種別」の組み合わせがある場合は試験ID・会場を上書き更新します。
           </p>
           <button type="button" onClick={onCancel} className="btn-secondary btn-sm">キャンセル</button>
           <button
@@ -267,25 +295,47 @@ export default function ExamSessionsPage() {
 
       let currentDate = ''
       let currentLocation = ''
+      // 1つの「試験日×試験地」ブロック（一級行＋二級行など複数行）。
+      // G列「学科：」「実技：」の行の H列に会場名があり、実技会場は2行目に載っていることが多い
+      let block: { gakka: string; jitsugi: string; items: ExamSessionInput[] } | null = null
+      const flush = () => {
+        if (!block) return
+        for (const it of block.items) parsed.push({ ...it, gakka_venue: block.gakka, jitsugi_venue: block.jitsugi })
+        block = null
+      }
+      const clean = (v: unknown) => String(v ?? '').replace(/[\s　]+/g, ' ').trim()
 
       for (let i = 5; i < rows.length; i++) {
         const row = rows[i]
-        if (!Array.isArray(row) || row.length < 4) continue
+        if (!Array.isArray(row)) continue
 
         const colA = row[0], colB = row[1], colC = row[2], colD = row[3]
+        const colG = clean(row[6]), colH = clean(row[7])
 
-        // A列が40000超の数値 → Excelシリアル日付
-        if (typeof colA === 'number' && colA > 40000) {
-          currentDate = serialToDate(colA)
+        // A列が40000超の数値 → Excelシリアル日付（新しいブロック開始）
+        const isDateRow = typeof colA === 'number' && colA > 40000
+        if (isDateRow) currentDate = serialToDate(colA as number)
+
+        // B列が地名なら更新（「◇ポルトガル語…」「１３時開始」などの注記行は除外）
+        const bText = clean(colB)
+        const isPlace = !!bText && !isSymbol(bText) && !/^[◆◇◎★■□▲△●○※＊＋×]/.test(bText) &&
+          (isDateRow || /[都道府県]/.test(bText))
+        if (isPlace) currentLocation = bText
+
+        if (isDateRow || isPlace) {
+          flush()
+          block = { gakka: '', jitsugi: '', items: [] }
         }
 
-        // B列が実在する地名（記号でない）なら更新
-        if (colB && !isSymbol(colB)) {
-          currentLocation = String(colB).trim()
+        // 学科・実技会場
+        if (block && colH) {
+          if (colG.startsWith('学科')) block.gakka = colH
+          else if (colG.startsWith('実技')) block.jitsugi = colH
         }
 
+        if (row.length < 4) continue
         const qual = colC ? String(colC).trim() : ''
-        if (!['一級', '二級', '特殊'].includes(qual)) continue
+        if (!QUAL_TYPES.includes(qual)) continue
         if (!currentDate || !currentLocation) continue
 
         // D列：数値なら6桁ゼロ埋め、文字列ならそのまま
@@ -298,14 +348,19 @@ export default function ExamSessionsPage() {
         }
         if (!examId) continue
 
-        parsed.push({
+        const item: ExamSessionInput = {
           exam_date: currentDate,
           exam_location: currentLocation,
           qualification_type: qual,
           exam_id: examId,
           exam_type: '学科+実技',
-        })
+          gakka_venue: '',
+          jitsugi_venue: '',
+        }
+        if (block) block.items.push(item)
+        else parsed.push(item)
       }
+      flush()
     }
 
     if (parsed.length > 0) {
@@ -352,7 +407,7 @@ export default function ExamSessionsPage() {
 
         {/* ヘッダー */}
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/')} className="text-gray-400 hover:text-gray-600 text-sm">← 戻る</button>
+          <button onClick={() => navigate('/settings')} className="text-gray-400 hover:text-gray-600 text-sm">← 戻る</button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-700">試験日程管理</h1>
             <p className="text-xs text-gray-400 mt-0.5">試験IDの事前登録・Excelインポート</p>
@@ -417,7 +472,16 @@ export default function ExamSessionsPage() {
                       <span className="text-xs font-medium px-2 py-0.5 rounded border bg-sky-50 text-sky-600 border-sky-200 shrink-0">
                         {s.exam_type}
                       </span>
-                      <span className="text-sm text-gray-700 flex-1">{s.exam_location}</span>
+                      <span className="text-sm text-gray-700 flex-1">
+                        {s.exam_location}
+                        {(s.gakka_venue || s.jitsugi_venue) && (
+                          <span className="block text-xs text-gray-400">
+                            {s.gakka_venue && `学科：${s.gakka_venue}`}
+                            {s.gakka_venue && s.jitsugi_venue && '　'}
+                            {s.jitsugi_venue && `実技：${s.jitsugi_venue}`}
+                          </span>
+                        )}
+                      </span>
                       <span className="font-mono text-sm text-gray-600 bg-gray-50 border border-gray-100 rounded px-2 py-0.5">
                         {s.exam_id}
                       </span>
@@ -449,7 +513,7 @@ export default function ExamSessionsPage() {
       {formOpen && (
         <ExamSessionFormModal
           initial={editTarget
-            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id, exam_type: editTarget.exam_type }
+            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id, exam_type: editTarget.exam_type, gakka_venue: editTarget.gakka_venue, jitsugi_venue: editTarget.jitsugi_venue }
             : makeEmpty()
           }
           editId={editTarget?.id ?? null}

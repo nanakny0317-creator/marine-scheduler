@@ -170,17 +170,10 @@ export default function HomePage() {
       <div className="flex gap-5 flex-wrap justify-center">
         <HomeButton
           icon="🏛️"
-          title="会場管理"
-          desc={"会場マスターの\n追加・編集"}
+          title="会場・日程の設定"
+          desc={"試験日程・講習日程\n会場の登録"}
           color="sky"
-          onClick={() => navigate('/venues')}
-        />
-        <HomeButton
-          icon="📋"
-          title="試験日程管理"
-          desc={"試験IDの登録・\nExcelインポート"}
-          color="mint"
-          onClick={() => navigate('/exam-sessions')}
+          onClick={() => navigate('/settings')}
         />
         <HomeButton
           icon="🎯"

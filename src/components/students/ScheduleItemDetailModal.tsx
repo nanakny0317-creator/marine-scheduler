@@ -10,7 +10,7 @@ import { printForm, type FieldDef } from '../../lib/formPrint'
 import { buildFormData } from '../../lib/formFieldMap'
 
 const TYPE_LABEL: Record<string, string> = {
-  new: '受講申請', renewal: '更新講習', lapsed: '失効再交付',
+  new: '試験申請', renewal: '更新講習', lapsed: '失効再交付',
 }
 const TYPE_CLASS: Record<string, string> = {
   new:     'bg-mint-50 text-mint-600 border-mint-200',
@@ -66,7 +66,7 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
   const examLocation  = typeof extra.exam_location   === 'string' ? extra.exam_location   : ''
   const examStartTime = typeof extra.exam_start_time === 'string' ? extra.exam_start_time : ''
 
-  // 受講申請：course_sessions（新形式）または旧形式から復元
+  // 試験申請：course_sessions（新形式）または旧形式から復元
   const courseSessions: CourseSessionData[] = (() => {
     if (!isNew) return []
     const rawSessions = extra.course_sessions
@@ -105,10 +105,10 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
         </span>
       </div>
 
-      {/* メニュー（受講申請のみ） */}
+      {/* メニュー（試験申請のみ） */}
       {isNew && <Row label="メニュー" value={dash(enrollment.menu)} />}
 
-      {/* 受講申請：日程一覧（新形式） */}
+      {/* 試験申請：日程一覧（新形式） */}
       {isNew && (
         <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50">
           <span className="text-gray-400 shrink-0 pt-0.5">講習日程</span>
@@ -140,7 +140,7 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
         </>
       )}
 
-      {/* 受講申請のみ：試験情報 */}
+      {/* 試験申請のみ：試験情報 */}
       {isNew && (
         <>
           {(extra.exam_qual_type as string | undefined) && (

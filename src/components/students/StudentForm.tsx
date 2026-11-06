@@ -7,15 +7,15 @@
 import { useEffect, useRef, useState } from 'react'
 import type {
   Student, StudentInput, DuplicateCheckResult,
-  ApplicationType, ExamSession, ExamResult,
+  ExamSession, ExamResult,
 } from '../../types'
 import {
   studentsApi, pendingReviewsApi, fetchAddressByZip,
   enrollmentsApi, examRecordsApi, examSessionsApi,
 } from '../../lib/api'
-import { NATIONALITIES } from '../../data/masterData'
 import DuplicateResolutionModal from './DuplicateResolutionModal'
 import Section from '../FormSection'
+import { useEnrollmentForm } from './EnrollmentFormModal'
 
 // コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
 interface FieldProps {
@@ -111,16 +111,6 @@ interface Props {
   onCancel: () => void
 }
 
-// ── 申込初期値 ───────────────────────────────────────────────────
-const EMPTY_ENROLLMENT = {
-  application_type: 'new' as ApplicationType,
-  menu: '',
-  course_date: '',
-  venue: '',
-  domicile: '',
-  nationality: '',
-}
-
 // ── 試験記録初期値 ────────────────────────────────────────────────
 const EMPTY_EXAM = {
   qualification_type: '二級',
@@ -144,11 +134,6 @@ const ADDR_KEYS = {
   mail: { zip: 'mail_postal_code', pref: 'mail_prefecture', city: 'mail_city', a1: 'mail_address1', a2: 'mail_address2' },
 } as const satisfies Record<string, Record<string, keyof StudentInput>>
 const MAIL_KEYS = Object.values(ADDR_KEYS.mail)
-const APP_TYPES: { value: ApplicationType; label: string }[] = [
-  { value: 'new',     label: '受講申請' },
-  { value: 'renewal', label: '更新講習' },
-  { value: 'lapsed',  label: '失効再交付' },
-]
 const RESULTS: ExamResult[] = ['合', '免', '否', '不']
 
 export default function StudentForm({ student, onSaved, onCancel }: Props) {
@@ -170,7 +155,9 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
 
   // ── 新規時のオプションセクション ──
   const [showEnrollment, setShowEnrollment] = useState(false)
-  const [enrollmentForm, setEnrollmentForm] = useState({ ...EMPTY_ENROLLMENT })
+  // 申込入力欄はスケジュールからの申込編集画面と共通
+  const enrollmentForm = useEnrollmentForm(null)
+  const [enrollmentError, setEnrollmentError] = useState('')
   const [showExam, setShowExam] = useState(false)
   const [examForm, setExamForm] = useState({ ...EMPTY_EXAM })
   const [examSessions, setExamSessions] = useState<ExamSession[]>([])
@@ -185,9 +172,6 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     }
   }
 
-  const setE = <K extends keyof typeof EMPTY_ENROLLMENT>(k: K, v: (typeof EMPTY_ENROLLMENT)[K]) =>
-    setEnrollmentForm(f => ({ ...f, [k]: v }))
-
   const setX = <K extends keyof typeof EMPTY_EXAM>(k: K, v: (typeof EMPTY_EXAM)[K]) =>
     setExamForm(f => ({ ...f, [k]: v }))
 
@@ -198,20 +182,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   // 学生保存後に申込・試験記録を追加作成
   const saveOptional = async (studentId: number) => {
     if (showEnrollment) {
-      const extra: Record<string, unknown> = {
-        application_type: enrollmentForm.application_type,
-      }
-      if (enrollmentForm.domicile)    extra.domicile    = enrollmentForm.domicile
-      if (enrollmentForm.nationality) extra.nationality = enrollmentForm.nationality
-      await enrollmentsApi.create({
-        student_id:  studentId,
-        menu:        enrollmentForm.application_type === 'new' ? enrollmentForm.menu : '',
-        course_date: enrollmentForm.course_date || null,
-        venue:       enrollmentForm.venue || null,
-        status:      'pending',
-        extra_json:  JSON.stringify(extra),
-        note:        null,
-      })
+      await enrollmentsApi.create(enrollmentForm.buildInput(studentId))
     }
     if (showExam) {
       await examRecordsApi.create({
@@ -308,6 +279,11 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
   // 保存（重複なし or 確認済み）
   const handleSubmit = async () => {
     if (!validate()) return
+    if (showEnrollment) {
+      const msg = enrollmentForm.validate()
+      setEnrollmentError(msg ?? '')
+      if (msg) return
+    }
     setSaving(true)
 
     const dup = await studentsApi.checkDuplicate(form, student?.id)
@@ -620,91 +596,11 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
                   <span className="text-gray-400 text-xs">{showEnrollment ? '▲ 閉じる' : '▼ 開く'}</span>
                 </button>
                 {showEnrollment && (
-                  <div className="px-4 pb-4 space-y-3 border-t border-lavender-100 pt-3 bg-lavender-50/20">
-                    {/* 申込種別 */}
-                    <div>
-                      <label className="field-label">申込種別</label>
-                      <div className="flex gap-2">
-                        {APP_TYPES.map(o => (
-                          <button
-                            key={o.value}
-                            type="button"
-                            onClick={() => setE('application_type', o.value)}
-                            className={`flex-1 py-1.5 rounded-lg border text-sm font-medium transition ${
-                              enrollmentForm.application_type === o.value
-                                ? 'bg-lavender-400 text-white border-lavender-400'
-                                : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
-                            }`}
-                          >
-                            {o.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* メニュー（受講申請のみ） */}
-                    {enrollmentForm.application_type === 'new' && (
-                      <div>
-                        <label className="field-label">メニュー</label>
-                        <input
-                          type="text"
-                          value={enrollmentForm.menu}
-                          onChange={e => setE('menu', e.target.value)}
-                          placeholder="例：2級小型船舶操縦士"
-                          className="field-input"
-                        />
-                      </div>
+                  <div className="px-4 pb-4 space-y-3 border-t border-lavender-100 pt-4">
+                    {enrollmentError && (
+                      <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{enrollmentError}</p>
                     )}
-
-                    {/* 講習日・会場 */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="field-label">講習日</label>
-                        <input
-                          type="date"
-                          value={enrollmentForm.course_date}
-                          onChange={e => setE('course_date', e.target.value)}
-                          className="field-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="field-label">会場</label>
-                        <input
-                          type="text"
-                          value={enrollmentForm.venue}
-                          onChange={e => setE('venue', e.target.value)}
-                          placeholder="例：大阪会場"
-                          className="field-input"
-                        />
-                      </div>
-                    </div>
-
-                    {/* 本籍・国籍 */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="field-label">本籍地（都道府県）</label>
-                        <input
-                          type="text"
-                          value={enrollmentForm.domicile}
-                          onChange={e => setE('domicile', e.target.value)}
-                          placeholder="例：大阪府"
-                          className="field-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="field-label">国籍</label>
-                        <select
-                          value={enrollmentForm.nationality}
-                          onChange={e => setE('nationality', e.target.value)}
-                          className="field-select"
-                        >
-                          <option value="">日本（省略可）</option>
-                          {NATIONALITIES.filter(n => n.code !== 1).map(n => (
-                            <option key={n.code} value={n.label}>{n.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                    {enrollmentForm.fields}
                   </div>
                 )}
               </div>

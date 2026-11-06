@@ -517,7 +517,7 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
 
           {/* ── Step 3: プレビュー ── */}
           {step === 'preview' && mode === 'mailwise' && (() => {
-            const typeLabel: Record<ApplicationType, string> = { new: '受講申請', renewal: '更新講習', lapsed: '失効再交付' }
+            const typeLabel: Record<ApplicationType, string> = { new: '試験申請', renewal: '更新講習', lapsed: '失効再交付' }
             const typeCounts = { new: 0, renewal: 0, lapsed: 0 }
             parsedRows.forEach((r) => typeCounts[r.applicationType]++)
             const tabs: { key: ApplicationType | 'all'; label: string; count: number }[] = [

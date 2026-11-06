@@ -29,7 +29,7 @@ function courseTimeFromExtra(e: Enrollment): string {
 
 
 const TYPE_LABEL: Record<string, string> = {
-  new: '受講申請',
+  new: '試験申請',
   renewal: '更新講習',
   lapsed: '失効再交付',
 }
@@ -37,9 +37,9 @@ const TYPE_LABEL: Record<string, string> = {
 function appTypeLabel(e: Enrollment): string {
   try {
     const t = JSON.parse(e.extra_json).application_type
-    return TYPE_LABEL[t as string] ?? '受講申請'
+    return TYPE_LABEL[t as string] ?? '試験申請'
   } catch {
-    return '受講申請'
+    return '試験申請'
   }
 }
 

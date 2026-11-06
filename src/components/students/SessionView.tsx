@@ -12,7 +12,7 @@ import { useSession, TABS } from '../../contexts/SessionContext'
 import type { SessionItem } from '../../contexts/SessionContext'
 
 const TYPE_LABEL: Record<string, string> = {
-  new: '受講申請', renewal: '更新講習', lapsed: '失効再交付',
+  new: '試験申請', renewal: '更新講習', lapsed: '失効再交付',
 }
 const TYPE_CLASS: Record<string, string> = {
   new:     'bg-mint-50 text-mint-600',
@@ -227,7 +227,7 @@ export default function SessionView() {
                     )}
                   </div>
 
-                  {/* メニュー（受講申請のみ） */}
+                  {/* メニュー（試験申請のみ） */}
                   <span className="text-xs text-gray-400 truncate flex-1 hidden sm:block">
                     {appType === 'new' ? enrollment.menu : ''}
                   </span>
