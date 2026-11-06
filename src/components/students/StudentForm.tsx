@@ -16,6 +16,7 @@ import {
 import DuplicateResolutionModal from './DuplicateResolutionModal'
 import Section from '../FormSection'
 import { useEnrollmentForm } from './EnrollmentFormModal'
+import { LICENSE_CLASSES, LICENSE_OPTIONS, OLD_LICENSE_CLASSES } from '../../data/masterData'
 
 // コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
 interface FieldProps {
@@ -151,6 +152,8 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     !!student && MAIL_KEYS.some((k) => (student[k] ?? '').trim() !== '')
   )
   const [addrTab, setAddrTab] = useState<'main' | 'mail'>('main')
+  // 旧免許の選択欄：旧免許が入っているときだけ最初から開く
+  const [showOldLicense, setShowOldLicense] = useState(!!student?.license_class?.startsWith('旧'))
   const firstRef = useRef<HTMLInputElement>(null)
 
   // ── 新規時のオプションセクション ──
@@ -219,6 +222,19 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     setForm((f) => ({ ...f, [k]: v }))
     setErrors((e) => ({ ...e, [k]: undefined }))
   }
+
+  // 現有免許：種類（一級/二級/湖川/旧免許）は1つだけ、追加区分は複数選択
+  const licenseOpts = (form.license_options ?? '').split(',').map(x => x.trim()).filter(Boolean)
+  const toggleLicenseClass = (c: string) => set('license_class', form.license_class === c ? null : c)
+  const toggleLicenseOption = (o: string) => {
+    const next = licenseOpts.includes(o) ? licenseOpts.filter(x => x !== o) : [...licenseOpts, o]
+    // 表示順を一定に保つ
+    set('license_options', LICENSE_OPTIONS.filter(x => next.includes(x)).join(',') || null)
+  }
+  const chipCls = (on: boolean) =>
+    `px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
+      on ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
+    }`
 
   // 郵便番号 → 住所（申請住所 / 送付先住所 共通）
   const handleZipBlur = async (kind: 'main' | 'mail' = 'main') => {
@@ -317,7 +333,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     try {
       let saved
       if (action === 'merge' && targetId) {
-        saved = await studentsApi.update(targetId, payload())
+        saved = await studentsApi.merge(targetId, payload())  // 空欄の項目は既存の値を引き継ぐ
       } else if (action === 'defer') {
         const notePrefix = '【要確認】重複の可能性あり'
         saved = await studentsApi.create({
@@ -409,6 +425,23 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
 
             {/* ① 本人情報 */}
             <Section step="1" title="本人情報" hint="* は必須">
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-dashed border-lavender-100">
+                <div>
+                  <label className="field-label">
+                    受講者番号
+                    <span className="ml-1 text-gray-400 font-normal text-[11px]">（自動採番）</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.student_code ?? ''}
+                    onChange={(e) => set('student_code', e.target.value || null)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="000001"
+                    maxLength={20}
+                    className="field-input bg-gray-50"
+                  />
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="姓" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
                 <Field label="名" required placeholder="太郎" {...f('first_name')} />
@@ -534,37 +567,63 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
               <Field label="メールアドレス" type="email" placeholder="taro@example.com" {...f('email')} />
             </Section>
 
-            {/* ④ 管理番号 */}
-            <Section step="4" title="管理番号">
+            {/* ④ 現有免許情報 */}
+            <Section step="4" title="現有免許情報" hint="お持ちの場合">
+              <Field label="免許番号" placeholder="例：0300160004901" {...f('license_number')} />
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">
-                    受講者番号
-                    <span className="ml-1 text-gray-400 font-normal text-[11px]">（自動採番）</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.student_code ?? ''}
-                    onChange={(e) => set('student_code', e.target.value || null)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="000001"
-                    maxLength={20}
-                    className="field-input bg-gray-50"
-                  />
+                <Field label="有効期限" type="date" {...f('license_expiry')} />
+                <Field label="交付日" type="date" {...f('license_issue_date')} />
+              </div>
+              <div className="pt-3 border-t border-dashed border-lavender-100 space-y-2">
+                <label className="field-label">免許の種類</label>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {LICENSE_CLASSES.map(c => (
+                    <button key={c} type="button" tabIndex={-1} onClick={() => toggleLicenseClass(c)} className={chipCls(form.license_class === c)}>
+                      {c}
+                    </button>
+                  ))}
+                  <span className="mx-1 text-gray-300">＋</span>
+                  {LICENSE_OPTIONS.map(o => (
+                    <button key={o} type="button" tabIndex={-1} onClick={() => toggleLicenseOption(o)} className={chipCls(licenseOpts.includes(o))}>
+                      {o}
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <label className="field-label">
-                    免許番号
-                    <span className="ml-1 text-gray-400 font-normal text-[11px]">（お持ちの場合）</span>
-                  </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none w-fit">
                   <input
-                    type="text"
-                    value={form.license_number ?? ''}
-                    onChange={(e) => set('license_number', e.target.value || null)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="例：0300160004901"
-                    className="field-input"
+                    type="checkbox"
+                    checked={!!form.license_equipment_limited}
+                    onChange={(e) => setForm((fm) => ({ ...fm, license_equipment_limited: e.target.checked }))}
+                    className="rounded"
+                    tabIndex={-1}
                   />
+                  設備限定
+                </label>
+                {/* 旧免許（普段は閉じておく） */}
+                <div className="rounded-lg border border-gray-100">
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowOldLicense(v => !v)}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
+                  >
+                    <span>
+                      旧免許の場合
+                      {form.license_class?.startsWith('旧') && (
+                        <span className="ml-2 text-lavender-600 font-semibold">{form.license_class.replace(/^旧/, '')} を選択中</span>
+                      )}
+                    </span>
+                    <span className="text-gray-400">{showOldLicense ? '▲' : '▼'}</span>
+                  </button>
+                  {showOldLicense && (
+                    <div className="flex flex-wrap gap-1.5 px-3 pb-2.5 pt-1">
+                      {OLD_LICENSE_CLASSES.map(c => (
+                        <button key={c} type="button" tabIndex={-1} onClick={() => toggleLicenseClass(c)} className={chipCls(form.license_class === c)}>
+                          {c.replace(/^旧/, '')}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </Section>

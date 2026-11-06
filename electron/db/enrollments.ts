@@ -1,5 +1,5 @@
 import { query, queryOne, run, transaction, Row } from './index'
-import { createStudent, updateStudent } from './students'
+import { createStudent, mergeIntoStudent, toStudent } from './students'
 import { createPendingReview } from './pending_reviews'
 import type { Enrollment, EnrollmentInput, Student, StudentInput, DupImportRow } from '../../src/types'
 
@@ -127,7 +127,7 @@ export function importWithDupHandling(rows: DupImportRow[]): { inserted: number;
     try {
       if (dupAction === 'merge' && mergeTargetId) {
         // 既存会員を更新して申込を紐付け
-        updateStudent(mergeTargetId, student)
+        mergeIntoStudent(mergeTargetId, student)  // 空欄の項目は既存の値を引き継ぐ
         createEnrollment({ ...enrollment, student_id: mergeTargetId })
       } else if (dupAction === 'defer') {
         // 新規作成＋備考に要確認記載＋pending_review
@@ -188,11 +188,14 @@ export function listAllWithStudents(
        s.id          AS s_id,
        s.student_code,
        s.license_number,
+       s.license_issue_date, s.license_expiry, s.license_class,
+       s.license_options,    s.license_equipment_limited,
        s.last_name,  s.first_name,
        s.last_kana,  s.first_kana,
        s.birth_date, s.gender,
        s.postal_code, s.prefecture, s.city,
        s.address1,   s.address2,
+       s.mail_postal_code, s.mail_prefecture, s.mail_city, s.mail_address1, s.mail_address2,
        s.phone,      s.mobile,     s.email,
        s.note        AS s_note,
        s.created_at  AS s_created_at,
@@ -221,27 +224,13 @@ export function listAllWithStudents(
       created_at:  String(row.e_created_at ?? ''),
       updated_at:  String(row.e_updated_at ?? ''),
     } satisfies Enrollment,
-    student: {
-      id:           Number(row.s_id),
-      student_code:   row.student_code   ? String(row.student_code)   : null,
-      license_number: row.license_number ? String(row.license_number) : null,
-      last_name:    String(row.last_name  ?? ''),
-      first_name:  String(row.first_name ?? ''),
-      last_kana:   row.last_kana  ? String(row.last_kana)  : null,
-      first_kana:  row.first_kana ? String(row.first_kana) : null,
-      birth_date:  row.birth_date ? String(row.birth_date) : null,
-      gender:      (row.gender as Student['gender']) ?? null,
-      postal_code: row.postal_code ? String(row.postal_code) : null,
-      prefecture:  row.prefecture  ? String(row.prefecture)  : null,
-      city:        row.city        ? String(row.city)        : null,
-      address1:    row.address1    ? String(row.address1)    : null,
-      address2:    row.address2    ? String(row.address2)    : null,
-      phone:       row.phone  ? String(row.phone)  : null,
-      mobile:      row.mobile ? String(row.mobile) : null,
-      email:       row.email  ? String(row.email)  : null,
-      note:        row.s_note ? String(row.s_note) : null,
-      created_at:  String(row.s_created_at ?? ''),
-      updated_at:  String(row.s_updated_at ?? ''),
-    } satisfies Student,
+    // 受講者は students.ts と同じ変換を使う（送付先住所・現有免許も含めて全項目）
+    student: toStudent({
+      ...row,
+      id:         row.s_id,
+      note:       row.s_note,
+      created_at: row.s_created_at,
+      updated_at: row.s_updated_at,
+    }),
   }))
 }

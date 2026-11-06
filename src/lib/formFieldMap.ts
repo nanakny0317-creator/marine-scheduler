@@ -5,6 +5,7 @@
  * フォームのキーは public/form-layouts/*.json の "key" フィールドと対応している。
  */
 import type { Student, Enrollment, ExamSession } from '../types'
+import { licenseSummary } from '../data/masterData'
 
 export type FormData = Record<string, string>
 
@@ -65,6 +66,12 @@ export function buildFormData(
 
   const appType = (extra.application_type as string) ?? enrollment.menu
 
+  // 現有免許
+  const licExp   = parseBirthDate(student.license_expiry ?? null)      // 和暦変換を流用
+  const licIssue = parseBirthDate(student.license_issue_date ?? null)
+  const licOpts  = (student.license_options ?? '').split(',').map(x => x.trim())
+  const flag = (b: boolean) => (b ? 'true' : '')
+
   return {
     // ── 氏名 ──
     last_name:    student.last_name  ?? '',
@@ -95,6 +102,29 @@ export function buildFormData(
 
     // ── 免許番号 ──
     license_number: student.license_number ?? '',
+    // 帳票レイアウト（PDFから変換）側のキー名でもそのまま印字できるように
+    '免許証番号':   student.license_number ?? '',
+    '免許':         student.license_number ?? '',
+
+    // ── 現有免許 ──
+    current_license:           licenseSummary(student),
+    license_class:             student.license_class ?? '',
+    license_1kairi:            flag(licOpts.includes('限定1海里')),
+    license_tokushu:           flag(licOpts.includes('特殊')),
+    license_tokutei:           flag(licOpts.includes('特定')),
+    license_equipment_limited: flag(!!student.license_equipment_limited),
+    license_expiry:            student.license_expiry ?? '',
+    license_expiry_year:       licExp.year,
+    license_expiry_month:      licExp.month,
+    license_expiry_day:        licExp.day,
+    license_expiry_era:        licExp.era,
+    license_expiry_era_year:   licExp.eraYear,
+    license_issue_date:        student.license_issue_date ?? '',
+    license_issue_year:        licIssue.year,
+    license_issue_month:       licIssue.month,
+    license_issue_day:         licIssue.day,
+    license_issue_era:         licIssue.era,
+    license_issue_era_year:    licIssue.eraYear,
 
     // ── 本籍・国籍 ──
     domicile_pref: (extra.domicile as string) ?? '',

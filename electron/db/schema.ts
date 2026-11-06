@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS students (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   student_code   TEXT,          -- 受講者番号（6桁ゼロ埋め連番。旧システムの番号も入れられる）
   license_number TEXT,          -- 操縦免許証番号
+  license_issue_date TEXT,      -- 現有免許：交付日
+  license_expiry     TEXT,      -- 現有免許：有効期限
+  license_class      TEXT,      -- 現有免許：種類（一級/二級/湖川、旧免許は 旧一級〜旧五級/旧湖川）
+  license_options    TEXT,      -- 現有免許：追加区分（限定1海里,特殊,特定 をカンマ区切り）
+  license_equipment_limited INTEGER NOT NULL DEFAULT 0,  -- 現有免許：設備限定
   last_name      TEXT NOT NULL,
   first_name   TEXT NOT NULL,
   last_kana   TEXT,

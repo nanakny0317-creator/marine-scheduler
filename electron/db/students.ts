@@ -16,11 +16,16 @@ function toKatakana(str: string | null): string | null {
   })
 }
 
-function toStudent(row: Row): Student {
+export function toStudent(row: Row): Student {
   return {
     id: Number(row.id),
     student_code: row.student_code ? String(row.student_code) : null,
     license_number: row.license_number ? String(row.license_number) : null,
+    license_issue_date: row.license_issue_date ? String(row.license_issue_date) : null,
+    license_expiry: row.license_expiry ? String(row.license_expiry) : null,
+    license_class: row.license_class ? String(row.license_class) : null,
+    license_options: row.license_options ? String(row.license_options) : null,
+    license_equipment_limited: Number(row.license_equipment_limited ?? 0) === 1,
     last_name: String(row.last_name ?? ''),
     first_name: String(row.first_name ?? ''),
     last_kana: row.last_kana ? String(row.last_kana) : null,
@@ -52,6 +57,15 @@ function mailParams(input: StudentInput): (string | null)[] {
     input.mail_postal_code, input.mail_prefecture, input.mail_city,
     input.mail_address1, input.mail_address2,
   ].map((v) => (v && v.trim()) ? v.trim() : null)
+}
+
+// 現有免許パラメータ（空文字は NULL に揃える）
+function licenseParams(input: StudentInput): (string | number | null)[] {
+  const t = (v: string | null | undefined) => (v && v.trim()) ? v.trim() : null
+  return [
+    t(input.license_issue_date), t(input.license_expiry), t(input.license_class), t(input.license_options),
+    input.license_equipment_limited ? 1 : 0,
+  ]
 }
 
 // -------- 次の受講者番号を生成（000001 〜） --------
@@ -121,8 +135,9 @@ export function createStudent(input: StudentInput): Student {
         postal_code, prefecture, city, address1, address2,
         mail_postal_code, mail_prefecture, mail_city, mail_address1, mail_address2,
         phone, mobile, email, note,
+        license_issue_date, license_expiry, license_class, license_options, license_equipment_limited,
         created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
              datetime('now','localtime'), datetime('now','localtime'))`,
     [
       code,
@@ -135,6 +150,7 @@ export function createStudent(input: StudentInput): Student {
       ...mailParams(processedInput),
       processedInput.phone ?? null, processedInput.mobile ?? null,
       processedInput.email ?? null, processedInput.note ?? null,
+      ...licenseParams(processedInput),
     ]
   )
   return getStudent(id)!
@@ -153,6 +169,7 @@ export function updateStudent(id: number, input: StudentInput): Student {
        postal_code=?, prefecture=?, city=?, address1=?, address2=?,
        mail_postal_code=?, mail_prefecture=?, mail_city=?, mail_address1=?, mail_address2=?,
        phone=?, mobile=?, email=?, note=?,
+       license_issue_date=?, license_expiry=?, license_class=?, license_options=?, license_equipment_limited=?,
        updated_at=datetime('now','localtime')
      WHERE id=?`,
     [
@@ -166,10 +183,69 @@ export function updateStudent(id: number, input: StudentInput): Student {
       ...mailParams(processedInput),
       processedInput.phone ?? null, processedInput.mobile ?? null,
       processedInput.email ?? null, processedInput.note ?? null,
+      ...licenseParams(processedInput),
       id,
     ]
   )
   return getStudent(id)!
+}
+
+// -------- 重複の統合 --------
+function isBlank(v: unknown): boolean {
+  return v === null || v === undefined || v === false || (typeof v === 'string' && v.trim() === '')
+}
+
+/**
+ * 2人分の受講者情報を1つにまとめる。
+ * primary の値を優先し、primary が空欄の項目は secondary の値を引き継ぐ。
+ * - 受講者番号は既存（keepCodeFrom）の番号を残す
+ * - 備考は両方あれば両方残す
+ */
+export function combineStudents(
+  primary: StudentInput, secondary: StudentInput, keepCodeFrom: StudentInput,
+): StudentInput {
+  const keys = new Set([...Object.keys(secondary), ...Object.keys(primary)]) as Set<keyof StudentInput>
+  const out: Record<string, unknown> = {}
+  for (const k of keys) {
+    out[k] = isBlank(primary[k]) ? secondary[k] : primary[k]
+  }
+  // 住所はまとまりで扱う：primary 側に住所が入っていれば、建物名などが空でも primary の住所一式を採用
+  // （新しい住所に古い建物名が混ざるのを防ぐ）
+  const ADDRESS_GROUPS: (keyof StudentInput)[][] = [
+    ['postal_code', 'prefecture', 'city', 'address1', 'address2'],
+    ['mail_postal_code', 'mail_prefecture', 'mail_city', 'mail_address1', 'mail_address2'],
+  ]
+  for (const g of ADDRESS_GROUPS) {
+    if (g.some(k => !isBlank(primary[k]))) for (const k of g) out[k] = primary[k] ?? null
+  }
+  out.student_code = keepCodeFrom.student_code?.trim() ? keepCodeFrom.student_code
+    : (primary.student_code || secondary.student_code || null)
+  const notes = [secondary.note, primary.note].map(n => n?.trim()).filter((n): n is string => !!n)
+  out.note = [...new Set(notes)].join('\n') || null
+  return out as unknown as StudentInput
+}
+
+function toInput(s: Student): StudentInput {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, created_at, updated_at, ...rest } = s
+  return rest
+}
+
+/** 既存の受講者に新しい情報を統合する（新しい情報が空欄の項目は既存の値を引き継ぐ） */
+export function mergeIntoStudent(targetId: number, incoming: StudentInput): Student {
+  const existing = getStudent(targetId)
+  if (!existing) throw new Error('統合先の受講者が見つかりません')
+  const ex = toInput(existing)
+  return updateStudent(targetId, combineStudents(incoming, ex, ex))
+}
+
+/** 既存の2人を統合する（残す人の値を優先し、空欄は消す人の値で埋める） */
+export function mergeStudentRecords(keepId: number, removeId: number): void {
+  const keep = getStudent(keepId)
+  const remove = getStudent(removeId)
+  if (!keep || !remove) return
+  const k = toInput(keep)
+  updateStudent(keepId, combineStudents(k, toInput(remove), k))
 }
 
 // -------- 削除 --------

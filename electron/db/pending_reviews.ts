@@ -1,4 +1,5 @@
 import { query, queryOne, run, Row } from './index'
+import { mergeStudentRecords } from './students'
 import type {
   PendingReview,
   PendingReviewInput,
@@ -107,6 +108,9 @@ export function mergePendingReview(id: number, keepStudentId: number): boolean {
   const sId = Number(pr.student_id)
   const cId = Number(pr.candidate_id)
   const deleteId = keepStudentId === sId ? cId : sId
+
+  // 残す人の空欄を、消す人の情報で埋める
+  mergeStudentRecords(keepStudentId, deleteId)
 
   // Transfer enrollments to kept student
   run('UPDATE enrollments SET student_id=? WHERE student_id=?', [keepStudentId, deleteId])

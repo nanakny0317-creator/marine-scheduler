@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { ApplicationType, Classroom, Enrollment, EnrollmentInput, ExamSession, RenewalSession } from '../../types'
 import { classroomsApi, enrollmentsApi, examSessionsApi, renewalSessionsApi } from '../../lib/api'
-import { NATIONALITIES } from '../../data/masterData'
+import { NATIONALITIES, PREFECTURES } from '../../data/masterData'
 import Section from '../FormSection'
 import VenueSelect from '../VenueSelect'
 
@@ -713,13 +713,17 @@ export function useEnrollmentForm(enrollment: Enrollment | null) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="field-label">本籍地（都道府県）</label>
-              <input
-                type="text"
+              <select
                 value={domicile}
                 onChange={e => setDomicile(e.target.value)}
-                className="field-input"
-                placeholder="例：大阪府"
-              />
+                className="field-select"
+              >
+                <option value="">-- 選択 --</option>
+                {domicile && !PREFECTURES.includes(domicile) && (
+                  <option value={domicile}>{domicile}（未登録）</option>
+                )}
+                {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
             </div>
             <div>
               <label className="field-label">国籍</label>
@@ -729,6 +733,9 @@ export function useEnrollmentForm(enrollment: Enrollment | null) {
                 className="field-select"
               >
                 <option value="">日本（省略可）</option>
+                {nationality && !NATIONALITIES.some(n => n.label === nationality) && (
+                  <option value={nationality}>{nationality}（未登録）</option>
+                )}
                 {NATIONALITIES.filter(n => n.code !== 1).map(n => (
                   <option key={n.code} value={n.label}>{n.label}</option>
                 ))}

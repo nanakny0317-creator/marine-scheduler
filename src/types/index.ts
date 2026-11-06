@@ -3,6 +3,12 @@ export interface Student {
   id: number
   student_code: string | null
   license_number: string | null
+  // 現有免許情報
+  license_issue_date?: string | null       // 交付日
+  license_expiry?: string | null           // 有効期限
+  license_class?: string | null            // 種類：一級/二級/湖川、旧免許は 旧一級〜旧五級/旧湖川
+  license_options?: string | null          // 追加区分：限定1海里,特殊,特定（カンマ区切り）
+  license_equipment_limited?: boolean      // 設備限定
   last_name: string
   first_name: string
   last_kana: string | null
@@ -274,6 +280,8 @@ export interface ElectronAPI {
     get: (id: number) => Promise<Student | null>
     create: (input: StudentInput) => Promise<Student>
     update: (id: number, input: StudentInput) => Promise<Student>
+    /** 重複の統合：空欄の項目は既存の値を引き継ぐ */
+    merge: (id: number, input: StudentInput) => Promise<Student>
     delete: (id: number) => Promise<boolean>
     checkDuplicate: (input: StudentInput, excludeId?: number) => Promise<DuplicateCheckResult>
     import: (rows: StudentInput[]) => Promise<{ inserted: number; skipped: number }>

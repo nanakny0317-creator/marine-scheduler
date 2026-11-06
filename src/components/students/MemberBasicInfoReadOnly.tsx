@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Student } from '../../types'
+import { licenseSummary } from '../../data/masterData'
 
 /** DB の日付文字列をローカル日付として解釈（UTC ずれ防止） */
 function parseLocalYmd(s: string): Date | null {
@@ -106,7 +107,6 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
         </h3>
         <div className="rounded-xl border border-lavender-100 bg-lavender-50/30 px-4 py-1">
           <Row label="受講者番号" value={dash(student.student_code)} />
-          <Row label="免許番号" value={dash(student.license_number)} />
           <Row label="氏名" value={`${student.last_name} ${student.first_name}`} />
           <Row
             label="フリガナ"
@@ -117,6 +117,18 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
                 .join(' ') || '—'
             }
           />
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-xs font-semibold text-lavender-400 uppercase tracking-wide mb-2">
+          現有免許
+        </h3>
+        <div className="rounded-xl border border-lavender-100 px-4 py-1">
+          <Row label="免許番号" value={dash(student.license_number)} />
+          <Row label="有効期限" value={dash(student.license_expiry ?? null)} />
+          <Row label="交付日" value={dash(student.license_issue_date ?? null)} />
+          <Row label="種類" value={dash(licenseSummary(student) || null)} />
         </div>
       </section>
 

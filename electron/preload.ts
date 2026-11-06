@@ -6,6 +6,7 @@ const api = {
     get: (id: number) => ipcRenderer.invoke('students:get', id),
     create: (input: unknown) => ipcRenderer.invoke('students:create', input),
     update: (id: number, input: unknown) => ipcRenderer.invoke('students:update', id, input),
+    merge: (id: number, input: unknown) => ipcRenderer.invoke('students:merge', id, input),
     delete: (id: number) => ipcRenderer.invoke('students:delete', id),
     checkDuplicate: (input: unknown, excludeId?: number) =>
       ipcRenderer.invoke('students:checkDuplicate', input, excludeId),

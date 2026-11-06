@@ -64,6 +64,17 @@ export async function initDb(): Promise<Database> {
     }
   }
 
+  // マイグレーション: 現有免許情報カラム
+  if (tableInfo.length > 0) {
+    const cols = tableInfo[0].values.map((row) => row[1] as string)
+    for (const c of ['license_issue_date', 'license_expiry', 'license_class', 'license_options']) {
+      if (!cols.includes(c)) db.run(`ALTER TABLE students ADD COLUMN ${c} TEXT`)
+    }
+    if (!cols.includes('license_equipment_limited')) {
+      db.run('ALTER TABLE students ADD COLUMN license_equipment_limited INTEGER NOT NULL DEFAULT 0')
+    }
+  }
+
   // マイグレーション: 送付先住所カラム
   if (tableInfo.length > 0) {
     const cols = tableInfo[0].values.map((row) => row[1] as string)

@@ -10,6 +10,68 @@ export interface MasterItem {
   extra?: string
 }
 
+// ── 現有免許の種類 ─────────────────────────────────────────────────
+export const LICENSE_CLASSES = ['一級', '二級', '湖川']
+export const LICENSE_OPTIONS = ['限定1海里', '特殊', '特定']
+/** 旧免許（保存値は「旧」付き、画面表示は「旧」を外す） */
+export const OLD_LICENSE_CLASSES = ['旧一級', '旧二級', '旧三級', '旧四級', '旧五級', '旧湖川']
+
+/** 現有免許の表示用まとめ（例：「二級＋特殊（設備限定）」） */
+export function licenseSummary(s: {
+  license_class?: string | null; license_options?: string | null; license_equipment_limited?: boolean
+}): string {
+  const opts = (s.license_options ?? '').split(',').map(x => x.trim()).filter(Boolean)
+  const parts = [s.license_class ? s.license_class.replace(/^旧(.+)$/, '旧免許 $1') : '', ...opts].filter(Boolean)
+  if (parts.length === 0) return ''
+  return parts.join('＋') + (s.license_equipment_limited ? '（設備限定）' : '')
+}
+
+/**
+ * 申込メール等の「現有免許」の自由記述を、種類・追加区分・設備限定に振り分ける。
+ * 例）「2級小型船舶操縦士（特殊付）」→ { class: '二級', options: '特殊' }
+ *     「旧4級」「四級」→ { class: '旧四級' }（三級〜五級は旧免許にしかない）
+ */
+export function parseLicenseText(text: string | null | undefined): {
+  license_class: string | null; license_options: string | null; license_equipment_limited: boolean
+} {
+  const t = (text ?? '')
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/\s/g, '')
+  const empty = { license_class: null, license_options: null, license_equipment_limited: false }
+  if (!t || /^(なし|無し|無|ない|特になし|-|ー)$/.test(t)) return empty
+
+  const KANJI: Record<string, string> = { '1': '一', '2': '二', '3': '三', '4': '四', '5': '五' }
+  const gradeM = t.match(/([1-5一二三四五])級/)
+  const grade = gradeM ? (KANJI[gradeM[1]] ?? gradeM[1]) : null
+  const isOld = /旧/.test(t) || (grade !== null && ['三', '四', '五'].includes(grade))
+
+  let license_class: string | null = null
+  if (grade) license_class = (isOld ? '旧' : '') + grade + '級'
+  else if (/湖川/.test(t)) license_class = isOld ? '旧湖川' : '湖川'
+
+  const opts: string[] = []
+  if (/(1|一)海里/.test(t)) opts.push('限定1海里')
+  if (/特殊/.test(t)) opts.push('特殊')
+  if (/特定/.test(t)) opts.push('特定')
+
+  return {
+    license_class,
+    license_options: opts.length ? opts.join(',') : null,
+    license_equipment_limited: /設備.?限定/.test(t),
+  }
+}
+
+// ── 都道府県（JIS順） ──────────────────────────────────────────────
+export const PREFECTURES: string[] = [
+  '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+  '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+  '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県',
+  '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県',
+  '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+  '徳島県', '香川県', '愛媛県', '高知県',
+  '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県',
+]
+
 // ── 国名称 ───────────────────────────────────────────────────────
 // コードはうーみーくん独自体系（ISO 3166 ではない）
 export const NATIONALITIES: MasterItem[] = [

@@ -41,6 +41,10 @@ export const studentsApi = {
   create: (input: StudentInput): Promise<Student> =>
     window.api.students.create(input),
 
+  /** 重複の統合：空欄の項目は既存の値を引き継ぐ */
+  merge: (id: number, input: StudentInput): Promise<Student> =>
+    window.api.students.merge(id, input),
+
   update: (id: number, input: StudentInput): Promise<Student> =>
     window.api.students.update(id, input),
 

@@ -59,6 +59,17 @@ export const browserApiMock: ElectronAPI = {
       students = students.filter(s => s.id !== sid)
       return Promise.resolve(true)
     },
+    merge: (sid: number, input: StudentInput) => {
+      const idx = students.findIndex(s => s.id === sid)
+      if (idx === -1) return Promise.reject(new Error('not found'))
+      const cur = students[idx] as unknown as Record<string, unknown>
+      const merged: Record<string, unknown> = { ...cur }
+      for (const [k, v] of Object.entries(input)) {
+        if (!(v === null || v === undefined || v === false || (typeof v === 'string' && v.trim() === '')) && k !== 'student_code') merged[k] = v
+      }
+      students[idx] = { ...(merged as unknown as Student), updated_at: now() }
+      return Promise.resolve(students[idx])
+    },
     checkDuplicate: () =>
       Promise.resolve<DuplicateCheckResult>({ hasDuplicate: false, candidates: [], byName: [], byAddress: [] }),
     import: (rows: StudentInput[]) => {

@@ -18,6 +18,7 @@ import {
   isLikelyApplication,
 } from '../../lib/bodyParser'
 import type { ParsedBody } from '../../types'
+import { parseLicenseText } from '../../data/masterData'
 
 // ====== 通常CSV列マッピング定義 ======
 const TARGET_FIELDS: { key: keyof StudentInput; label: string; required?: boolean }[] = [
@@ -255,6 +256,9 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
         mobile: null,
         email: studentBase.email ?? null,
         note: null,
+        // 現有免許（本文の「現有免許」「現有免許の種類」「有効期限日」から）
+        license_expiry: parsed.license_expiry ?? null,
+        ...parseLicenseText(parsed.current_license),
       }
 
       const typeMenuLabel: Record<ApplicationType, string> = {
