@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import PrevExamMissingBadge from './PrevExamMissingBadge'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
@@ -206,7 +207,7 @@ export default function SessionView() {
                   />
 
                   {/* 種別バッジ */}
-                  <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${TYPE_CLASS[appType] ?? 'bg-gray-100 text-gray-500'}`}>
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold ${TYPE_CLASS[appType] ?? 'bg-gray-100 text-gray-500'}`}>
                     {TYPE_LABEL[appType] ?? appType}
                   </span>
 
@@ -221,11 +222,14 @@ export default function SessionView() {
                       </span>
                     )}
                     {student.student_code && (
-                      <span className="text-[10px] text-lavender-400 ml-1.5 font-mono">
+                      <span className="text-[11px] text-lavender-400 ml-1.5 font-mono">
                         #{student.student_code}
                       </span>
                     )}
                   </div>
+
+                  {/* 過去合格歴の未入力 */}
+                  <PrevExamMissingBadge enrollment={enrollment} />
 
                   {/* メニュー（試験申請のみ） */}
                   <span className="text-xs text-gray-400 truncate flex-1 hidden sm:block">

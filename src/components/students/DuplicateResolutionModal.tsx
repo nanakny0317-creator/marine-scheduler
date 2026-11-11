@@ -75,10 +75,10 @@ export default function DuplicateResolutionModal({ candidates, newStudent, onRes
               <div key={c.student.id}>
                 <div className={`border rounded-xl p-3 ${CONFIDENCE_STYLE[c.confidence]}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${CONFIDENCE_STYLE[c.confidence]}`}>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${CONFIDENCE_STYLE[c.confidence]}`}>
                       {CONFIDENCE_LABEL[c.confidence]}
                     </span>
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[11px] text-gray-400">
                       一致項目: {c.reasons.join('・')}
                     </span>
                   </div>
@@ -130,7 +130,7 @@ export default function DuplicateResolutionModal({ candidates, newStudent, onRes
           </div>
 
           {/* 注意書き */}
-          <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+          <p className="note-box">
             「この会員に統合」を選ぶと、既存会員の情報が今回入力した内容で上書きされます。
           </p>
         </div>

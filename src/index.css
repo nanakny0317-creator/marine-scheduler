@@ -9,7 +9,7 @@
 
   body {
     @apply font-sans bg-lavender-50 text-gray-700 antialiased;
-    font-size: 14px;
+    font-size: 15px;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -50,16 +50,24 @@
 
   /* フォームフィールド */
   .field-label {
-    @apply block text-xs font-medium text-gray-500 mb-1;
+    @apply block text-xs font-semibold text-gray-600 mb-1;
   }
   .field-input {
     @apply w-full rounded-lg border border-lavender-200 bg-white px-3 py-2
-           text-sm text-gray-700 placeholder-gray-300
+           text-sm text-gray-700 placeholder-gray-400
            focus:outline-none focus:ring-2 focus:ring-lavender-300 focus:border-transparent
            transition-all duration-150;
   }
   .field-select {
     @apply field-input cursor-pointer;
+  }
+
+  /* 注意書き・説明文（目に留まるよう琥珀色） */
+  .note-text {
+    @apply text-xs font-medium text-amber-700;
+  }
+  .note-box {
+    @apply text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2;
   }
 
   /* カード */
@@ -73,7 +81,7 @@
            bg-lavender-50 border-b border-lavender-200 select-none;
   }
   .table-cell {
-    @apply px-4 py-3 text-sm text-gray-700 border-b border-lavender-50;
+    @apply px-4 py-3 text-sm text-gray-700 border-b border-lavender-100;
   }
   .table-row {
     @apply hover:bg-lavender-50 transition-colors duration-100 cursor-pointer;

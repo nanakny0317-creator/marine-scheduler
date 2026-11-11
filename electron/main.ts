@@ -11,6 +11,7 @@ import { registerExamSessionHandlers } from './handlers/examSessionHandlers'
 import { registerRenewalSessionHandlers } from './handlers/renewalSessionHandlers'
 import { registerClassroomHandlers } from './handlers/classroomHandlers'
 import { registerExamRecordHandlers } from './handlers/examRecordHandlers'
+import { registerPhysicalExamHandlers } from './handlers/physicalExamHandlers'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -96,6 +97,7 @@ app.whenReady().then(async () => {
   registerRenewalSessionHandlers()
   registerClassroomHandlers()
   registerExamRecordHandlers()
+  registerPhysicalExamHandlers()
   if (isDev) registerDevHandlers()
   createWindow()
 

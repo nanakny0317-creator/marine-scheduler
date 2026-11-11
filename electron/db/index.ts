@@ -6,6 +6,7 @@
  * 将来 Supabase に移行する際は getDb() 以下だけ差し替えればよい。
  */
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js'
+import { normalizeExamLocation } from '../../src/lib/examLocation'
 import path from 'path'
 import fs from 'fs'
 import { app } from 'electron'
@@ -80,6 +81,92 @@ export async function initDb(): Promise<Database> {
     const cols = tableInfo[0].values.map((row) => row[1] as string)
     for (const c of ['mail_postal_code', 'mail_prefecture', 'mail_city', 'mail_address1', 'mail_address2']) {
       if (!cols.includes(c)) db.run(`ALTER TABLE students ADD COLUMN ${c} TEXT`)
+    }
+  }
+
+  // マイグレーション: 試験地の書き方をそろえる（試験日程・申込に保存された試験地）
+  {
+    const locs = db.exec('SELECT DISTINCT exam_location FROM exam_sessions')[0]?.values ?? []
+    for (const [loc] of locs) {
+      const n = normalizeExamLocation(String(loc ?? ''))
+      if (n !== loc) db.run('UPDATE exam_sessions SET exam_location = ? WHERE exam_location = ?', [n, loc as string])
+    }
+    const ens = db.exec("SELECT id, extra_json FROM enrollments WHERE extra_json LIKE '%exam_location%'")[0]?.values ?? []
+    for (const [id, json] of ens) {
+      try {
+        const ex = JSON.parse(String(json))
+        if (typeof ex.exam_location === 'string') {
+          const n = normalizeExamLocation(ex.exam_location)
+          if (n !== ex.exam_location) {
+            ex.exam_location = n
+            db.run('UPDATE enrollments SET extra_json = ? WHERE id = ?', [JSON.stringify(ex), id as number])
+          }
+        }
+      } catch { /* 壊れたJSONは無視 */ }
+    }
+  }
+
+  // マイグレーション: 部屋番号を「建物名・部屋番号」欄から分離
+  if (tableInfo.length > 0) {
+    const cols = tableInfo[0].values.map((row) => row[1] as string)
+    if (!cols.includes('address_room') || !cols.includes('mail_address_room')) {
+      for (const c of ['address_room', 'mail_address_room']) {
+        if (!cols.includes(c)) db.run(`ALTER TABLE students ADD COLUMN ${c} TEXT`)
+      }
+      // 末尾の部屋番号を切り出す。確実なものだけ：
+      //   「○○マンション 101」「○○マンション101号室」「101」「101号室」
+      //   （「○○マンション101」のように区切りが無いものは建物名の一部かもしれないので触らない）
+      const toHalf = (x: string) => x.replace(/[０-９Ａ-Ｚａ-ｚ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0))
+      const split = (v: string): { building: string | null; room: string } | null => {
+        const t = v.trim()
+        const m = t.match(/^(.*?)[\s　]*([0-9０-９]+(?![FfＦｆ])[A-Za-zＡ-Ｚａ-ｚ]?)(号室)?$/)
+        if (!m) return null
+        const building = m[1].trim()
+        const hasSep = !!m[3] || building === '' || /[\s　]$/.test(t.slice(0, t.length - m[2].length - (m[3]?.length ?? 0)))
+        if (!hasSep) return null
+        return { building: building || null, room: toHalf(m[2]) }
+      }
+      for (const [b, r] of [['address2', 'address_room'], ['mail_address2', 'mail_address_room']]) {
+        const res = db.exec(`SELECT id, ${b} FROM students WHERE ${b} IS NOT NULL AND TRIM(${b}) != '' AND (${r} IS NULL OR ${r} = '')`)
+        for (const [id, v] of res[0]?.values ?? []) {
+          const sp = split(String(v))
+          if (sp) db.run(`UPDATE students SET ${b} = ?, ${r} = ? WHERE id = ?`, [sp.building, sp.room, id as number])
+        }
+      }
+    }
+  }
+
+  // マイグレーション: 本籍・国籍を受講者へ（以前は申込の extra_json に保存していた）
+  if (tableInfo.length > 0) {
+    const cols = tableInfo[0].values.map((row) => row[1] as string)
+    if (!cols.includes('domicile') || !cols.includes('nationality')) {
+      for (const c of ['domicile', 'nationality']) {
+        if (!cols.includes(c)) db.run(`ALTER TABLE students ADD COLUMN ${c} TEXT`)
+      }
+      // 既存の申込に入っている値を受講者へコピー（新しい申込の値を優先）
+      const res = db.exec(
+        `SELECT student_id, extra_json FROM enrollments
+         WHERE extra_json IS NOT NULL ORDER BY created_at ASC, id ASC`
+      )
+      const latest = new Map<number, { domicile?: string; nationality?: string }>()
+      for (const [sid, json] of res[0]?.values ?? []) {
+        try {
+          const ex = JSON.parse(String(json))
+          const cur = latest.get(Number(sid)) ?? {}
+          if (typeof ex.domicile === 'string' && ex.domicile.trim()) cur.domicile = ex.domicile.trim()
+          if (typeof ex.nationality === 'string' && ex.nationality.trim()) cur.nationality = ex.nationality.trim()
+          latest.set(Number(sid), cur)
+        } catch { /* 壊れたJSONは無視 */ }
+      }
+      for (const [sid, v] of latest) {
+        db.run(
+          `UPDATE students SET
+             domicile = COALESCE(NULLIF(domicile,''), ?),
+             nationality = COALESCE(NULLIF(nationality,''), ?)
+           WHERE id = ?`,
+          [v.domicile ?? null, v.nationality ?? null, sid]
+        )
+      }
     }
   }
 
@@ -234,7 +321,7 @@ export async function initDb(): Promise<Database> {
   }
 
   // 会場マスターの初期シード（近畿・中部それぞれ未登録の場合のみ）
-  type VenueSeedRow = { region: string; prefecture: string; city: string | null; name: string; sort_order: number }
+  type VenueSeedRow = { region: string; prefecture: string; name: string; sort_order: number }
 
   const KINKI_SEED: VenueSeedRow[] = [
     { region: '近畿', prefecture: '滋賀県', name: 'ヤマハマリーナ琵琶湖',                        sort_order: 10 },
@@ -420,6 +507,39 @@ export async function initDb(): Promise<Database> {
         UPDATE exam_records SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
       END
   `)
+
+  // マイグレーション: 身体検査の履歴テーブル（受検日から1年有効）
+  {
+    const existed = (db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='physical_exams'")[0]?.values ?? []).length > 0
+    db.run(`
+      CREATE TABLE IF NOT EXISTS physical_exams (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id  INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        exam_date   TEXT,
+        valid_until TEXT,
+        note        TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+        updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+      )
+    `)
+    db.run(`
+      CREATE TRIGGER IF NOT EXISTS physical_exams_updated_at
+        AFTER UPDATE ON physical_exams
+        FOR EACH ROW
+        BEGIN
+          UPDATE physical_exams SET updated_at = datetime('now','localtime') WHERE id = OLD.id;
+        END
+    `)
+    // 初回のみ：試験記録に入っていた身体検査（証明書あり・有効期限）を履歴へ移す
+    if (!existed) {
+      db.run(`
+        INSERT INTO physical_exams (student_id, exam_date, valid_until, note)
+        SELECT student_id, NULL, shintai_valid_until, '試験記録から移行'
+        FROM exam_records
+        WHERE shintai_cert = 1
+      `)
+    }
+  }
 
   save()
 

@@ -78,7 +78,7 @@ export default function DevPanel({ onDataChanged }: Props) {
               {/* 現在のデータ件数 */}
               {counts && (
                 <div className="bg-gray-800 rounded-xl px-4 py-3 space-y-1 text-xs">
-                  <p className="text-gray-400 text-[10px] uppercase tracking-widest mb-1">現在のデータ</p>
+                  <p className="text-gray-400 text-[11px] uppercase tracking-widest mb-1">現在のデータ</p>
                   <div className="flex justify-between"><span className="text-gray-400">会員</span><span className="text-white font-bold">{counts.students} 件</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">申込</span><span className="text-white font-bold">{counts.enrollments} 件</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">要対応</span><span className="text-yellow-400 font-bold">{counts.pendingReviews} 件</span></div>
@@ -111,7 +111,7 @@ export default function DevPanel({ onDataChanged }: Props) {
               </div>
 
               {/* テストデータの内容説明 */}
-              <div className="bg-gray-800 rounded-xl px-3 py-2.5 text-[10px] text-gray-400 space-y-0.5">
+              <div className="bg-gray-800 rounded-xl px-3 py-2.5 text-[11px] text-gray-400 space-y-0.5">
                 <p className="text-gray-300 font-bold mb-1">生成データの内容</p>
                 <p>・通常会員 16名（氏名/住所/電話/生年月日）</p>
                 <p>・申込 9件（日程・会場・種別あり）</p>
@@ -122,7 +122,7 @@ export default function DevPanel({ onDataChanged }: Props) {
 
               {/* 結果メッセージ */}
               {lastMsg && (
-                <p className="text-[11px] text-green-400 bg-green-900/30 rounded-lg px-3 py-2">{lastMsg}</p>
+                <p className="text-[12px] text-green-400 bg-green-900/30 rounded-lg px-3 py-2">{lastMsg}</p>
               )}
             </div>
           </div>

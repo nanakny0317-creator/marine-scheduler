@@ -26,6 +26,8 @@ export function toStudent(row: Row): Student {
     license_class: row.license_class ? String(row.license_class) : null,
     license_options: row.license_options ? String(row.license_options) : null,
     license_equipment_limited: Number(row.license_equipment_limited ?? 0) === 1,
+    domicile: row.domicile ? String(row.domicile) : null,
+    nationality: row.nationality ? String(row.nationality) : null,
     last_name: String(row.last_name ?? ''),
     first_name: String(row.first_name ?? ''),
     last_kana: row.last_kana ? String(row.last_kana) : null,
@@ -42,6 +44,8 @@ export function toStudent(row: Row): Student {
     mail_city: row.mail_city ? String(row.mail_city) : null,
     mail_address1: row.mail_address1 ? String(row.mail_address1) : null,
     mail_address2: row.mail_address2 ? String(row.mail_address2) : null,
+    address_room: row.address_room ? String(row.address_room) : null,
+    mail_address_room: row.mail_address_room ? String(row.mail_address_room) : null,
     phone: row.phone ? String(row.phone) : null,
     mobile: row.mobile ? String(row.mobile) : null,
     email: row.email ? String(row.email) : null,
@@ -65,6 +69,8 @@ function licenseParams(input: StudentInput): (string | number | null)[] {
   return [
     t(input.license_issue_date), t(input.license_expiry), t(input.license_class), t(input.license_options),
     input.license_equipment_limited ? 1 : 0,
+    t(input.domicile), t(input.nationality),
+    t(input.address_room), t(input.mail_address_room),
   ]
 }
 
@@ -82,7 +88,7 @@ export function nextStudentCode(): string {
 // -------- 一覧・検索 --------
 export function listStudents(params: StudentSearchParams = {}): Student[] {
   const { query: q, sortBy = 'created_at', sortDir = 'desc', applicationType } = params
-  const allowed = ['last_name', 'last_kana', 'created_at', 'updated_at']
+  const allowed = ['last_name', 'last_kana', 'created_at', 'updated_at', 'birth_date']
   const col = allowed.includes(sortBy ?? '') ? sortBy : 'created_at'
   const dir = sortDir === 'asc' ? 'ASC' : 'DESC'
 
@@ -97,23 +103,47 @@ export function listStudents(params: StudentSearchParams = {}): Student[] {
     typeParams.push(applicationType)
   }
 
-  if (q && q.trim()) {
-    const like = `%${q.trim()}%`
-    return query(
-      `SELECT * FROM students
-       WHERE (last_name LIKE ? OR first_name LIKE ?
-          OR last_kana LIKE ? OR first_kana LIKE ?
-          OR email LIKE ? OR phone LIKE ? OR mobile LIKE ?
-          OR student_code LIKE ?)
-       ${typeClause}
-       ORDER BY ${col} ${dir}`,
-      [like, like, like, like, like, like, like, like, ...typeParams]
-    ).map(toStudent)
+  const where: string[] = []
+  const wp: SqlParam[] = []
+
+  // キーワード：空白で区切った語すべてに一致（「山田 太郎」「ヤマダ タロウ」も可）
+  const words = (q ?? '').trim().split(/[\s　]+/).filter(Boolean)
+  for (const w of words) {
+    const like = `%${w}%`
+    where.push(`(last_name LIKE ? OR first_name LIKE ? OR (last_name || first_name) LIKE ?
+          OR last_kana LIKE ? OR first_kana LIKE ? OR (COALESCE(last_kana,'') || COALESCE(first_kana,'')) LIKE ?
+          OR email LIKE ? OR phone LIKE ? OR mobile LIKE ? OR student_code LIKE ?)`)
+    wp.push(like, like, like, like, like, like, like, like, like, like)
+  }
+  // 生年月日
+  if (params.birthDate) {
+    where.push('birth_date = ?')
+    wp.push(params.birthDate)
+  }
+  // 電話・携帯（ハイフン・空白を無視）
+  const digits = (params.phone ?? '').replace(/[^0-9]/g, '')
+  if (digits) {
+    const norm = (c: string) => `REPLACE(REPLACE(REPLACE(COALESCE(${c},''),'-',''),' ',''),'－','')`
+    where.push(`(${norm('phone')} LIKE ? OR ${norm('mobile')} LIKE ?)`)
+    wp.push(`%${digits}%`, `%${digits}%`)
+  }
+  // 住所（申請住所・送付先住所）
+  const addr = (params.address ?? '').trim()
+  if (addr) {
+    const like = `%${addr}%`
+    where.push(`((COALESCE(prefecture,'') || COALESCE(city,'') || COALESCE(address1,'') || COALESCE(address2,'')) LIKE ?
+          OR (COALESCE(mail_prefecture,'') || COALESCE(mail_city,'') || COALESCE(mail_address1,'') || COALESCE(mail_address2,'')) LIKE ?)`)
+    wp.push(like, like)
   }
 
+  // 並び順：生年月日順のときは未入力を最後に。同順位はフリガナ順
+  const order = col === 'birth_date'
+    ? `birth_date IS NULL, birth_date ${dir}, last_kana ASC`
+    : `${col} ${dir}`
   return query(
-    `SELECT * FROM students WHERE 1=1 ${typeClause} ORDER BY ${col} ${dir}`,
-    typeParams
+    `SELECT * FROM students WHERE 1=1 ${where.length ? 'AND ' + where.join(' AND ') : ''} ${typeClause}
+     ORDER BY ${order}`,
+    [...wp, ...typeParams]
   ).map(toStudent)
 }
 
@@ -136,8 +166,9 @@ export function createStudent(input: StudentInput): Student {
         mail_postal_code, mail_prefecture, mail_city, mail_address1, mail_address2,
         phone, mobile, email, note,
         license_issue_date, license_expiry, license_class, license_options, license_equipment_limited,
+        domicile, nationality, address_room, mail_address_room,
         created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
              datetime('now','localtime'), datetime('now','localtime'))`,
     [
       code,
@@ -170,6 +201,7 @@ export function updateStudent(id: number, input: StudentInput): Student {
        mail_postal_code=?, mail_prefecture=?, mail_city=?, mail_address1=?, mail_address2=?,
        phone=?, mobile=?, email=?, note=?,
        license_issue_date=?, license_expiry=?, license_class=?, license_options=?, license_equipment_limited=?,
+       domicile=?, nationality=?, address_room=?, mail_address_room=?,
        updated_at=datetime('now','localtime')
      WHERE id=?`,
     [
@@ -212,8 +244,8 @@ export function combineStudents(
   // 住所はまとまりで扱う：primary 側に住所が入っていれば、建物名などが空でも primary の住所一式を採用
   // （新しい住所に古い建物名が混ざるのを防ぐ）
   const ADDRESS_GROUPS: (keyof StudentInput)[][] = [
-    ['postal_code', 'prefecture', 'city', 'address1', 'address2'],
-    ['mail_postal_code', 'mail_prefecture', 'mail_city', 'mail_address1', 'mail_address2'],
+    ['postal_code', 'prefecture', 'city', 'address1', 'address2', 'address_room'],
+    ['mail_postal_code', 'mail_prefecture', 'mail_city', 'mail_address1', 'mail_address2', 'mail_address_room'],
   ]
   for (const g of ADDRESS_GROUPS) {
     if (g.some(k => !isBlank(primary[k]))) for (const k of g) out[k] = primary[k] ?? null
@@ -422,6 +454,6 @@ export function migrateKanaToKatakana(): void {
   for (const student of students) {
     const newLastKana = toKatakana(student.last_kana ? String(student.last_kana) : null)
     const newFirstKana = toKatakana(student.first_kana ? String(student.first_kana) : null)
-    run('UPDATE students SET last_kana = ?, first_kana = ? WHERE id = ?', [newLastKana, newFirstKana, student.id])
+    run('UPDATE students SET last_kana = ?, first_kana = ? WHERE id = ?', [newLastKana, newFirstKana, Number(student.id)])
   }
 }

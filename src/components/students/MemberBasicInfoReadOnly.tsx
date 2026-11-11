@@ -139,6 +139,8 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
         <div className="rounded-xl border border-lavender-100 px-4 py-1">
           <Row label="生年月日" value={formatBirthWithWareki(student.birth_date)} />
           <Row label="性別" value={genderLabel(student.gender)} />
+          <Row label="本籍地" value={dash(student.domicile ?? null)} />
+          <Row label="国籍" value={student.nationality?.trim() || '日本'} />
         </div>
       </section>
 
@@ -150,13 +152,14 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
           <Row label="郵便番号" value={dash(student.postal_code)} />
           <Row label="都道府県" value={dash(student.prefecture)} />
           <Row label="市区町村" value={dash(student.city)} />
-          <Row label="番地・建物" value={dash(student.address1)} />
-          <Row label="住所2" value={dash(student.address2)} />
+          <Row label="番地" value={dash(student.address1)} />
+          <Row label="建物名" value={dash(student.address2)} />
+          <Row label="部屋番号" value={dash(student.address_room ?? null)} />
         </div>
       </section>
 
       {[student.mail_postal_code, student.mail_prefecture, student.mail_city,
-        student.mail_address1, student.mail_address2].some((v) => v && v.trim()) && (
+        student.mail_address1, student.mail_address2, student.mail_address_room].some((v) => v && v.trim()) && (
         <section>
           <h3 className="text-xs font-semibold text-amber-500 uppercase tracking-wide mb-2">
             送付先住所（申請住所と別）
@@ -165,8 +168,9 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
             <Row label="郵便番号" value={dash(student.mail_postal_code ?? null)} />
             <Row label="都道府県" value={dash(student.mail_prefecture ?? null)} />
             <Row label="市区町村" value={dash(student.mail_city ?? null)} />
-            <Row label="番地・建物" value={dash(student.mail_address1 ?? null)} />
-            <Row label="住所2" value={dash(student.mail_address2 ?? null)} />
+            <Row label="番地" value={dash(student.mail_address1 ?? null)} />
+            <Row label="建物名" value={dash(student.mail_address2 ?? null)} />
+            <Row label="部屋番号" value={dash(student.mail_address_room ?? null)} />
           </div>
         </section>
       )}
@@ -191,7 +195,7 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
         </p>
       </section>
 
-      <p className="text-[11px] text-gray-400">
+      <p className="text-[12px] text-gray-400">
         登録 {student.created_at} ／ 更新 {student.updated_at}
       </p>
     </div>

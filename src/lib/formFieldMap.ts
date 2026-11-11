@@ -27,6 +27,32 @@ function parseBirthDate(bd: string | null): {
   return { year: String(y), month: mo, day: d, era, eraYear }
 }
 
+
+// ── 住所の組み立て ─────────────────────────────────────────────
+/** 申込書用：「番地-部屋番号」（部屋番号が無ければ番地のみ） */
+export function joinRoom(a1: string | null | undefined, room: string | null | undefined): string {
+  const b = (a1 ?? '').trim()
+  const r = (room ?? '').trim()
+  if (!r) return b
+  return b ? `${b}-${r}` : r
+}
+
+/** 宛名ラベル用：送付先住所があれば送付先、無ければ申請住所。2行目は「建物名 部屋番号」 */
+export function labelAddress(s: Student): { postal_code: string; line1: string; line2: string } {
+  const useMail = [s.mail_postal_code, s.mail_prefecture, s.mail_city, s.mail_address1, s.mail_address2, s.mail_address_room]
+    .some(v => v && v.trim())
+  const zip  = (useMail ? s.mail_postal_code : s.postal_code) ?? ''
+  const pref = (useMail ? s.mail_prefecture  : s.prefecture)  ?? ''
+  const city = (useMail ? s.mail_city        : s.city)        ?? ''
+  const a1   = (useMail ? s.mail_address1    : s.address1)    ?? ''
+  const bld  = ((useMail ? s.mail_address2   : s.address2)    ?? '').trim()
+  const room = ((useMail ? s.mail_address_room : s.address_room) ?? '').trim()
+  // 建物名が無い場合は「番地-部屋番号」、ある場合は「建物名 部屋番号」を2行目に
+  const line1 = pref + city + (bld ? a1 : joinRoom(a1, room))
+  const line2 = bld ? [bld, room].filter(Boolean).join(' ') : ''
+  return { postal_code: zip, line1, line2 }
+}
+
 // ── 試験日パース ─────────────────────────────────────────────────
 function parseExamDate(d: string | null): { year: string; month: string; day: string } {
   if (!d) return { year: '', month: '', day: '' }
@@ -56,13 +82,25 @@ export function buildFormData(
 ): FormData {
   const extra  = getExtra(enrollment)
   const bd     = parseBirthDate(student.birth_date)
+  const prevRaw = (extra.prev_exam ?? {}) as Record<string, unknown>
+  const prev = {
+    qual:     typeof prevRaw.qual === 'string' ? prevRaw.qual : '',
+    date:     typeof prevRaw.date === 'string' ? prevRaw.date : '',
+    location: typeof prevRaw.location === 'string' ? prevRaw.location : '',
+    number:   typeof prevRaw.number === 'string' ? prevRaw.number : '',
+    examId:   typeof prevRaw.exam_id === 'string' ? prevRaw.exam_id : '',
+  }
+  const prevDate = parseExamDate(prev.date || null)
   const exDate = parseExamDate(examSession?.exam_date ?? (extra.exam_date as string | null) ?? null)
 
+  // 申込書用：建物名は入れず「番地-部屋番号」
   const address = [
     student.prefecture ?? '',
     student.city       ?? '',
-    student.address1   ?? '',
+    joinRoom(student.address1, student.address_room),
   ].join('')
+  // 宛名ラベル用：送付先があれば送付先、無ければ申請住所（建物名・部屋番号つき）
+  const label = labelAddress(student)
 
   const appType = (extra.application_type as string) ?? enrollment.menu
 
@@ -93,7 +131,13 @@ export function buildFormData(
     // ── 住所 ──
     postal_code: student.postal_code ?? '',
     address1:    address,
-    address2:    student.address2    ?? '',
+    address2:    student.address2    ?? '',   // 建物名
+    address_room: student.address_room ?? '',
+
+    // ── 宛名ラベル用（送付先優先・建物名つき） ──
+    label_postal_code: label.postal_code,
+    label_address1:    label.line1,
+    label_address2:    label.line2,
 
     // ── 連絡先 ──
     phone:  student.phone  ?? '',
@@ -127,8 +171,8 @@ export function buildFormData(
     license_issue_era_year:    licIssue.eraYear,
 
     // ── 本籍・国籍 ──
-    domicile_pref: (extra.domicile as string) ?? '',
-    nationality:   (extra.nationality as string) ?? '',
+    domicile_pref: student.domicile    || (extra.domicile as string)    || '',
+    nationality:   student.nationality || (extra.nationality as string) || '',
 
     // ── 申込種別 ──
     application_type: appType,
@@ -142,6 +186,20 @@ export function buildFormData(
     exam_location:      examSession?.exam_location  ?? (extra.exam_location as string) ?? enrollment.venue ?? '',
     exam_id:            examSession?.exam_id        ?? (extra.exam_id as string)       ?? '',
     exam_qual_type:     examSession?.qualification_type ?? (extra.exam_qual_type as string) ?? '',
+    // 受験する試験（未設定の古い申込は両方受験）
+    written_exam:       extra.exam_gakka   === false ? '' : '受験',
+    practical_exam:     extra.exam_jitsugi === false ? '' : '受験',
+    // 身体検査証明書（申請書③欄）：有効な証明書あり→あり／受検が必要→なし
+    physical_exam_cert: extra.shintai === 'have' ? 'あり' : extra.shintai === 'need' ? 'なし' : '',
+    // 免除の根拠：過去に合格した試験（申請書②欄）
+    prev_exam_qual_type: prev.qual,
+    prev_exam_date:      prev.date,
+    prev_exam_year:      prevDate.year,
+    prev_exam_month:     prevDate.month,
+    prev_exam_day:       prevDate.day,
+    prev_exam_location:  prev.location,
+    prev_exam_number:    prev.number,
+    prev_exam_id:        prev.examId,
 
     // ── mark 型対応（条件チェック） ──
     // 性別チェック

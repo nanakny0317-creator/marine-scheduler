@@ -421,6 +421,8 @@ export function parsedBodyToStudent(p: ParsedBody): Partial<StudentInput> {
     address2: p.address2 ?? null,
     phone: p.phone ?? null,
     email: p.email ?? null,
+    domicile: p.domicile ?? null,
+    nationality: p.nationality ?? null,
   }
 }
 

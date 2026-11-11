@@ -55,7 +55,7 @@ export default function MultiReceiptSelectModal({ sessions, onConfirm, onClose }
 
         {/* ボディ */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
-          <p className="text-xs text-gray-400 mb-3">印刷したい日程にチェックを入れてください。10名を超える場合は自動で2枚目に分かれます。</p>
+          <p className="note-text mb-3">印刷したい日程にチェックを入れてください。10名を超える場合は自動で2枚目に分かれます。</p>
 
           {/* 全選択 */}
           <label className="flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer select-none text-xs text-gray-500 hover:bg-gray-50">

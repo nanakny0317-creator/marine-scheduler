@@ -51,21 +51,21 @@ export default function Sidebar() {
             >
               {/* 1行目：日付 + 時刻 */}
               <div className="flex items-baseline gap-1.5">
-                <span className={`font-semibold text-[11px] leading-tight ${isSelected ? 'text-lavender-700' : 'text-gray-700'}`}>
+                <span className={`font-semibold text-[12px] leading-tight ${isSelected ? 'text-lavender-700' : 'text-gray-700'}`}>
                   {formatDate(session.course_date)}
                 </span>
                 {session.course_time && (
-                  <span className={`text-[10px] font-medium ${isSelected ? 'text-lavender-500' : 'text-lavender-400'}`}>
+                  <span className={`text-[11px] font-medium ${isSelected ? 'text-lavender-500' : 'text-lavender-400'}`}>
                     {session.course_time}
                   </span>
                 )}
               </div>
               {/* 2行目：会場 + 人数 */}
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] text-gray-400 truncate leading-tight">
+                <span className="text-[11px] text-gray-400 truncate leading-tight">
                   {session.venue ?? '会場未定'}
                 </span>
-                <span className={`text-[10px] shrink-0 ${isSelected ? 'text-lavender-400' : 'text-gray-300'}`}>
+                <span className={`text-[11px] shrink-0 ${isSelected ? 'text-lavender-400' : 'text-gray-300'}`}>
                   {session.items.length}名
                 </span>
               </div>

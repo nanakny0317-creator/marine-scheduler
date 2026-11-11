@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { exemptSubjectOf, missingPrevExam } from '../../lib/prevExam'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
@@ -16,15 +17,6 @@ const TYPE_CLASS: Record<string, string> = {
   new:     'bg-mint-50 text-mint-600 border-mint-200',
   renewal: 'bg-blue-50 text-blue-500 border-blue-200',
   lapsed:  'bg-orange-50 text-orange-500 border-orange-200',
-}
-const STATUS_LABEL: Record<string, string> = {
-  pending: '未確定', confirmed: '確定', completed: '完了', cancelled: 'キャンセル',
-}
-const STATUS_CLASS: Record<string, string> = {
-  pending:   'bg-yellow-50 text-yellow-600',
-  confirmed: 'bg-mint-50 text-mint-600',
-  completed: 'bg-blue-50 text-blue-500',
-  cancelled: 'bg-gray-100 text-gray-400',
 }
 
 function fmtDate(d: string | null | undefined) {
@@ -99,7 +91,7 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
       <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50">
         <span className="text-gray-400 shrink-0">申込種別</span>
         <span>
-          <span className={`inline-block px-2 py-0.5 rounded border text-[11px] font-bold ${TYPE_CLASS[appType] ?? 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+          <span className={`inline-block px-2 py-0.5 rounded border text-[12px] font-bold ${TYPE_CLASS[appType] ?? 'bg-gray-100 text-gray-500 border-gray-200'}`}>
             {TYPE_LABEL[appType] ?? appType}
           </span>
         </span>
@@ -120,7 +112,7 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
                   {s.venue      && <span>📍 {s.venue}</span>}
                   {s.time       && <span>🕐 {s.time}</span>}
                   {s.lessonType && (
-                    <span className="inline-block px-1.5 py-0 rounded bg-lavender-50 text-lavender-500 border border-lavender-100 text-[10px] font-semibold">
+                    <span className="inline-block px-1.5 py-0 rounded bg-lavender-50 text-lavender-500 border border-lavender-100 text-[11px] font-semibold">
                       {s.lessonType}
                     </span>
                   )}
@@ -147,7 +139,7 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
             <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50">
               <span className="text-gray-400 shrink-0">受験種別</span>
               <span>
-                <span className="inline-block px-2 py-0.5 rounded border text-[11px] font-bold bg-lavender-50 text-lavender-600 border-lavender-200">
+                <span className="inline-block px-2 py-0.5 rounded border text-[12px] font-bold bg-lavender-50 text-lavender-600 border-lavender-200">
                   {extra.exam_qual_type as string}
                 </span>
               </span>
@@ -159,15 +151,12 @@ function EnrollmentDetail({ enrollment }: { enrollment: Enrollment }) {
         </>
       )}
 
-      {/* ステータス */}
-      <div className="grid grid-cols-[7rem_1fr] gap-x-3 text-sm py-2 border-b border-gray-50 last:border-0">
-        <span className="text-gray-400 shrink-0">ステータス</span>
-        <span>
-          <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${STATUS_CLASS[enrollment.status] ?? 'bg-gray-100 text-gray-500'}`}>
-            {STATUS_LABEL[enrollment.status] ?? enrollment.status}
-          </span>
-        </span>
-      </div>
+      {missingPrevExam(enrollment).length > 0 && (
+        <div className="my-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+          ⚠ {exemptSubjectOf(enrollment)}の過去合格歴が未入力：{missingPrevExam(enrollment).join('・')}
+          <span className="block font-normal text-red-500 mt-0.5">試験機関に確認して、申込の編集から入力してください</span>
+        </div>
+      )}
 
       {enrollment.note?.trim() && (
         <Row label="備考" value={enrollment.note} />

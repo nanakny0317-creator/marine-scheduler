@@ -67,7 +67,7 @@ export default function ClassroomsPage() {
           <button onClick={() => navigate('/settings')} className="text-gray-400 hover:text-gray-600 text-sm">← 戻る</button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-700">授業会場管理</h1>
-            <p className="text-xs text-gray-400 mt-0.5">試験申請の「講習日程」で選べる教室を登録します（上から順に表示）</p>
+            <p className="note-text mt-0.5">試験申請の「講習日程」で選べる教室を登録します（上から順に表示）</p>
           </div>
         </div>
 

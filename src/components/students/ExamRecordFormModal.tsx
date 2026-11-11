@@ -188,31 +188,7 @@ export default function ExamRecordFormModal({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="field-label">身体検査</label>
-              <div className="flex items-center gap-3 mt-1">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={form.shintai_cert}
-                    onChange={e => set('shintai_cert', e.target.checked)}
-                    className="rounded border-gray-300 text-lavender-400 focus:ring-lavender-300"
-                  />
-                  <span className="text-sm text-gray-700">証明書あり</span>
-                </label>
-                {form.shintai_cert && (
-                  <input
-                    type="date"
-                    value={form.shintai_valid_until ?? ''}
-                    onChange={e => set('shintai_valid_until', e.target.value || null)}
-                    className="field-input flex-1"
-                  />
-                )}
-              </div>
-              {form.shintai_cert && (
-                <p className="text-xs text-gray-400 mt-0.5">有効期限</p>
-              )}
-            </div>
+            {/* 身体検査は会員画面「試験記録」タブの「身体検査」で管理 */}
           </div>
 
           {/* 下段: 学科試験 ｜ 実技試験 （左右2カラム） */}

@@ -47,6 +47,7 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
   { value: 'physical_exam_cert',      label: '身体検査証明書',           values: ['あり', 'なし'] },
   { value: 'written_exam',            label: '学科試験',                 values: ['受験'] },
   { value: 'practical_exam',          label: '実技試験',                 values: ['受験'] },
+  { value: 'prev_exam_qual_type',     label: '過去合格試験：資格',       values: ['一級', '二級', '湖川', '二級若年', '特殊'] },
   { value: 'birth_era',               label: '生年月日（元号/世紀）',    values: ['明治', '大正', '昭和', '平成', '令和', '1900', '2000'] },
   { value: 'gender',                  label: '性別',                     values: ['male', 'female'] },
   { value: 'nationality',             label: '国籍',                     values: ['韓国', '朝鮮', '米国'] },
@@ -84,6 +85,12 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
   { value: 'exam_date',       label: '試験日' },
   { value: 'exam_location',   label: '試験地' },
   { value: 'exam_id',         label: '試験ID' },
+  { value: 'prev_exam_year',     label: '過去合格試験：開始日 年' },
+  { value: 'prev_exam_month',    label: '過去合格試験：開始日 月' },
+  { value: 'prev_exam_day',      label: '過去合格試験：開始日 日' },
+  { value: 'prev_exam_location', label: '過去合格試験：試験地' },
+  { value: 'prev_exam_number',   label: '過去合格試験：受験番号' },
+  { value: 'prev_exam_id',       label: '過去合格試験：試験ID' },
   { value: 'menu',            label: 'メニュー' },
   { value: 'application_type',label: '申込種別',  values: ['new', 'renewal', 'lapsed'] },
   { value: 'status',          label: 'ステータス',values: ['pending', 'confirmed', 'completed', 'cancelled'] },
@@ -130,7 +137,7 @@ function FieldRow({ field, onEdit, onDelete, highlighted }: {
   return (
     <div className={`px-3 py-2 border-b border-gray-50 last:border-0 text-xs flex items-center gap-2 hover:bg-lavender-50/40 ${highlighted ? 'bg-lavender-50' : ''}`}>
       <span className="font-mono text-gray-400 w-4">{field.page}</span>
-      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] font-medium ${
         field.type === 'chars' ? 'bg-mint-50 text-mint-600' :
         field.type === 'text'  ? 'bg-blue-50 text-blue-500' :
                                   'bg-orange-50 text-orange-500'
@@ -138,7 +145,7 @@ function FieldRow({ field, onEdit, onDelete, highlighted }: {
       <div className="flex-1 min-w-0">
         <div className="font-medium text-gray-700 truncate">{field.label}</div>
         {field.type === 'mark' && field.dataKey && (
-          <div className="text-[10px] text-orange-500 truncate">
+          <div className="text-[11px] text-orange-500 truncate">
             {field.dataKey} = {field.matchValue} → {field.markChar ?? '●'}
           </div>
         )}
@@ -436,7 +443,7 @@ export default function FormCalibrationPage() {
                     f.type === 'chars' ? 'bg-mint-500' :
                     f.type === 'text'  ? 'bg-blue-500' : 'bg-orange-500'
                   } opacity-70`} />
-                  <div className="absolute left-2.5 -top-0.5 text-[9px] font-bold text-white bg-black/50 rounded px-1 whitespace-nowrap">
+                  <div className="absolute left-2.5 -top-0.5 text-[10px] font-bold text-white bg-black/50 rounded px-1 whitespace-nowrap">
                     {f.label}
                   </div>
                 </div>
@@ -563,7 +570,7 @@ export default function FormCalibrationPage() {
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] text-gray-400 mb-0.5">キー名 (英数字)</label>
+                <label className="block text-[11px] text-gray-400 mb-0.5">キー名 (英数字)</label>
                 <input
                   value={fKey}
                   onChange={e => setFKey(e.target.value)}
@@ -572,7 +579,7 @@ export default function FormCalibrationPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-gray-400 mb-0.5">ラベル</label>
+                <label className="block text-[11px] text-gray-400 mb-0.5">ラベル</label>
                 <input
                   value={fLabel}
                   onChange={e => setFLabel(e.target.value)}
@@ -583,7 +590,7 @@ export default function FormCalibrationPage() {
             </div>
 
             <div>
-              <label className="block text-[10px] text-gray-400 mb-0.5">フィールド種別</label>
+              <label className="block text-[11px] text-gray-400 mb-0.5">フィールド種別</label>
               <div className="flex gap-1">
                 {FIELD_TYPES.map(t => (
                   <button
@@ -605,7 +612,7 @@ export default function FormCalibrationPage() {
 
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-[10px] text-gray-400 mb-0.5">フォントサイズ(pt)</label>
+                <label className="block text-[11px] text-gray-400 mb-0.5">フォントサイズ(pt)</label>
                 <input
                   type="number"
                   value={fFontSize}
@@ -615,7 +622,7 @@ export default function FormCalibrationPage() {
               </div>
               {fType === 'chars' && (
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">最大文字数</label>
+                  <label className="block text-[11px] text-gray-400 mb-0.5">最大文字数</label>
                   <input
                     type="number"
                     value={fMaxChars}
@@ -626,7 +633,7 @@ export default function FormCalibrationPage() {
               )}
               {fType === 'text' && (
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">フィールド幅(pt)</label>
+                  <label className="block text-[11px] text-gray-400 mb-0.5">フィールド幅(pt)</label>
                   <input
                     type="number"
                     value={fWidth}
@@ -637,7 +644,7 @@ export default function FormCalibrationPage() {
               )}
               {fType === 'mark' && (
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">印字文字</label>
+                  <label className="block text-[11px] text-gray-400 mb-0.5">印字文字</label>
                   <input
                     value={fMarkChar}
                     onChange={e => setFMarkChar(e.target.value)}
@@ -651,9 +658,9 @@ export default function FormCalibrationPage() {
             {/* マーク型：データリンク設定 */}
             {fType === 'mark' && (
               <div className="rounded-xl border border-orange-100 bg-orange-50/40 p-3 space-y-2">
-                <p className="text-[10px] font-semibold text-orange-600">データリンク（条件一致でマークを印字）</p>
+                <p className="text-[11px] font-semibold text-orange-600">データリンク（条件一致でマークを印字）</p>
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">参照するデータ項目</label>
+                  <label className="block text-[11px] text-gray-400 mb-0.5">参照するデータ項目</label>
                   <select
                     value={fDataKey}
                     onChange={e => { setFDataKey(e.target.value); setFMatchValue('') }}
@@ -666,7 +673,7 @@ export default function FormCalibrationPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">この値のときにマーク</label>
+                  <label className="block text-[11px] text-gray-400 mb-0.5">この値のときにマーク</label>
                   {DATA_KEY_OPTIONS.find(o => o.value === fDataKey)?.values ? (
                     <div className="flex flex-wrap gap-1">
                       {DATA_KEY_OPTIONS.find(o => o.value === fDataKey)!.values!.map(v => (
@@ -694,7 +701,7 @@ export default function FormCalibrationPage() {
                   )}
                 </div>
                 {fDataKey && fMatchValue && (
-                  <p className="text-[10px] text-orange-600 bg-orange-100 rounded px-2 py-1">
+                  <p className="text-[11px] text-orange-600 bg-orange-100 rounded px-2 py-1">
                     「{DATA_KEY_OPTIONS.find(o => o.value === fDataKey)?.label}」が
                     <strong> {fMatchValue} </strong>
                     のとき、この位置に <strong>{fMarkChar || '●'}</strong> を印字
@@ -706,11 +713,11 @@ export default function FormCalibrationPage() {
             {/* プレビューテキスト */}
             <div>
               <div className="flex items-center justify-between mb-0.5">
-                <label className="block text-[10px] text-gray-400">プレビューテキスト（画像に赤字で表示）</label>
+                <label className="block text-[11px] text-gray-400">プレビューテキスト（画像に赤字で表示）</label>
                 <button
                   type="button"
                   onClick={() => setShowPreview(v => !v)}
-                  className={`text-[10px] px-2 py-0.5 rounded border transition ${
+                  className={`text-[11px] px-2 py-0.5 rounded border transition ${
                     showPreview
                       ? 'bg-red-50 border-red-200 text-red-500'
                       : 'bg-gray-50 border-gray-200 text-gray-400'
@@ -776,7 +783,7 @@ export default function FormCalibrationPage() {
 
           {/* 事前定義フォームの読み込み */}
           <div className="px-4 py-3 border-t border-gray-200 shrink-0 space-y-2">
-            <p className="text-[10px] text-gray-400 font-semibold">書式レイアウトを読み込む</p>
+            <p className="text-[11px] text-gray-400 font-semibold">書式レイアウトを読み込む</p>
             <div className="flex gap-2">
               {[
                 { label: '試験申請書',       file: 'shiken'  },
@@ -798,7 +805,7 @@ export default function FormCalibrationPage() {
                       alert('読み込みに失敗しました')
                     }
                   }}
-                  className="flex-1 py-1.5 text-[10px] border border-lavender-200 text-lavender-600 rounded hover:bg-lavender-50 leading-tight text-center"
+                  className="flex-1 py-1.5 text-[11px] border border-lavender-200 text-lavender-600 rounded hover:bg-lavender-50 leading-tight text-center"
                 >
                   {label}
                 </button>
@@ -808,7 +815,7 @@ export default function FormCalibrationPage() {
 
           {/* JSON エクスポート／インポート */}
           <div className="px-4 py-3 border-t border-gray-200 shrink-0 space-y-2">
-            <p className="text-[10px] text-gray-400">手動保存・読み込み（JSONファイル）</p>
+            <p className="text-[11px] text-gray-400">手動保存・読み込み（JSONファイル）</p>
             <div className="flex gap-2">
               <button
                 onClick={() => {

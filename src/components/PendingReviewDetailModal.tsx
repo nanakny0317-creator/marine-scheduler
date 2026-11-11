@@ -30,7 +30,8 @@ function fieldRows(s: Student, c: Student): FieldRow[] {
     { label: '都道府県',     left: s.prefecture,    right: c.prefecture },
     { label: '市区町村',     left: s.city,          right: c.city },
     { label: '番地',         left: s.address1,      right: c.address1 },
-    { label: 'マンション等', left: s.address2,      right: c.address2 },
+    { label: '建物名',       left: s.address2,      right: c.address2 },
+    { label: '部屋番号',     left: s.address_room ?? null, right: c.address_room ?? null },
     { label: '電話',         left: s.phone,         right: c.phone },
     { label: '携帯',         left: s.mobile,        right: c.mobile },
     { label: 'メール',       left: s.email,         right: c.email },
@@ -81,7 +82,7 @@ export default function PendingReviewDetailModal({ pr, onClose, onResolved }: Pr
             <h2 className="text-base font-bold text-amber-700">重複確認 — 詳細比較</h2>
             <div className="flex gap-1.5 mt-1 flex-wrap">
               {parseReasons(pr.match_reasons).map((r) => (
-                <span key={r} className="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-700 rounded-full">{r}</span>
+                <span key={r} className="text-[11px] px-2 py-0.5 bg-amber-200 text-amber-700 rounded-full">{r}</span>
               ))}
             </div>
           </div>
@@ -118,7 +119,7 @@ export default function PendingReviewDetailModal({ pr, onClose, onResolved }: Pr
                   ].join(' ')}
                 >
                   <div className="px-3 py-2.5 text-xs text-gray-500 font-medium flex items-center gap-1">
-                    {diff && <span className="text-amber-400 text-[10px]">●</span>}
+                    {diff && <span className="text-amber-400 text-[11px]">●</span>}
                     {row.label}
                   </div>
                   <div className={`px-3 py-2.5 text-sm ${diff ? 'text-blue-700 font-semibold bg-blue-50/40' : 'text-gray-700'}`}>
@@ -137,7 +138,7 @@ export default function PendingReviewDetailModal({ pr, onClose, onResolved }: Pr
         <div className="border-t border-gray-100 px-6 py-4 shrink-0">
           {confirm === null ? (
             <div className="flex gap-3 flex-wrap items-center justify-between">
-              <p className="text-xs text-gray-400">どちらかの情報を正として統合するか、別会員として確定してください。</p>
+              <p className="note-text">どちらかの情報を正として統合するか、別会員として確定してください。</p>
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setConfirm('left')}

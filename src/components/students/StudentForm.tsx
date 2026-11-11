@@ -11,12 +11,14 @@ import type {
 } from '../../types'
 import {
   studentsApi, pendingReviewsApi, fetchAddressByZip,
-  enrollmentsApi, examRecordsApi, examSessionsApi,
+  enrollmentsApi, examRecordsApi, examSessionsApi, physicalExamsApi,
 } from '../../lib/api'
 import DuplicateResolutionModal from './DuplicateResolutionModal'
 import Section from '../FormSection'
+import DateTextInput from '../DateTextInput'
+import { PHYSICAL_VALID_YEARS, expiryAfterYears, fmtYmd } from '../../lib/validity'
 import { useEnrollmentForm } from './EnrollmentFormModal'
-import { LICENSE_CLASSES, LICENSE_OPTIONS, OLD_LICENSE_CLASSES } from '../../data/masterData'
+import { LICENSE_CLASSES, LICENSE_OPTIONS, OLD_LICENSE_CLASSES, NATIONALITIES, PREFECTURES } from '../../data/masterData'
 
 // コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
 interface FieldProps {
@@ -81,6 +83,11 @@ function Field({
   )
 }
 
+// フリガナ欄：ひらがな入力を確定時にカタカナへ変換
+const KANA_FIELDS: (keyof StudentInput)[] = ['last_kana', 'first_kana']
+const hiraToKata = (s: string) =>
+  s.replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60))
+
 const EMPTY: StudentInput = {
   student_code: null,
   license_number: null,
@@ -95,20 +102,28 @@ const EMPTY: StudentInput = {
   city: '',
   address1: '',
   address2: '',
+  address_room: '',
   mail_postal_code: '',
   mail_prefecture: '',
   mail_city: '',
   mail_address1: '',
   mail_address2: '',
+  mail_address_room: '',
   phone: '',
   mobile: '',
   email: '',
   note: '',
+  domicile: '',
+  nationality: '',
 }
 
 interface Props {
   student?: Student | null
   onSaved: (s: Student) => void
+  /** 画面に埋め込んで表示（全画面オーバーレイ・見出しなし、Escで閉じない） */
+  embedded?: boolean
+  /** 未保存の変更があるかを親へ通知（embedded 時の離脱確認用） */
+  onDirtyChange?: (dirty: boolean) => void
   onCancel: () => void
 }
 
@@ -117,6 +132,7 @@ const EMPTY_EXAM = {
   qualification_type: '二級',
   shintai_cert: false,
   shintai_valid_until: '',
+  shintai_date: '',        // 身体検査の受検日（入力すると身体検査の履歴に登録）
   gakka_session_id: null as number | null,
   gakka_exam_number: '',
   gakka_result: null as ExamResult,
@@ -131,18 +147,29 @@ const QUAL_TYPES = ['一級', '二級', '特殊', '湖川']
 
 // 住所欄のキー（申請住所 / 送付先住所）
 const ADDR_KEYS = {
-  main: { zip: 'postal_code', pref: 'prefecture', city: 'city', a1: 'address1', a2: 'address2' },
-  mail: { zip: 'mail_postal_code', pref: 'mail_prefecture', city: 'mail_city', a1: 'mail_address1', a2: 'mail_address2' },
+  main: { zip: 'postal_code', pref: 'prefecture', city: 'city', a1: 'address1', a2: 'address2', room: 'address_room' },
+  mail: { zip: 'mail_postal_code', pref: 'mail_prefecture', city: 'mail_city', a1: 'mail_address1', a2: 'mail_address2', room: 'mail_address_room' },
 } as const satisfies Record<string, Record<string, keyof StudentInput>>
 const MAIL_KEYS = Object.values(ADDR_KEYS.mail)
 const RESULTS: ExamResult[] = ['合', '免', '否', '不']
 
-export default function StudentForm({ student, onSaved, onCancel }: Props) {
+export default function StudentForm({ student, onSaved, onCancel, embedded = false, onDirtyChange }: Props) {
   const isNew = !student
 
   const [form, setForm] = useState<StudentInput>(
     student ? { ...student } : { ...EMPTY }
   )
+
+  // 埋め込み表示：保存後などに親から新しい student が来たらフォームを合わせる
+  useEffect(() => {
+    if (embedded && student) setForm({ ...student })
+  }, [embedded, student])
+
+  // 未保存の変更があるか（空文字と null は同じとみなす）
+  const norm = (v: unknown) => (v === '' || v === undefined ? null : v)
+  const dirty = !!student && (Object.keys(form) as (keyof StudentInput)[])
+    .some((k) => norm(form[k]) !== norm((student as StudentInput)[k]))
+  useEffect(() => { onDirtyChange?.(dirty) }, [dirty, onDirtyChange])
   const [errors, setErrors] = useState<Partial<Record<keyof StudentInput, string>>>({})
   const [dupResult, setDupResult] = useState<DuplicateCheckResult | null>(null)
   const [saving, setSaving] = useState(false)
@@ -192,8 +219,8 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         student_id:          studentId,
         enrollment_id:       null,
         qualification_type:  examForm.qualification_type,
-        shintai_cert:        examForm.shintai_cert,
-        shintai_valid_until: examForm.shintai_valid_until || null,
+        shintai_cert:        false,   // 身体検査は physical_exams で管理
+        shintai_valid_until: null,
         gakka_session_id:    examForm.gakka_session_id,
         gakka_exam_number:   examForm.gakka_exam_number || null,
         gakka_result:        examForm.gakka_result,
@@ -203,6 +230,14 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         jitsugi_result:      examForm.jitsugi_result,
         jitsugi_result_date: examForm.jitsugi_result_date || null,
         note:                null,
+      })
+    }
+    if (showExam && examForm.shintai_date) {
+      await physicalExamsApi.create({
+        student_id:  studentId,
+        exam_date:   examForm.shintai_date,
+        valid_until: expiryAfterYears(examForm.shintai_date, PHYSICAL_VALID_YEARS) || null,
+        note:        null,
       })
     }
   }
@@ -245,11 +280,12 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
     const addr = await fetchAddressByZip(zip)
     setZipLoading(null)
     if (addr) {
+      // 町名は市区町村の欄にまとめる（番地の欄は番地だけを入力する）。
+      // 番地欄に入力済みの内容は消さない
       setForm((f) => ({
         ...f,
         [keys.pref]: addr.prefecture,
-        [keys.city]: addr.city,
-        [keys.a1]: addr.address1,
+        [keys.city]: addr.city + addr.address1,
       }))
     }
   }
@@ -276,6 +312,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
       mail_city: f.city,
       mail_address1: f.address1,
       mail_address2: f.address2,
+      mail_address_room: f.address_room,
     }))
   }
 
@@ -377,12 +414,12 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         inputs[idx + 1]?.focus()
       }
     }
-    if (e.key === 'Escape') onCancel()
+    if (e.key === 'Escape' && !embedded) onCancel()
   }
 
   const f = (name: keyof StudentInput) => ({
     value: (form[name] as string) ?? '',
-    onChange: (v: string) => set(name, v),
+    onChange: (v: string) => set(name, KANA_FIELDS.includes(name) ? hiraToKata(v) : v),
     onKeyDown: handleKeyDown,
     error: errors[name],
   })
@@ -397,8 +434,9 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         onCancel={() => setDupResult(null)}
       />
     )}
-    <div className="fixed inset-0 z-[55] bg-white flex flex-col">
+    <div className={embedded ? 'flex-1 min-h-0 flex flex-col bg-white' : 'fixed inset-0 z-[55] bg-white flex flex-col'}>
         {/* sticky header */}
+        {!embedded && (
         <div className="shrink-0 px-8 py-5 border-b border-lavender-100 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-700">
             {student ? '受講者を編集' : '受講者を追加'}
@@ -412,6 +450,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
             ✕
           </button>
         </div>
+        )}
 
         {/* scrollable body */}
         <form
@@ -420,225 +459,274 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
           onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
         >
         <div className="max-w-6xl mx-auto px-8 py-4 space-y-4">
-          {/* ── メイン情報：2カラムのセクションカード ── */}
-          <div className="grid grid-cols-2 gap-4 bg-lavender-50/30 -mx-2 p-2 rounded-2xl">
+          {/* ── メイン情報：本人情報（2/3）＋ 免許・備考（1/3） ── */}
+          <div className="grid grid-cols-3 gap-4 bg-lavender-50/30 -mx-2 p-2 rounded-2xl">
 
-            {/* ① 本人情報 */}
-            <Section step="1" title="本人情報" hint="* は必須">
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-dashed border-lavender-100">
-                <div>
-                  <label className="field-label">
-                    受講者番号
-                    <span className="ml-1 text-gray-400 font-normal text-[11px]">（自動採番）</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.student_code ?? ''}
-                    onChange={(e) => set('student_code', e.target.value || null)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="000001"
-                    maxLength={20}
-                    className="field-input bg-gray-50"
-                  />
+            {/* ── 左 2/3：① 本人情報（氏名・住所・連絡先） ── */}
+            <Section step="1" title="本人情報" hint="* は必須" className="col-span-2">
+              <div className="space-y-3">
+                {/* 表示：1行目＝受講者番号・生年月日・性別・本籍・国籍／2行目＝姓・名／3行目＝セイ・メイ。入力順（Tab・Enter）は 氏名→フリガナ→生年月日→性別→本籍→国籍 */}
+                <div className="grid grid-cols-12 gap-x-3 gap-y-3 content-start">
+                  <div className="col-span-2 row-start-1 col-start-1">
+                    <label className="field-label">
+                      受講者番号
+                    </label>
+                    <input
+                      type="text"
+                      value={form.student_code ?? ''}
+                      onChange={(e) => set('student_code', e.target.value || null)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="自動採番"
+                      title="空欄なら保存時に自動で採番されます"
+                      maxLength={20}
+                      className="field-input bg-gray-50"
+                    />
+                  </div>
+                  <div className="col-span-4 row-start-2 col-start-1">
+                    <Field label="姓" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
+                  </div>
+                  <div className="col-span-4 row-start-2 col-start-5">
+                    <Field label="名" required placeholder="太郎" {...f('first_name')} />
+                  </div>
+                  <div className="col-span-4 row-start-3 col-start-1">
+                    <Field label="セイ（フリガナ）" placeholder="ヤマダ" {...f('last_kana')} />
+                  </div>
+                  <div className="col-span-4 row-start-3 col-start-5">
+                    <Field label="メイ（フリガナ）" placeholder="タロウ" {...f('first_kana')} />
+                  </div>
+                  <div className="col-span-4 row-start-1 col-start-3">
+                    <Field label="生年月日" {...f('birth_date')}>
+                      <DateTextInput showAge value={form.birth_date} onChange={(v) => set('birth_date', v || null)} onKeyDown={handleKeyDown} />
+                    </Field>
+                  </div>
+                  <div className="col-span-2 row-start-1 col-start-7">
+                      <Field label="性別" {...f('gender')}>
+                        <select
+                          value={form.gender ?? ''}
+                          onChange={(e) => set('gender', e.target.value as StudentInput['gender'] || null)}
+                          onKeyDown={handleKeyDown}
+                          className="field-select"
+                        >
+                          <option value="">--</option>
+                          <option value="male">男性</option>
+                          <option value="female">女性</option>
+                          <option value="other">その他</option>
+                        </select>
+                      </Field>
+                  </div>
+                  <div className="col-span-2 row-start-1 col-start-9">
+                      <Field label="本籍地" {...f('domicile')}>
+                        <select
+                          value={form.domicile ?? ''}
+                          onChange={(e) => set('domicile', e.target.value || null)}
+                          onKeyDown={handleKeyDown}
+                          className="field-select"
+                        >
+                          <option value="">--</option>
+                          {form.domicile && !PREFECTURES.includes(form.domicile) && (
+                            <option value={form.domicile}>{form.domicile}（未登録）</option>
+                          )}
+                          {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </Field>
+                  </div>
+                  <div className="col-span-2 row-start-1 col-start-11">
+                      <Field label="国籍" {...f('nationality')}>
+                        <select
+                          value={form.nationality ?? ''}
+                          onChange={(e) => set('nationality', e.target.value || null)}
+                          onKeyDown={handleKeyDown}
+                          className="field-select"
+                        >
+                          <option value="">日本</option>
+                          {form.nationality && !NATIONALITIES.some(n => n.label === form.nationality) && (
+                            <option value={form.nationality}>{form.nationality}（未登録）</option>
+                          )}
+                          {NATIONALITIES.filter(n => n.code !== 1).map(n => (
+                            <option key={n.code} value={n.label}>{n.label}</option>
+                          ))}
+                        </select>
+                      </Field>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="姓" required placeholder="山田" inputRef={firstRef} {...f('last_name')} />
-                <Field label="名" required placeholder="太郎" {...f('first_name')} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="せい（ふりがな）" placeholder="やまだ" {...f('last_kana')} />
-                <Field label="めい（ふりがな）" placeholder="たろう" {...f('first_kana')} />
-              </div>
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-dashed border-lavender-100">
-                <Field label="生年月日" type="date" {...f('birth_date')} />
-                <Field label="性別" {...f('gender')}>
-                  <select
-                    value={form.gender ?? ''}
-                    onChange={(e) => set('gender', e.target.value as StudentInput['gender'] || null)}
-                    onKeyDown={handleKeyDown}
-                    className="field-select"
-                  >
-                    <option value="">選択してください</option>
-                    <option value="male">男性</option>
-                    <option value="female">女性</option>
-                    <option value="other">その他</option>
-                  </select>
-                </Field>
-              </div>
-            </Section>
 
-            {/* ② 住所（免許申請用住所 / 送付先住所 をタブ切替） */}
-            <Section
-              step="2"
-              title="住所"
-              action={
-                <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={hasMail}
-                    onChange={(e) => toggleMail(e.target.checked)}
-                    className="rounded"
-                    tabIndex={-1}
-                  />
-                  送付先が別
-                </label>
-              }
-            >
-              {hasMail && (
-                <div className="flex gap-1 -mt-1 border-b border-lavender-100">
-                  {([['main', '免許申請用住所'], ['mail', '送付先住所']] as const).map(([k, label]) => (
-                    <button
-                      key={k}
-                      type="button"
-                      tabIndex={-1}
-                      onClick={() => setAddrTab(k)}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg border-b-2 -mb-px transition ${
-                        addrTab === k
-                          ? k === 'mail'
-                            ? 'border-amber-400 text-amber-600 bg-amber-50'
-                            : 'border-lavender-400 text-lavender-600 bg-lavender-50'
-                          : 'border-transparent text-gray-400 hover:text-gray-600'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                  {addrTab === 'mail' && (
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={copyMainToMail}
-                      className="ml-auto text-[11px] text-lavender-500 hover:text-lavender-700"
-                    >
-                      申請用住所をコピー
-                    </button>
+                {/* 住所・連絡先 */}
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center gap-2 pb-1 border-b border-lavender-100">
+                    <h4 className="text-xs font-bold text-lavender-600">住所</h4>
+                    <label className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={hasMail}
+                        onChange={(e) => toggleMail(e.target.checked)}
+                        className="rounded"
+                        tabIndex={-1}
+                      />
+                      送付先が別
+                    </label>
+                  </div>
+                  {hasMail && (
+                    <div className="flex gap-1 -mt-1 border-b border-lavender-100">
+                      {([['main', '免許申請用住所'], ['mail', '送付先住所']] as const).map(([k, label]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          tabIndex={-1}
+                          onClick={() => setAddrTab(k)}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg border-b-2 -mb-px transition ${
+                            addrTab === k
+                              ? k === 'mail'
+                                ? 'border-amber-400 text-amber-600 bg-amber-50'
+                                : 'border-lavender-400 text-lavender-600 bg-lavender-50'
+                              : 'border-transparent text-gray-400 hover:text-gray-600'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                      {addrTab === 'mail' && (
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={copyMainToMail}
+                          className="ml-auto text-[12px] text-lavender-500 hover:text-lavender-700"
+                        >
+                          申請用住所をコピー
+                        </button>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
-              {(() => {
-                const kind = hasMail ? addrTab : 'main'
-                const k = ADDR_KEYS[kind]
-                return (
-                  <div key={kind} className={kind === 'mail' ? 'space-y-3 rounded-lg bg-amber-50/40 -mx-1 px-1 pb-1' : 'space-y-3'}>
-                    <div className="grid grid-cols-[10rem_1fr] gap-3">
-                      <div>
-                        <label className="field-label">郵便番号</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={(form[k.zip] as string | null | undefined) ?? ''}
-                            onChange={(e) => set(k.zip, e.target.value)}
-                            onBlur={() => handleZipBlur(kind)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleZipBlur(kind)
-                              handleKeyDown(e)
-                            }}
-                            placeholder="1234567"
-                            maxLength={8}
-                            className="field-input pr-12"
-                          />
-                          {zipLoading === kind && (
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-lavender-400 animate-pulse">
-                              検索中
-                            </span>
+                  {(() => {
+                    const kind = hasMail ? addrTab : 'main'
+                    const k = ADDR_KEYS[kind]
+                    return (
+                      <div key={kind} className={kind === 'mail' ? 'space-y-3 rounded-lg bg-amber-50/40 -mx-1 px-1 pb-1' : 'space-y-3'}>
+                        <div className="grid grid-cols-12 gap-3">
+                          <div className="col-span-2">
+                            <label className="field-label">郵便番号</label>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={(form[k.zip] as string | null | undefined) ?? ''}
+                                onChange={(e) => set(k.zip, e.target.value)}
+                                onBlur={() => handleZipBlur(kind)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleZipBlur(kind)
+                                  handleKeyDown(e)
+                                }}
+                                placeholder="1234567"
+                                maxLength={8}
+                                className="field-input pr-12"
+                              />
+                              {zipLoading === kind && (
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-lavender-400 animate-pulse">
+                                  検索中
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="col-span-2"><Field label="都道府県" placeholder="東京都" {...f(k.pref)} /></div>
+                          <div className="col-span-5"><Field label="市区町村・町名" placeholder="渋谷区道玄坂" {...f(k.city)} /></div>
+                          <div className="col-span-3"><Field label="番地" placeholder="1-2-3" {...f(k.a1)} /></div>
+                        </div>
+                        <div className="grid grid-cols-12 gap-3 items-end">
+                          <div className="col-span-5"><Field label="建物名" placeholder="○○マンション" {...f(k.a2)} /></div>
+                          <div className="col-span-2"><Field label="部屋番号" placeholder="101" {...f(k.room)} /></div>
+                          {kind === 'main' && (
+                            <p className="col-span-5 note-text leading-snug pb-0.5">申込書は「番地-部屋番号」で印字（建物名は宛名ラベルのみ）。{!hasMail && '送付先が違う人は「送付先が別」にチェック。'}</p>
                           )}
                         </div>
                       </div>
-                      <Field label="都道府県" placeholder="東京都" {...f(k.pref)} />
-                    </div>
-                    <Field label="市区町村" placeholder="渋谷区" {...f(k.city)} />
-                    <Field label="番地" placeholder="道玄坂1-2-3" {...f(k.a1)} />
-                    <Field label="建物名・部屋番号" placeholder="○○マンション 101" {...f(k.a2)} />
+                    )
+                  })()}
+                  <div className="pt-1" />
+                  <div className="flex items-center gap-2 pb-1 border-b border-lavender-100">
+                    <h4 className="text-xs font-bold text-lavender-600">連絡先</h4>
                   </div>
-                )
-              })()}
-              {!hasMail && (
-                <p className="text-[11px] text-gray-400">書類はこの住所へ送付します。別の送付先がある場合は右上の「送付先が別」にチェック。</p>
-              )}
-            </Section>
-
-            {/* ③ 連絡先 */}
-            <Section step="3" title="連絡先">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="電話番号" type="tel" placeholder="03-0000-0000" {...f('phone')} />
-                <Field label="携帯電話" type="tel" placeholder="090-0000-0000" {...f('mobile')} />
-              </div>
-              <Field label="メールアドレス" type="email" placeholder="taro@example.com" {...f('email')} />
-            </Section>
-
-            {/* ④ 現有免許情報 */}
-            <Section step="4" title="現有免許情報" hint="お持ちの場合">
-              <Field label="免許番号" placeholder="例：0300160004901" {...f('license_number')} />
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="有効期限" type="date" {...f('license_expiry')} />
-                <Field label="交付日" type="date" {...f('license_issue_date')} />
-              </div>
-              <div className="pt-3 border-t border-dashed border-lavender-100 space-y-2">
-                <label className="field-label">免許の種類</label>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {LICENSE_CLASSES.map(c => (
-                    <button key={c} type="button" tabIndex={-1} onClick={() => toggleLicenseClass(c)} className={chipCls(form.license_class === c)}>
-                      {c}
-                    </button>
-                  ))}
-                  <span className="mx-1 text-gray-300">＋</span>
-                  {LICENSE_OPTIONS.map(o => (
-                    <button key={o} type="button" tabIndex={-1} onClick={() => toggleLicenseOption(o)} className={chipCls(licenseOpts.includes(o))}>
-                      {o}
-                    </button>
-                  ))}
-                </div>
-                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none w-fit">
-                  <input
-                    type="checkbox"
-                    checked={!!form.license_equipment_limited}
-                    onChange={(e) => setForm((fm) => ({ ...fm, license_equipment_limited: e.target.checked }))}
-                    className="rounded"
-                    tabIndex={-1}
-                  />
-                  設備限定
-                </label>
-                {/* 旧免許（普段は閉じておく） */}
-                <div className="rounded-lg border border-gray-100">
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={() => setShowOldLicense(v => !v)}
-                    className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
-                  >
-                    <span>
-                      旧免許の場合
-                      {form.license_class?.startsWith('旧') && (
-                        <span className="ml-2 text-lavender-600 font-semibold">{form.license_class.replace(/^旧/, '')} を選択中</span>
-                      )}
-                    </span>
-                    <span className="text-gray-400">{showOldLicense ? '▲' : '▼'}</span>
-                  </button>
-                  {showOldLicense && (
-                    <div className="flex flex-wrap gap-1.5 px-3 pb-2.5 pt-1">
-                      {OLD_LICENSE_CLASSES.map(c => (
-                        <button key={c} type="button" tabIndex={-1} onClick={() => toggleLicenseClass(c)} className={chipCls(form.license_class === c)}>
-                          {c.replace(/^旧/, '')}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-12 gap-3">
+                    <div className="col-span-3"><Field label="電話番号" type="tel" placeholder="03-0000-0000" {...f('phone')} /></div>
+                    <div className="col-span-3"><Field label="携帯電話" type="tel" placeholder="090-0000-0000" {...f('mobile')} /></div>
+                    <div className="col-span-6"><Field label="メールアドレス" type="email" placeholder="taro@example.com" {...f('email')} /></div>
+                  </div>
                 </div>
               </div>
             </Section>
 
-            {/* 備考 */}
-            <Section title="備考" className="col-span-2">
-              <textarea
-                value={form.note ?? ''}
-                onChange={(e) => set('note', e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}
-                rows={2}
-                placeholder="連絡事項・注意点など"
-                className="field-input resize-none"
-              />
-            </Section>
+            {/* ── 右 1/3：② 現有免許情報＋備考 ── */}
+            <div className="flex flex-col gap-4">
+              {/* ② 現有免許情報 */}
+              <Section step="2" title="現有免許情報" hint="お持ちの場合">
+                <Field label="免許番号" placeholder="例：0300160004901" {...f('license_number')} />
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="有効期限" type="date" {...f('license_expiry')} />
+                  <Field label="交付日" type="date" {...f('license_issue_date')} />
+                </div>
+                <div className="pt-3 border-t border-dashed border-lavender-100 space-y-2">
+                  <label className="field-label">免許の種類</label>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {LICENSE_CLASSES.map(c => (
+                      <button key={c} type="button" tabIndex={-1} onClick={() => toggleLicenseClass(c)} className={chipCls(form.license_class === c)}>
+                        {c}
+                      </button>
+                    ))}
+                    <span className="mx-1 text-gray-300">＋</span>
+                    {LICENSE_OPTIONS.map(o => (
+                      <button key={o} type="button" tabIndex={-1} onClick={() => toggleLicenseOption(o)} className={chipCls(licenseOpts.includes(o))}>
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none w-fit">
+                    <input
+                      type="checkbox"
+                      checked={!!form.license_equipment_limited}
+                      onChange={(e) => setForm((fm) => ({ ...fm, license_equipment_limited: e.target.checked }))}
+                      className="rounded"
+                      tabIndex={-1}
+                    />
+                    設備限定
+                  </label>
+                  {/* 旧免許（普段は閉じておく） */}
+                  <div className="rounded-lg border border-gray-100">
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowOldLicense(v => !v)}
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
+                    >
+                      <span>
+                        旧免許の場合
+                        {form.license_class?.startsWith('旧') && (
+                          <span className="ml-2 text-lavender-600 font-semibold">{form.license_class.replace(/^旧/, '')} を選択中</span>
+                        )}
+                      </span>
+                      <span className="text-gray-400">{showOldLicense ? '▲' : '▼'}</span>
+                    </button>
+                    {showOldLicense && (
+                      <div className="flex flex-wrap gap-1.5 px-3 pb-2.5 pt-1">
+                        {OLD_LICENSE_CLASSES.map(c => (
+                          <button key={c} type="button" tabIndex={-1} onClick={() => toggleLicenseClass(c)} className={chipCls(form.license_class === c)}>
+                            {c.replace(/^旧/, '')}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Section>
+
+              {/* 備考 */}
+              <Section title="備考" fill className="flex-1">
+                <textarea
+                  value={form.note ?? ''}
+                  onChange={(e) => set('note', e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Escape' && !embedded) onCancel() }}
+                  rows={3}
+                  placeholder="連絡事項・注意点など"
+                  className="field-input resize-none flex-1"
+                />
+              </Section>
+            </div>
           </div>
 
           {/* ── 新規時のオプションセクション ── */}
@@ -697,28 +785,17 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
                       </div>
                     </div>
 
-                    {/* 身体検査 */}
-                    <div>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={examForm.shintai_cert}
-                          onChange={e => setX('shintai_cert', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span className="text-sm text-gray-700">身体検査証明書あり</span>
-                      </label>
-                      {examForm.shintai_cert && (
-                        <div className="mt-2">
-                          <label className="field-label">身体検査有効期限</label>
-                          <input
-                            type="date"
-                            value={examForm.shintai_valid_until}
-                            onChange={e => setX('shintai_valid_until', e.target.value)}
-                            className="field-input"
-                          />
-                        </div>
-                      )}
+                    {/* 身体検査（受検日から1年有効） */}
+                    <div className="grid grid-cols-[11rem_1fr] gap-3 items-end">
+                      <div>
+                        <label className="field-label">身体検査の受検日</label>
+                        <DateTextInput value={examForm.shintai_date} onChange={v => setX('shintai_date', v)} />
+                      </div>
+                      <p className="note-text pb-2">
+                        {examForm.shintai_date
+                          ? `${fmtYmd(expiryAfterYears(examForm.shintai_date, PHYSICAL_VALID_YEARS))} まで有効（受検日から1年）`
+                          : '受けている場合のみ入力（受検日から1年有効）'}
+                      </p>
                     </div>
 
                     {/* 学科試験 */}
@@ -848,7 +925,20 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
         </form>
         {/* sticky footer */}
         <div className="shrink-0 border-t border-lavender-100 bg-white">
-          <div className="max-w-6xl mx-auto px-8 py-5 flex items-center justify-end gap-3">
+          <div className={`max-w-6xl mx-auto px-8 flex items-center justify-end gap-3 ${embedded ? 'py-3' : 'py-5'}`}>
+            {embedded ? (
+              <>
+                {dirty && <span className="note-text mr-auto">未保存の変更があります</span>}
+                <button
+                  type="button"
+                  onClick={() => { if (student) setForm({ ...student }) }}
+                  disabled={!dirty}
+                  className="btn-secondary disabled:opacity-40"
+                >
+                  変更を元に戻す
+                </button>
+              </>
+            ) : (
             <button
               type="button"
               onClick={onCancel}
@@ -856,6 +946,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
             >
               キャンセル (Esc)
             </button>
+            )}
             <button
               type="submit"
               form="student-form"
@@ -863,7 +954,7 @@ export default function StudentForm({ student, onSaved, onCancel }: Props) {
               className="btn-primary min-w-[100px]"
               onKeyDown={(e) => handleKeyDown(e, true)}
             >
-              {saving ? '保存中…' : student ? '更新する' : '追加する'}
+              {saving ? '保存中…' : student ? (embedded ? '保存する' : '更新する') : '追加する'}
             </button>
           </div>
         </div>

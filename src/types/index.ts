@@ -9,6 +9,9 @@ export interface Student {
   license_class?: string | null            // 種類：一級/二級/湖川、旧免許は 旧一級〜旧五級/旧湖川
   license_options?: string | null          // 追加区分：限定1海里,特殊,特定（カンマ区切り）
   license_equipment_limited?: boolean      // 設備限定
+  // 申請者情報（免許申請書に記載）
+  domicile?: string | null                 // 本籍地（都道府県）
+  nationality?: string | null              // 国籍（日本は空欄）
   last_name: string
   first_name: string
   last_kana: string | null
@@ -19,13 +22,15 @@ export interface Student {
   prefecture: string | null
   city: string | null
   address1: string | null
-  address2: string | null
+  address2: string | null                  // 建物名（マンション名など）
+  address_room?: string | null             // 部屋番号（申込書では「番地-部屋番号」）
   // 送付先住所（申請住所と別の場合のみ入力。すべて空なら申請住所へ送付）
   mail_postal_code?: string | null
   mail_prefecture?: string | null
   mail_city?: string | null
   mail_address1?: string | null
   mail_address2?: string | null
+  mail_address_room?: string | null
   phone: string | null
   mobile: string | null
   email: string | null
@@ -38,7 +43,11 @@ export type StudentInput = Omit<Student, 'id' | 'created_at' | 'updated_at'>
 
 export interface StudentSearchParams {
   query?: string
-  sortBy?: 'last_name' | 'last_kana' | 'created_at' | 'updated_at'
+  // 追加の絞り込み（同姓同名の見分け用）
+  birthDate?: string          // 生年月日（YYYY-MM-DD 完全一致）
+  phone?: string              // 電話・携帯（ハイフン無視の部分一致）
+  address?: string            // 住所（都道府県・市区町村・番地・建物名の部分一致）
+  sortBy?: 'last_name' | 'last_kana' | 'created_at' | 'updated_at' | 'birth_date'
   sortDir?: 'asc' | 'desc'
   applicationType?: ApplicationType | 'all'
 }
@@ -239,6 +248,18 @@ export interface ExamRecord {
 
 export type ExamRecordInput = Omit<ExamRecord, 'id' | 'created_at' | 'updated_at'>
 
+// ===== 身体検査の履歴（受検日から1年有効） =====
+export interface PhysicalExam {
+  id: number
+  student_id: number
+  exam_date: string | null     // 受検日
+  valid_until: string | null   // 有効期限（受検日から1年。手で直すことも可）
+  note: string | null
+  created_at: string
+  updated_at: string
+}
+export type PhysicalExamInput = Omit<PhysicalExam, 'id' | 'created_at' | 'updated_at'>
+
 // ===== 会場マスター =====
 export interface Venue {
   id: number
@@ -328,6 +349,12 @@ export interface ElectronAPI {
     list:   (studentId: number) => Promise<ExamRecord[]>
     create: (input: ExamRecordInput) => Promise<ExamRecord>
     update: (id: number, input: ExamRecordInput) => Promise<ExamRecord>
+    delete: (id: number) => Promise<boolean>
+  }
+  physicalExams: {
+    list:   (studentId: number) => Promise<PhysicalExam[]>
+    create: (input: PhysicalExamInput) => Promise<PhysicalExam>
+    update: (id: number, input: PhysicalExamInput) => Promise<PhysicalExam>
     delete: (id: number) => Promise<boolean>
   }
   print: {

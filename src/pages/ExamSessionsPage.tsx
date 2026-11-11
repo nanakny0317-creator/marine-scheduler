@@ -5,168 +5,13 @@ import { ja } from 'date-fns/locale'
 import * as XLSX from 'xlsx'
 import type { ExamSession, ExamSessionInput } from '../types'
 import { examSessionsApi } from '../lib/api'
+import ExamSessionFormModal, { makeEmptyExamSession as makeEmpty } from '../components/ExamSessionFormModal'
+import { normalizeExamLocation } from '../lib/examLocation'
 
 const QUAL_TYPES = ['一級', '二級', '特殊', '湖川']
 
 function fmtDate(d: string) {
   try { return format(new Date(d), 'yyyy年M月d日(E)', { locale: ja }) } catch { return d }
-}
-
-function makeEmpty(): ExamSessionInput {
-  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技', gakka_venue: '', jitsugi_venue: '' }
-}
-
-// ── 追加/編集フォームモーダル ─────────────────────────────────
-
-interface FormModalProps {
-  initial: ExamSessionInput
-  editId: number | null
-  onSave: (input: ExamSessionInput) => Promise<void>
-  onCancel: () => void
-}
-
-function ExamSessionFormModal({ initial, editId, onSave, onCancel }: FormModalProps) {
-  const [form, setForm] = useState<ExamSessionInput>(initial)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-
-  const set = <K extends keyof ExamSessionInput>(k: K, v: ExamSessionInput[K]) =>
-    setForm(f => ({ ...f, [k]: v }))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.exam_date) { setError('試験日を入力してください'); return }
-    if (!form.exam_location.trim()) { setError('試験地を入力してください'); return }
-    if (!form.exam_id.trim()) { setError('試験IDを入力してください'); return }
-    setSaving(true)
-    try {
-      await onSave(form)
-    } catch {
-      setError('保存に失敗しました')
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="px-6 py-4 border-b border-lavender-100 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-700">
-            {editId ? '試験日程を編集' : '試験日程を追加'}
-          </h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
-        </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {error && <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">試験日</label>
-            <input
-              type="date"
-              value={form.exam_date}
-              onChange={e => set('exam_date', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">試験地</label>
-            <input
-              type="text"
-              value={form.exam_location}
-              onChange={e => set('exam_location', e.target.value)}
-              placeholder="例：大阪"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">学科試験会場</label>
-              <input
-                type="text"
-                value={form.gakka_venue}
-                onChange={e => set('gakka_venue', e.target.value)}
-                placeholder="例：大手前センチュリービル"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">実技試験会場</label>
-              <input
-                type="text"
-                value={form.jitsugi_venue}
-                onChange={e => set('jitsugi_venue', e.target.value)}
-                placeholder="空欄＝学科と同じ"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">資格種別</label>
-            <div className="flex gap-2">
-              {QUAL_TYPES.map(q => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => set('qualification_type', q)}
-                  className={`flex-1 py-2 rounded-lg border text-sm font-medium transition ${
-                    form.qualification_type === q
-                      ? 'bg-lavender-400 text-white border-lavender-400'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
-                  }`}
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">試験ID</label>
-            <input
-              type="text"
-              value={form.exam_id}
-              onChange={e => set('exam_id', e.target.value)}
-              placeholder="例：2025-A-001"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">試験区分</label>
-            <div className="flex gap-2">
-              {(['学科', '実技', '学科+実技'] as const).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => set('exam_type', t)}
-                  className={`flex-1 py-1.5 rounded-lg border text-sm font-medium transition ${
-                    form.exam_type === t
-                      ? 'bg-lavender-400 text-white border-lavender-400'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onCancel} className="flex-1 btn-secondary">キャンセル</button>
-            <button type="submit" disabled={saving} className="flex-1 btn-primary disabled:opacity-40">
-              {saving ? '保存中…' : '保存'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
 }
 
 // ── Excel プレビューモーダル ───────────────────────────────────
@@ -229,7 +74,7 @@ function ImportPreviewModal({ rows, onConfirm, onCancel }: ImportPreviewModalPro
         </div>
 
         <div className="shrink-0 px-6 py-4 border-t border-lavender-100 flex items-center gap-3 bg-gray-50 rounded-b-2xl">
-          <p className="flex-1 text-xs text-gray-400">
+          <p className="flex-1 note-text">
             同じ「試験日・試験地・資格種別」の組み合わせがある場合は試験ID・会場を上書き更新します。
           </p>
           <button type="button" onClick={onCancel} className="btn-secondary btn-sm">キャンセル</button>
@@ -350,7 +195,7 @@ export default function ExamSessionsPage() {
 
         const item: ExamSessionInput = {
           exam_date: currentDate,
-          exam_location: currentLocation,
+          exam_location: normalizeExamLocation(currentLocation),
           qualification_type: qual,
           exam_id: examId,
           exam_type: '学科+実技',
@@ -468,9 +313,6 @@ export default function ExamSessionsPage() {
                     >
                       <span className="w-20 shrink-0 text-xs font-medium px-2 py-1 rounded bg-lavender-50 text-lavender-600 border border-lavender-100 text-center">
                         {s.qualification_type}
-                      </span>
-                      <span className="text-xs font-medium px-2 py-0.5 rounded border bg-sky-50 text-sky-600 border-sky-200 shrink-0">
-                        {s.exam_type}
                       </span>
                       <span className="text-sm text-gray-700 flex-1">
                         {s.exam_location}

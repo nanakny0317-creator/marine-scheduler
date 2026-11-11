@@ -256,6 +256,8 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
         mobile: null,
         email: studentBase.email ?? null,
         note: null,
+        domicile: studentBase.domicile ?? null,
+        nationality: studentBase.nationality ?? null,
         // 現有免許（本文の「現有免許」「現有免許の種類」「有効期限日」から）
         license_expiry: parsed.license_expiry ?? null,
         ...parseLicenseText(parsed.current_license),
@@ -593,12 +595,12 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                       <span>#{i + 1} {r.student.last_name} {r.student.first_name}</span>
                       <span className="text-gray-400 font-normal">{r.student.last_kana} {r.student.first_kana}</span>
                       {!r.likelyApplication && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-600">
+                        <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-yellow-100 text-yellow-600">
                           申込外？
                         </span>
                       )}
                       {hasDup && (
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                        <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold border ${
                           topCandidate?.confidence === 'high'
                             ? 'bg-red-100 text-red-600 border-red-200'
                             : 'bg-amber-100 text-amber-600 border-amber-200'
@@ -606,7 +608,7 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                           ⚠ 重複候補あり
                         </span>
                       )}
-                      <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      <span className={`ml-auto px-1.5 py-0.5 rounded text-[11px] font-bold ${
                         r.applicationType === 'new' ? 'bg-mint-50 text-mint-600' :
                         r.applicationType === 'renewal' ? 'bg-blue-50 text-blue-500' :
                         'bg-orange-50 text-orange-500'
@@ -648,7 +650,7 @@ export default function CsvImportModal({ onClose, onImported }: Props) {
                             ))}
                           </div>
                           {!dupChoice && (
-                            <p className="text-amber-600 text-[10px]">未選択 → インポート時に自動的に「後で対応」として処理されます</p>
+                            <p className="text-amber-600 text-[11px]">未選択 → インポート時に自動的に「後で対応」として処理されます</p>
                           )}
                         </div>
 

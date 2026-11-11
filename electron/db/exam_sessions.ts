@@ -1,4 +1,5 @@
 import { query, run, Row } from './index'
+import { normalizeExamLocation } from '../../src/lib/examLocation'
 import type { ExamSession, ExamSessionInput } from '../../src/types'
 
 function toExamSession(row: Row): ExamSession {
@@ -27,7 +28,7 @@ export function createExamSession(input: ExamSessionInput): ExamSession {
   const id = run(
     `INSERT INTO exam_sessions (exam_date, exam_location, qualification_type, exam_id, exam_type, gakka_venue, jitsugi_venue)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [input.exam_date, input.exam_location, input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '']
+    [input.exam_date, normalizeExamLocation(input.exam_location), input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '']
   )
   return query('SELECT * FROM exam_sessions WHERE id = ?', [id]).map(toExamSession)[0]
 }
@@ -35,7 +36,7 @@ export function createExamSession(input: ExamSessionInput): ExamSession {
 export function updateExamSession(id: number, input: ExamSessionInput): ExamSession {
   run(
     `UPDATE exam_sessions SET exam_date=?, exam_location=?, qualification_type=?, exam_id=?, exam_type=?, gakka_venue=?, jitsugi_venue=? WHERE id=?`,
-    [input.exam_date, input.exam_location, input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '', id]
+    [input.exam_date, normalizeExamLocation(input.exam_location), input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '', id]
   )
   return query('SELECT * FROM exam_sessions WHERE id = ?', [id]).map(toExamSession)[0]
 }
@@ -47,7 +48,8 @@ export function deleteExamSession(id: number): void {
 export function upsertExamSessions(rows: ExamSessionInput[]): { inserted: number; updated: number } {
   let inserted = 0
   let updated = 0
-  for (const row of rows) {
+  for (const raw of rows) {
+    const row = { ...raw, exam_location: normalizeExamLocation(raw.exam_location) }
     const existing = query(
       'SELECT id FROM exam_sessions WHERE exam_date=? AND exam_location=? AND qualification_type=?',
       [row.exam_date, row.exam_location, row.qualification_type]

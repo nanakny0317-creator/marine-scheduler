@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "noEmit": false
   },
-  "include": ["electron", "src/types", "vite.config.ts"]
+  "include": ["electron", "src/types", "src/lib/examLocation.ts", "vite.config.ts"]
 }

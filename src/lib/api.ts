@@ -10,6 +10,7 @@ import type {
   RenewalSession, RenewalSessionInput,
   Classroom, ClassroomInput,
   ExamRecord, ExamRecordInput,
+  PhysicalExam, PhysicalExamInput,
   PendingReview, PendingReviewInput, PendingReviewWithStudents,
   DupImportRow,
 } from '../types'
@@ -143,6 +144,17 @@ export const examRecordsApi = {
     window.api.examRecords.update(id, input),
   delete: (id: number): Promise<boolean> =>
     window.api.examRecords.delete(id),
+}
+
+export const physicalExamsApi = {
+  list:   (studentId: number): Promise<PhysicalExam[]> =>
+    window.api.physicalExams.list(studentId),
+  create: (input: PhysicalExamInput): Promise<PhysicalExam> =>
+    window.api.physicalExams.create(input),
+  update: (id: number, input: PhysicalExamInput): Promise<PhysicalExam> =>
+    window.api.physicalExams.update(id, input),
+  delete: (id: number): Promise<boolean> =>
+    window.api.physicalExams.delete(id),
 }
 
 export const pendingReviewsApi = {

@@ -76,7 +76,7 @@ function RenewalSessionFormModal({ initial, editId, onSave, onCancel }: FormModa
           <div>
             <label className="block text-xs text-gray-500 mb-1">講習地</label>
             <VenueSelect value={form.location} onChange={v => set('location', v)} className={inputCls} />
-            <p className="text-[11px] text-gray-400 mt-1">候補にない会場は「会場・日程の設定」→「更新講習会場」で追加できます</p>
+            <p className="text-[12px] text-gray-400 mt-1">候補にない会場は「会場・日程の設定」→「更新講習会場」で追加できます</p>
           </div>
 
           <div>

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import CsvImportModal from '../components/students/CsvImportModal'
 import StudentForm from '../components/students/StudentForm'
 import PendingReviewDetailModal from '../components/PendingReviewDetailModal'
-import type { PendingReviewWithStudents } from '../types'
-import { pendingReviewsApi } from '../lib/api'
+import type { Enrollment, PendingReviewWithStudents, Student } from '../types'
+import { enrollmentsApi, pendingReviewsApi } from '../lib/api'
+import { exemptSubjectOf, missingPrevExam } from '../lib/prevExam'
+import EnrollmentFormModal from '../components/students/EnrollmentFormModal'
 import DevPanel from '../components/DevPanel'
 
 // ────────────────────────────────────────
@@ -89,7 +91,7 @@ function HomeButton({ icon, title, desc, color, primary = false, onClick, disabl
       </span>
       <span className="text-xs text-gray-400 text-center leading-relaxed whitespace-pre-line">{desc}</span>
       {disabled && (
-        <span className="absolute top-2.5 right-3 text-[10px] bg-gray-100 text-gray-400 rounded-full px-2 py-0.5 font-medium">
+        <span className="absolute top-2.5 right-3 text-[11px] bg-gray-100 text-gray-400 rounded-full px-2 py-0.5 font-medium">
           準備中
         </span>
       )}
@@ -113,7 +115,16 @@ export default function HomePage() {
     pendingReviewsApi.list().then(setPendingReviews).catch(() => {})
   }
 
-  useEffect(() => { loadPending() }, [])
+  // 過去合格歴（申請書②欄）が未入力の申込
+  const [prevMissing, setPrevMissing] = useState<{ enrollment: Enrollment; student: Student }[]>([])
+  const [editEnrollment, setEditEnrollment] = useState<{ enrollment: Enrollment; student: Student } | null>(null)
+  const loadPrevMissing = () => {
+    enrollmentsApi.listAll()
+      .then(list => setPrevMissing(list.filter(x => missingPrevExam(x.enrollment).length > 0)))
+      .catch(() => {})
+  }
+
+  useEffect(() => { loadPending(); loadPrevMissing() }, [])
 
   const handleResolve = async (id: number, resolution: 'merged' | 'different') => {
     await pendingReviewsApi.resolve(id, resolution)
@@ -238,11 +249,11 @@ export default function HomePage() {
             >
               {/* 新規会員 */}
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-gray-400 mb-0.5">新規登録</p>
+                <p className="text-[11px] text-gray-400 mb-0.5">新規登録</p>
                 <p className="text-sm font-bold text-gray-800 truncate">
                   {pr.student.last_name} {pr.student.first_name}
                 </p>
-                <p className="text-[10px] text-gray-400 truncate">
+                <p className="text-[11px] text-gray-400 truncate">
                   {pr.student.birth_date ?? '生年月日不明'}
                 </p>
               </div>
@@ -252,7 +263,7 @@ export default function HomePage() {
                 <p className="text-gray-300 text-lg leading-none">↔</p>
                 <div className="flex flex-wrap gap-1 justify-center mt-1 max-w-[120px]">
                   {parseReasons(pr.match_reasons).map((r: string) => (
-                    <span key={r} className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded-full whitespace-nowrap">
+                    <span key={r} className="text-[11px] px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded-full whitespace-nowrap">
                       {r}
                     </span>
                   ))}
@@ -261,11 +272,11 @@ export default function HomePage() {
 
               {/* 既存会員 */}
               <div className="flex-1 min-w-0 text-right">
-                <p className="text-[10px] text-gray-400 mb-0.5">重複候補（既存）</p>
+                <p className="text-[11px] text-gray-400 mb-0.5">重複候補（既存）</p>
                 <p className="text-sm font-bold text-gray-800 truncate">
                   {pr.candidate.last_name} {pr.candidate.first_name}
                 </p>
-                <p className="text-[10px] text-gray-400 truncate">
+                <p className="text-[11px] text-gray-400 truncate">
                   {pr.candidate.birth_date ?? '生年月日不明'}
                 </p>
               </div>
@@ -274,13 +285,13 @@ export default function HomePage() {
               <div className="flex flex-col gap-1 shrink-0">
                 <button
                   onClick={() => setSelectedPr(pr)}
-                  className="px-3 py-1.5 bg-amber-500 text-white text-[11px] font-semibold rounded-lg hover:bg-amber-600 transition whitespace-nowrap"
+                  className="px-3 py-1.5 bg-amber-500 text-white text-[12px] font-semibold rounded-lg hover:bg-amber-600 transition whitespace-nowrap"
                 >
                   詳細確認 →
                 </button>
                 <button
                   onClick={() => handleResolve(pr.id, 'different')}
-                  className="px-3 py-1 bg-white border border-gray-200 text-gray-500 text-[11px] font-semibold rounded-lg hover:bg-gray-50 transition whitespace-nowrap"
+                  className="px-3 py-1 bg-white border border-gray-200 text-gray-500 text-[12px] font-semibold rounded-lg hover:bg-gray-50 transition whitespace-nowrap"
                 >
                   別会員
                 </button>
@@ -299,6 +310,42 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      {/* ─── ダッシュボード：過去合格歴の未入力 ─── */}
+      {prevMissing.length > 0 && (
+        <div className="w-full max-w-3xl -mt-6">
+          <div className="rounded-2xl border-2 border-red-200 bg-white overflow-hidden shadow-sm">
+            <div className="px-5 py-3 flex items-center gap-2 border-b bg-red-50 border-red-200">
+              <span className="text-base">📝</span>
+              <span className="font-bold text-sm text-red-600">過去合格歴が未入力の申込</span>
+              <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">{prevMissing.length}</span>
+              <span className="ml-auto note-text">試験機関に確認して入力してください</span>
+            </div>
+            {prevMissing.map(({ enrollment, student }) => (
+              <button
+                key={enrollment.id}
+                type="button"
+                onClick={() => setEditEnrollment({ enrollment, student })}
+                className="w-full text-left px-5 py-2.5 flex items-center gap-3 border-b border-red-50 last:border-0 hover:bg-red-50/50 transition"
+              >
+                <span className="text-sm font-semibold text-gray-800 min-w-[8rem]">{student.last_name} {student.first_name}</span>
+                <span className="text-xs text-gray-500">{exemptSubjectOf(enrollment)}免除</span>
+                <span className="text-xs font-semibold text-red-600">未入力：{missingPrevExam(enrollment).join('・')}</span>
+                <span className="ml-auto text-xs text-lavender-500">入力する →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {editEnrollment && (
+        <EnrollmentFormModal
+          studentId={editEnrollment.student.id}
+          enrollment={editEnrollment.enrollment}
+          onClose={() => setEditEnrollment(null)}
+          onSaved={() => { setEditEnrollment(null); loadPrevMissing() }}
+        />
+      )}
 
       {/* モーダル：CSVインポート */}
       {showCsvImport && (
@@ -345,7 +392,7 @@ export default function HomePage() {
                 <div key={pr.id} className="border border-amber-200 bg-amber-50/40 rounded-xl p-4">
                   <div className="flex items-start gap-4">
                     <div className="flex-1 space-y-0.5">
-                      <p className="text-[10px] text-gray-400">新規登録</p>
+                      <p className="text-[11px] text-gray-400">新規登録</p>
                       <p className="text-sm font-bold text-gray-800">
                         {pr.student.last_name} {pr.student.first_name}
                         <span className="ml-2 text-xs font-normal text-gray-400">{pr.student.last_kana} {pr.student.first_kana}</span>
@@ -354,7 +401,7 @@ export default function HomePage() {
                     </div>
                     <div className="text-gray-300 self-center text-lg">↔</div>
                     <div className="flex-1 space-y-0.5">
-                      <p className="text-[10px] text-gray-400">重複候補（既存）</p>
+                      <p className="text-[11px] text-gray-400">重複候補（既存）</p>
                       <p className="text-sm font-bold text-gray-800">
                         {pr.candidate.last_name} {pr.candidate.first_name}
                         <span className="ml-2 text-xs font-normal text-gray-400">{pr.candidate.last_kana} {pr.candidate.first_kana}</span>

@@ -346,7 +346,7 @@ export default function VenueSettingsPage() {
                         </span>
 
                         {!v.active && (
-                          <span className="text-[10px] bg-gray-100 text-gray-400 rounded px-1.5 py-0.5 shrink-0">
+                          <span className="text-[11px] bg-gray-100 text-gray-400 rounded px-1.5 py-0.5 shrink-0">
                             無効
                           </span>
                         )}

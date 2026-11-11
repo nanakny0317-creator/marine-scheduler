@@ -11,6 +11,7 @@ import type {
   RenewalSession, RenewalSessionInput,
   Classroom, ClassroomInput,
   ExamRecord, ExamRecordInput,
+  PhysicalExam, PhysicalExamInput,
   DuplicateCheckResult, PendingReview, PendingReviewInput,
   PendingReviewWithStudents, DupImportRow,
 } from '../types'
@@ -20,6 +21,7 @@ let students: Student[] = []
 let enrollments: Enrollment[] = []
 let venues: Venue[] = []
 let examSessions: ExamSession[] = []
+let physicalExams: PhysicalExam[] = []
 let renewalSessions: RenewalSession[] = []
 let classrooms: Classroom[] = []
 let examRecords: ExamRecord[] = []
@@ -263,6 +265,27 @@ export const browserApiMock: ElectronAPI = {
     },
     delete: (rid: number) => {
       examRecords = examRecords.filter(r => r.id !== rid)
+      return Promise.resolve(true)
+    },
+  },
+
+  physicalExams: {
+    list: (studentId: number) =>
+      Promise.resolve(physicalExams.filter(r => r.student_id === studentId)
+        .sort((a, b) => (b.exam_date ?? '').localeCompare(a.exam_date ?? ''))),
+    create: (input: PhysicalExamInput) => {
+      const r: PhysicalExam = { ...input, id: id(), created_at: now(), updated_at: now() }
+      physicalExams.push(r)
+      return Promise.resolve(r)
+    },
+    update: (rid: number, input: PhysicalExamInput) => {
+      const idx = physicalExams.findIndex(r => r.id === rid)
+      if (idx < 0) throw new Error('not found')
+      physicalExams[idx] = { ...physicalExams[idx], ...input, updated_at: now() }
+      return Promise.resolve(physicalExams[idx])
+    },
+    delete: (rid: number) => {
+      physicalExams = physicalExams.filter(r => r.id !== rid)
       return Promise.resolve(true)
     },
   },

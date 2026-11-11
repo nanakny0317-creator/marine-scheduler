@@ -222,7 +222,7 @@ export default function CalendarModal({ allItems, onClose, onUpdated }: Props) {
                   >
                     {/* 日付番号 */}
                     <div className="flex justify-end mb-0.5">
-                      <span className={`text-[11px] font-semibold w-5 h-5 flex items-center justify-center rounded-full ${
+                      <span className={`text-[12px] font-semibold w-5 h-5 flex items-center justify-center rounded-full ${
                         !isCurrentMonth ? 'text-gray-300' :
                         isToday        ? 'bg-lavender-400 text-white' :
                         dow === 6      ? 'text-blue-400' :
@@ -241,7 +241,7 @@ export default function CalendarModal({ allItems, onClose, onUpdated }: Props) {
                       return (
                         <div
                           key={idx}
-                          className={`w-full px-1.5 py-0.5 rounded border text-[10px] leading-snug truncate pointer-events-none ${TYPE_COLOR[event.appType] ?? 'bg-gray-100 text-gray-500 border-gray-200'}`}
+                          className={`w-full px-1.5 py-0.5 rounded border text-[11px] leading-snug truncate pointer-events-none ${TYPE_COLOR[event.appType] ?? 'bg-gray-100 text-gray-500 border-gray-200'}`}
                           title={tip}
                         >
                           <span className="font-bold">{TYPE_LABEL[event.appType] ?? ''}</span>
@@ -292,7 +292,7 @@ export default function CalendarModal({ allItems, onClose, onUpdated }: Props) {
                     <div key={eIdx}>
                       {/* イベントヘッダー */}
                       <div className={`px-5 py-2.5 flex items-center gap-2 border-b ${TYPE_HEADER[event.appType] ?? 'bg-gray-50 border-gray-100'}`}>
-                        <span className={`shrink-0 px-2 py-0.5 rounded text-[11px] font-bold ${TYPE_BADGE[event.appType] ?? 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`shrink-0 px-2 py-0.5 rounded text-[12px] font-bold ${TYPE_BADGE[event.appType] ?? 'bg-gray-100 text-gray-500'}`}>
                           {TYPE_LABEL[event.appType] ?? event.appType}
                         </span>
                         <div className="flex-1 min-w-0">

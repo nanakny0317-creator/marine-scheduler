@@ -38,6 +38,7 @@ function toStudent(row: Row, prefix: string): Student {
     city: g('city') ? String(g('city')) : null,
     address1: g('address1') ? String(g('address1')) : null,
     address2: g('address2') ? String(g('address2')) : null,
+    address_room: g('address_room') ? String(g('address_room')) : null,
     phone: g('phone') ? String(g('phone')) : null,
     mobile: g('mobile') ? String(g('mobile')) : null,
     email: g('email') ? String(g('email')) : null,
@@ -66,7 +67,7 @@ export function listPendingReviews(): PendingReviewWithStudents[] {
        s.last_kana AS s_last_kana, s.first_kana AS s_first_kana,
        s.birth_date AS s_birth_date, s.gender AS s_gender,
        s.postal_code AS s_postal_code, s.prefecture AS s_prefecture,
-       s.city AS s_city, s.address1 AS s_address1, s.address2 AS s_address2,
+       s.city AS s_city, s.address1 AS s_address1, s.address2 AS s_address2, s.address_room AS s_address_room,
        s.phone AS s_phone, s.mobile AS s_mobile, s.email AS s_email,
        s.note AS s_note, s.created_at AS s_created_at, s.updated_at AS s_updated_at,
        c.id AS c_id, c.student_code AS c_student_code, c.license_number AS c_license_number,
@@ -74,7 +75,7 @@ export function listPendingReviews(): PendingReviewWithStudents[] {
        c.last_kana AS c_last_kana, c.first_kana AS c_first_kana,
        c.birth_date AS c_birth_date, c.gender AS c_gender,
        c.postal_code AS c_postal_code, c.prefecture AS c_prefecture,
-       c.city AS c_city, c.address1 AS c_address1, c.address2 AS c_address2,
+       c.city AS c_city, c.address1 AS c_address1, c.address2 AS c_address2, c.address_room AS c_address_room,
        c.phone AS c_phone, c.mobile AS c_mobile, c.email AS c_email,
        c.note AS c_note, c.created_at AS c_created_at, c.updated_at AS c_updated_at
      FROM pending_reviews pr
