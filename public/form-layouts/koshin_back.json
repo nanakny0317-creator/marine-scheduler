@@ -5,11 +5,12 @@
     "label": "旧小文字",
     "page": 2,
     "type": "chars",
-    "x": 72.43,
-    "y": 598.81,
+    "x": 83.82,
+    "y": 602.31,
     "charWidth": 22.77,
     "maxChars": 22,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0002",
@@ -17,11 +18,12 @@
     "label": "旧カナ",
     "page": 2,
     "type": "chars",
-    "x": 68.6,
-    "y": 576.01,
+    "x": 79.86,
+    "y": 579.51,
     "charWidth": 22.52,
     "maxChars": 22,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0003",
@@ -29,11 +31,12 @@
     "label": "旧漢字",
     "page": 2,
     "type": "chars",
-    "x": 70.03,
-    "y": 510.43,
+    "x": 89.81,
+    "y": 513.93,
     "charWidth": 39.56,
     "maxChars": 12,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0004",
@@ -41,11 +44,12 @@
     "label": "旧本籍",
     "page": 2,
     "type": "chars",
-    "x": 45.8,
-    "y": 379.02,
+    "x": 64.16,
+    "y": 382.52,
     "charWidth": 36.71,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0007",
@@ -53,11 +57,12 @@
     "label": "旧国籍_米国",
     "page": 2,
     "type": "chars",
-    "x": 81.29,
-    "y": 270.7,
+    "x": 86.68,
+    "y": 274.2,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0005",
@@ -65,11 +70,12 @@
     "label": "旧国籍_韓国",
     "page": 2,
     "type": "chars",
-    "x": 47.24,
-    "y": 270.48,
+    "x": 52.63,
+    "y": 273.98,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0006",
@@ -77,11 +83,12 @@
     "label": "旧国籍_朝鮮",
     "page": 2,
     "type": "chars",
-    "x": 64.5,
-    "y": 270.45,
+    "x": 69.78,
+    "y": 273.95,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0008",
@@ -89,10 +96,11 @@
     "label": "旧国コード",
     "page": 2,
     "type": "chars",
-    "x": 106.72,
-    "y": 262.28,
+    "x": 115.36,
+    "y": 265.78,
     "charWidth": 17.27,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   }
 ]

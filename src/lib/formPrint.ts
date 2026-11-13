@@ -18,13 +18,27 @@ export interface FieldDef {
   type: FieldType
   x: number      // PDF points from left
   y: number      // PDF points from bottom
-  charWidth?: number
-  maxChars?: number
+  charWidth?: number   // 文字マス：枠の間隔（枠の中心から次の枠の中心まで）
+  maxChars?: number    // 文字マス：枠の数
   width?: number
   fontSize: number
   dataKey?: string
   matchValue?: string
   markChar?: string
+  /** 文字マスの基準点。'center' = x,y が1枠目の中心（枠方式）。未指定は旧形式（x=左端, y=文字の下端） */
+  anchor?: 'center'
+}
+
+/** 旧形式の文字マスを枠方式（1枠目の中心）に変換する。印字結果は変わらない */
+export function toCenterAnchor<T extends FieldDef>(f: T): T {
+  if (f.type !== 'chars' || f.anchor === 'center') return f
+  const cw = f.charWidth ?? f.fontSize * 1.2
+  return {
+    ...f,
+    x: parseFloat((f.x + cw / 2).toFixed(2)),
+    y: parseFloat((f.y + f.fontSize / 2).toFixed(2)),
+    anchor: 'center',
+  }
 }
 
 export type FormData = Record<string, string>
@@ -40,6 +54,16 @@ function esc(s: string): string {
     .replace(/>/g, '&gt;')
 }
 
+// ── 座標の換算 ──────────────────────────────────────────────────
+// 印字位置は調整画面の画像（申請書スキャン：幅 592.56pt × 高さ 842.4pt として扱う）上の座標。
+// 実際の用紙は A4（595.28pt × 841.89pt）なので、用紙に対する割合が同じになるよう換算する。
+const CAL_W = 592.56, CAL_H = 842.4
+const A4_W  = 595.28, A4_H  = 841.89
+const SX = A4_W / CAL_W
+const SY = A4_H / CAL_H
+const px = (x: number) => (x * SX).toFixed(2)
+const py = (y: number) => (y * SY).toFixed(2)
+
 // ── フィールドを HTML スパンに変換 ──────────────────────────────
 function fieldToHtml(field: FieldDef, data: FormData): string {
   const value = data[field.key] ?? ''
@@ -52,49 +76,34 @@ function fieldToHtml(field: FieldDef, data: FormData): string {
       : Boolean(value)
     if (!hit) return ''
     const ch = field.markChar ?? '●'
-    return `<span style="position:absolute;left:${field.x}pt;bottom:${field.y}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;">${esc(ch)}</span>`
+    return `<span style="position:absolute;left:${px(field.x)}pt;bottom:${py(field.y)}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;">${esc(ch)}</span>`
   }
 
   if (!value) return ''
 
   if (field.type === 'text') {
-    const maxW = field.width ? `max-width:${field.width}pt;` : ''
-    return `<span style="position:absolute;left:${field.x}pt;bottom:${field.y}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;white-space:nowrap;overflow:hidden;${maxW}">${esc(value)}</span>`
+    const maxW = field.width ? `max-width:${px(field.width)}pt;` : ''
+    return `<span style="position:absolute;left:${px(field.x)}pt;bottom:${py(field.y)}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;white-space:nowrap;overflow:hidden;${maxW}">${esc(value)}</span>`
   }
 
-  // chars: 1 文字ずつ配置
-  const cw      = field.charWidth ?? fs * 1.2
-  const chars   = Array.from(value).slice(0, field.maxChars ?? 20)
-  return chars.map((ch, i) =>
-    `<span style="position:absolute;left:${(field.x + i * cw).toFixed(2)}pt;bottom:${field.y}pt;width:${cw.toFixed(2)}pt;text-align:center;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;">${esc(ch)}</span>`
-  ).join('')
+  // chars: 1 文字ずつ、各枠の中心に配置（縦も中央）
+  const f       = toCenterAnchor(field)
+  const cw      = f.charWidth ?? fs * 1.2
+  const chars   = Array.from(value).slice(0, f.maxChars ?? 20)
+  return chars.map((ch, i) => {
+    const cx = f.x + i * cw
+    return `<span style="position:absolute;left:${px(cx - cw / 2)}pt;bottom:${py(f.y - fs / 2)}pt;width:${px(cw)}pt;height:${fs}pt;text-align:center;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:${fs}pt;">${esc(ch)}</span>`
+  }).join('')
 }
 
 // ── 1 ページ分の HTML 生成 ──────────────────────────────────────
-function buildPageHtml(
-  pageNum: number,
-  fields: FieldDef[],
-  data: FormData,
-  imageDataUrl: string,
-): string {
+// OCR 用紙に文字だけを印字するので、背景画像は出さない（画像は位置調整用）
+function buildPageHtml(fields: FieldDef[], data: FormData): string {
   const fieldHtml = fields.map(f => fieldToHtml(f, data)).join('\n')
   return `
 <div class="form-page">
-  <img class="form-bg" src="${imageDataUrl}" alt="page ${pageNum}">
 ${fieldHtml}
 </div>`
-}
-
-// ── PNG を fetch して base64 data URL に変換 ───────────────────
-async function toDataUrl(src: string): Promise<string> {
-  const res  = await fetch(src)
-  const blob = await res.blob()
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result as string)
-    reader.onerror   = reject
-    reader.readAsDataURL(blob)
-  })
 }
 
 // ── メイン: フォーム印刷 ────────────────────────────────────────
@@ -103,14 +112,12 @@ async function toDataUrl(src: string): Promise<string> {
  * @param data         フォームデータ { キー: 値 }
  * @param pageCount    印刷するページ数
  * @param formTitle    PDF のタイトル
- * @param imagePrefix  フォーム画像の URL プレフィックス (例: '/pdf-pages/page-')
  */
 export async function printForm(
   fields: FieldDef[],
   data: FormData,
   pageCount: number,
   formTitle: string,
-  imagePrefix = '/pdf-pages/page-',
 ): Promise<void> {
   // ページ別にグループ化
   const byPage = new Map<number, FieldDef[]>()
@@ -119,15 +126,8 @@ export async function printForm(
     byPage.get(f.page)!.push(f)
   }
 
-  // 使用するページ画像を先読み (base64)
-  const imageUrls: string[] = await Promise.all(
-    Array.from({ length: pageCount }, (_, i) =>
-      toDataUrl(`${imagePrefix}${i + 1}.png`)
-    )
-  )
-
   const pagesHtml = Array.from({ length: pageCount }, (_, i) =>
-    buildPageHtml(i + 1, byPage.get(i + 1) ?? [], data, imageUrls[i])
+    buildPageHtml(byPage.get(i + 1) ?? [], data)
   ).join('\n')
 
   const html = `<!DOCTYPE html>
@@ -147,11 +147,6 @@ body { margin: 0; padding: 0; }
   page-break-after: always;
 }
 .form-page:last-child { page-break-after: auto; }
-.form-bg {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-}
 </style>
 </head>
 <body>

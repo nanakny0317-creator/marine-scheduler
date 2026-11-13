@@ -5,11 +5,12 @@
     "label": "①期限切",
     "page": 1,
     "type": "chars",
-    "x": 49.38,
-    "y": 727.1,
+    "x": 54.77,
+    "y": 730.6,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0045",
@@ -17,11 +18,12 @@
     "label": "①流失",
     "page": 1,
     "type": "chars",
-    "x": 71.67,
-    "y": 727.1,
+    "x": 77.06,
+    "y": 730.6,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0046",
@@ -29,11 +31,12 @@
     "label": "①焼失",
     "page": 1,
     "type": "chars",
-    "x": 91.56,
-    "y": 727.1,
+    "x": 96.84,
+    "y": 730.6,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0047",
@@ -41,11 +44,12 @@
     "label": "①紛失",
     "page": 1,
     "type": "chars",
-    "x": 111.23,
-    "y": 726.87,
+    "x": 116.62,
+    "y": 730.37,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0048",
@@ -53,11 +57,12 @@
     "label": "①盗難",
     "page": 1,
     "type": "chars",
-    "x": 130.87,
-    "y": 726.62,
+    "x": 136.26,
+    "y": 730.12,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0049",
@@ -65,11 +70,12 @@
     "label": "①き損",
     "page": 1,
     "type": "chars",
-    "x": 153.64,
-    "y": 726.62,
+    "x": 159.03,
+    "y": 730.12,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0019",
@@ -77,11 +83,12 @@
     "label": "②一級A",
     "page": 1,
     "type": "chars",
-    "x": 49.38,
-    "y": 673.3,
+    "x": 54.77,
+    "y": 676.8,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0020",
@@ -89,11 +96,12 @@
     "label": "②二級A",
     "page": 1,
     "type": "chars",
-    "x": 88.69,
-    "y": 673.07,
+    "x": 94.08,
+    "y": 676.57,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0021",
@@ -101,11 +109,12 @@
     "label": "②湖川",
     "page": 1,
     "type": "chars",
-    "x": 128.25,
-    "y": 673.04,
+    "x": 133.53,
+    "y": 676.54,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0022",
@@ -113,11 +122,12 @@
     "label": "②特殊",
     "page": 1,
     "type": "chars",
-    "x": 150.76,
-    "y": 672.81,
+    "x": 156.15,
+    "y": 676.31,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0036",
@@ -125,11 +135,12 @@
     "label": "③_免許証番号",
     "page": 1,
     "type": "chars",
-    "x": 49.38,
-    "y": 613.22,
+    "x": 60.53,
+    "y": 616.72,
     "charWidth": 22.29,
     "maxChars": 6,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0037",
@@ -137,11 +148,12 @@
     "label": "③_免許証番号",
     "page": 1,
     "type": "chars",
-    "x": 190.1,
-    "y": 612.51,
+    "x": 201.36,
+    "y": 616.01,
     "charWidth": 22.52,
     "maxChars": 7,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0001",
@@ -149,11 +161,12 @@
     "label": "④_小文字",
     "page": 1,
     "type": "chars",
-    "x": 74.3,
-    "y": 559.19,
+    "x": 85.58,
+    "y": 562.69,
     "charWidth": 22.55,
     "maxChars": 16,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0002",
@@ -161,11 +174,12 @@
     "label": "④_小文字",
     "page": 1,
     "type": "chars",
-    "x": 434.83,
-    "y": 557.03,
+    "x": 446.1,
+    "y": 560.53,
     "charWidth": 22.55,
     "maxChars": 6,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0003",
@@ -173,11 +187,12 @@
     "label": "④_氏名カナ",
     "page": 1,
     "type": "chars",
-    "x": 70.23,
-    "y": 536.36,
+    "x": 81.62,
+    "y": 539.86,
     "charWidth": 22.77,
     "maxChars": 4,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0004",
@@ -185,11 +200,12 @@
     "label": "④_氏名カナ",
     "page": 1,
     "type": "chars",
-    "x": 160.61,
-    "y": 535.87,
+    "x": 171.87,
+    "y": 539.37,
     "charWidth": 22.52,
     "maxChars": 18,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0030",
@@ -197,11 +213,12 @@
     "label": "④_氏名漢字",
     "page": 1,
     "type": "chars",
-    "x": 71.67,
-    "y": 471.03,
+    "x": 91.45,
+    "y": 474.53,
     "charWidth": 39.56,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0031",
@@ -209,11 +226,12 @@
     "label": "④_氏名漢字",
     "page": 1,
     "type": "chars",
-    "x": 150.54,
-    "y": 470.55,
+    "x": 170.32,
+    "y": 474.05,
     "charWidth": 39.56,
     "maxChars": 10,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0039",
@@ -221,11 +239,12 @@
     "label": "④_氏名変更",
     "page": 1,
     "type": "chars",
-    "x": 43.62,
-    "y": 440.29,
+    "x": 49.01,
+    "y": 443.79,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0032",
@@ -233,11 +252,12 @@
     "label": "⑤_郵便番号上",
     "page": 1,
     "type": "chars",
-    "x": 68.79,
-    "y": 399.47,
+    "x": 77.3,
+    "y": 402.97,
     "charWidth": 17.01,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0033",
@@ -245,11 +265,12 @@
     "label": "⑤_郵便番号下",
     "page": 1,
     "type": "chars",
-    "x": 136.4,
-    "y": 399.22,
+    "x": 144.91,
+    "y": 402.72,
     "charWidth": 17.01,
     "maxChars": 4,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0034",
@@ -257,11 +278,12 @@
     "label": "⑤_電話番号",
     "page": 1,
     "type": "chars",
-    "x": 281.41,
-    "y": 397.29,
+    "x": 289.81,
+    "y": 400.79,
     "charWidth": 16.79,
     "maxChars": 16,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0023",
@@ -269,11 +291,12 @@
     "label": "⑤_都道府県",
     "page": 1,
     "type": "chars",
-    "x": 50.82,
-    "y": 360.53,
+    "x": 69.03,
+    "y": 364.03,
     "charWidth": 36.43,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0024",
@@ -281,11 +304,12 @@
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
-    "x": 196.81,
-    "y": 359.57,
+    "x": 215.26,
+    "y": 363.07,
     "charWidth": 36.91,
     "maxChars": 10,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0025",
@@ -293,11 +317,12 @@
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
-    "x": 50.57,
-    "y": 321.13,
+    "x": 68.8,
+    "y": 324.63,
     "charWidth": 36.46,
     "maxChars": 14,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0026",
@@ -305,11 +330,12 @@
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
-    "x": 50.57,
-    "y": 281.28,
+    "x": 68.8,
+    "y": 284.78,
     "charWidth": 36.46,
     "maxChars": 9,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0027",
@@ -317,11 +343,12 @@
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
-    "x": 379.69,
-    "y": 278.87,
+    "x": 397.92,
+    "y": 282.37,
     "charWidth": 36.46,
     "maxChars": 5,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0028",
@@ -329,11 +356,12 @@
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
-    "x": 50.57,
-    "y": 241.66,
+    "x": 68.67,
+    "y": 245.16,
     "charWidth": 36.2,
     "maxChars": 4,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0029",
@@ -341,11 +369,12 @@
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
-    "x": 196.56,
-    "y": 240.44,
+    "x": 215.01,
+    "y": 243.94,
     "charWidth": 36.91,
     "maxChars": 10,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0038",
@@ -353,11 +382,12 @@
     "label": "⑤_住所変更",
     "page": 1,
     "type": "chars",
-    "x": 43.4,
-    "y": 219.31,
+    "x": 48.67,
+    "y": 222.81,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0035",
@@ -365,11 +395,12 @@
     "label": "⑧本籍",
     "page": 1,
     "type": "chars",
-    "x": 425.97,
-    "y": 179.66,
+    "x": 444.31,
+    "y": 183.16,
     "charWidth": 36.68,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0005",
@@ -377,11 +408,12 @@
     "label": "⑥_平成",
     "page": 1,
     "type": "chars",
-    "x": 45.8,
-    "y": 175.12,
+    "x": 51.19,
+    "y": 178.62,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0006",
@@ -389,11 +421,12 @@
     "label": "⑥_昭和",
     "page": 1,
     "type": "chars",
-    "x": 62.81,
-    "y": 175.12,
+    "x": 68.09,
+    "y": 178.62,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0007",
@@ -401,11 +434,12 @@
     "label": "⑥_大正",
     "page": 1,
     "type": "chars",
-    "x": 79.35,
-    "y": 175.09,
+    "x": 84.74,
+    "y": 178.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0008",
@@ -413,11 +447,12 @@
     "label": "⑥_明治",
     "page": 1,
     "type": "chars",
-    "x": 96.36,
-    "y": 174.86,
+    "x": 101.64,
+    "y": 178.36,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0013",
@@ -425,11 +460,12 @@
     "label": "⑦_男",
     "page": 1,
     "type": "chars",
-    "x": 340.38,
-    "y": 171.49,
+    "x": 345.53,
+    "y": 174.99,
     "charWidth": 10.3,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0014",
@@ -437,11 +473,12 @@
     "label": "⑦_女",
     "page": 1,
     "type": "chars",
-    "x": 364.11,
-    "y": 171.0,
+    "x": 369.38,
+    "y": 174.5,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0009",
@@ -449,11 +486,12 @@
     "label": "⑥_西暦",
     "page": 1,
     "type": "chars",
-    "x": 117.69,
-    "y": 165.96,
+    "x": 124.52,
+    "y": 169.46,
     "charWidth": 13.66,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0010",
@@ -461,11 +499,12 @@
     "label": "⑥_出生年",
     "page": 1,
     "type": "chars",
-    "x": 152.94,
-    "y": 165.25,
+    "x": 161.57,
+    "y": 168.75,
     "charWidth": 17.27,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0011",
@@ -473,11 +512,12 @@
     "label": "⑥_出生月",
     "page": 1,
     "type": "chars",
-    "x": 202.32,
-    "y": 164.54,
+    "x": 210.72,
+    "y": 168.04,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0012",
@@ -485,11 +525,12 @@
     "label": "⑥_出生日",
     "page": 1,
     "type": "chars",
-    "x": 252.66,
-    "y": 164.28,
+    "x": 261.06,
+    "y": 167.78,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0040",
@@ -497,11 +538,12 @@
     "label": "⑧本籍変更",
     "page": 1,
     "type": "chars",
-    "x": 423.31,
-    "y": 154.47,
+    "x": 428.7,
+    "y": 157.97,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0016",
@@ -509,11 +551,12 @@
     "label": "⑨_韓国",
     "page": 1,
     "type": "chars",
-    "x": 48.67,
-    "y": 116.01,
+    "x": 54.06,
+    "y": 119.51,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0017",
@@ -521,11 +564,12 @@
     "label": "⑨_朝鮮",
     "page": 1,
     "type": "chars",
-    "x": 65.69,
-    "y": 115.78,
+    "x": 70.97,
+    "y": 119.28,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0015",
@@ -533,11 +577,12 @@
     "label": "⑨_米国",
     "page": 1,
     "type": "chars",
-    "x": 82.45,
-    "y": 115.55,
+    "x": 87.84,
+    "y": 119.05,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0018",
@@ -545,11 +590,12 @@
     "label": "⑨_国コード",
     "page": 1,
     "type": "chars",
-    "x": 107.87,
-    "y": 106.9,
+    "x": 116.25,
+    "y": 110.4,
     "charWidth": 16.76,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0042",
@@ -557,11 +603,12 @@
     "label": "⑩申請月日_月",
     "page": 1,
     "type": "chars",
-    "x": 198.0,
-    "y": 106.17,
+    "x": 206.63,
+    "y": 109.67,
     "charWidth": 17.27,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0043",
@@ -569,11 +616,12 @@
     "label": "⑩申請月日_日",
     "page": 1,
     "type": "chars",
-    "x": 245.94,
-    "y": 105.94,
+    "x": 254.34,
+    "y": 109.44,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0041",
@@ -581,11 +629,12 @@
     "label": "⑨_国籍変更",
     "page": 1,
     "type": "chars",
-    "x": 43.14,
-    "y": 85.26,
+    "x": 48.41,
+    "y": 88.76,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0053",
@@ -593,11 +642,12 @@
     "label": "⑫免許証返納有",
     "page": 1,
     "type": "chars",
-    "x": 297.72,
-    "y": 46.83,
+    "x": 303.11,
+    "y": 50.33,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0054",
@@ -605,11 +655,12 @@
     "label": "⑫免許証返納無",
     "page": 1,
     "type": "chars",
-    "x": 315.95,
-    "y": 46.6,
+    "x": 321.46,
+    "y": 50.1,
     "charWidth": 11.03,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0050",
@@ -617,11 +668,12 @@
     "label": "⑪免許証交付_年",
     "page": 1,
     "type": "chars",
-    "x": 116.25,
-    "y": 40.33,
+    "x": 124.64,
+    "y": 43.83,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0051",
@@ -629,11 +681,12 @@
     "label": "⑪免許証交付_月",
     "page": 1,
     "type": "chars",
-    "x": 161.32,
-    "y": 39.85,
+    "x": 169.72,
+    "y": 43.35,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0052",
@@ -641,10 +694,11 @@
     "label": "⑪免許証交付_日",
     "page": 1,
     "type": "chars",
-    "x": 206.38,
-    "y": 39.14,
+    "x": 214.88,
+    "y": 42.64,
     "charWidth": 17.01,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   }
 ]

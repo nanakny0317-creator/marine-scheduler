@@ -9,6 +9,12 @@ import { PREV_EXAM_FIELDS } from '../../lib/prevExam'
 import { PASS_VALID_YEARS, expiryAfterYears, fmtYmd, isValidOn, todayIso } from '../../lib/validity'
 import Section from '../FormSection'
 import VenueSelect from '../VenueSelect'
+import { COURSE_ORGANIZATIONS, DEFAULT_TRANSPORT_BUREAU, TRANSPORT_BUREAUS, courseOrgCode2 } from '../../data/masterData'
+
+// 更新・失効：講習機関（既定は海レ協 01）・提出先（既定は近畿運輸局 本部）
+const DEFAULT_COURSE_ORG = 1
+const bureauKey = (bureauCode: string, branchCode: string) => `${bureauCode}-${branchCode}`
+const DEFAULT_BUREAU_KEY = bureauKey(DEFAULT_TRANSPORT_BUREAU.bureauCode, DEFAULT_TRANSPORT_BUREAU.branchCode)
 
 // ── 定数 ────────────────────────────────────────────────────
 
@@ -84,6 +90,9 @@ interface ExtraResult {
   examJitsugi: boolean    // 実技試験を受ける
   prevExam: PrevExam      // 免除の根拠：過去に合格した試験（申請書②欄）
   shintai: '' | 'need' | 'have'
+  licenseReturn: '' | 'yes' | 'no'   // 免許証返納 有／無（更新・失効）
+  courseOrg: number                  // 講習機関コード（更新・失効）
+  bureau: string                     // 提出先 "本局-支局"（更新・失効）
 }
 
 // 免除の根拠：過去に合格した試験（申請書②欄：資格・試験開始日・試験地・受験番号）
@@ -118,6 +127,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       courseLocation: '', courseTime: '',
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
       examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '',
+      licenseReturn: '', courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -166,6 +176,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       examJitsugi:   extra.exam_jitsugi !== false,
       prevExam:      readPrevExam(extra.prev_exam),
       shintai:       extra.shintai === 'need' || extra.shintai === 'have' ? extra.shintai : '',
+      licenseReturn: '', courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -181,6 +192,10 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     courseLocation, courseTime,
     examDate: '', examLocation: '', examStartTime: '', examQualType: '',
     examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '',
+    licenseReturn: extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : '',
+    courseOrg: typeof extra.course_org_code === 'number' ? extra.course_org_code : DEFAULT_COURSE_ORG,
+    bureau: typeof extra.bureau_code === 'string' && typeof extra.branch_code === 'string'
+      ? bureauKey(extra.bureau_code, extra.branch_code) : DEFAULT_BUREAU_KEY,
   }
 }
 
@@ -214,6 +229,9 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   const [renewalCourseDate, setRenewalCourseDate] = useState('')
   const [courseLocation,    setCourseLocation]    = useState('')
   const [courseTime,        setCourseTime]        = useState('')
+  const [licenseReturn,     setLicenseReturn]     = useState<'' | 'yes' | 'no'>('')
+  const [courseOrg,         setCourseOrg]         = useState<number>(DEFAULT_COURSE_ORG)
+  const [bureau,            setBureau]            = useState<string>(DEFAULT_BUREAU_KEY)
 
   // 本籍・国籍（全種別共通）
 
@@ -357,6 +375,9 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
     setExamJitsugi(ex.examJitsugi)
     setPrevExam(ex.prevExam)
     setShintai(ex.shintai)
+    setLicenseReturn(ex.licenseReturn)
+    setCourseOrg(ex.courseOrg)
+    setBureau(ex.bureau)
     setMenu(enrollment?.menu ?? '')
     setNote(enrollment?.note ?? '')
     setMenuError(false)
@@ -459,11 +480,20 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
         delete extra.exam_jitsugi_venue
       }
       delete extra.course_dates_renewal
+      delete extra.license_return
+      delete extra.course_org_code
+      delete extra.bureau_code
+      delete extra.branch_code
     } else {
       primaryCourseDate = renewalCourseDate.trim() || null
       primaryVenue      = courseLocation.trim() || null
       if (courseLocation.trim()) extra.course_location = courseLocation.trim(); else delete extra.course_location
       if (courseTime.trim())     extra.course_time     = courseTime.trim();     else delete extra.course_time
+      if (licenseReturn) extra.license_return = licenseReturn; else delete extra.license_return
+      extra.course_org_code = courseOrg
+      const [bc, brc] = bureau.split('-')
+      extra.bureau_code = bc
+      extra.branch_code = brc
       delete extra.course_sessions
       delete extra.course_dates
       delete extra.exam_date
@@ -793,6 +823,44 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
               <div>
                 <label className="field-label">講習時間</label>
                 <input type="text" value={courseTime} onChange={e => setCourseTime(e.target.value)} className="field-input" placeholder="14:00" />
+              </div>
+            </div>
+            <div>
+              <label className="field-label">免許証返納</label>
+              <div className="flex items-center gap-2">
+                {([['yes', '有'], ['no', '無']] as const).map(([v, label]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setLicenseReturn(licenseReturn === v ? '' : v)}
+                    className={[
+                      'px-5 py-1.5 rounded-lg border text-sm font-medium transition',
+                      licenseReturn === v ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                    ].join(' ')}
+                  >
+                    {label}
+                  </button>
+                ))}
+                {!licenseReturn && <span className="note-text">未選択</span>}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="field-label">講習機関</label>
+                <select value={courseOrg} onChange={e => setCourseOrg(Number(e.target.value))} className="field-select">
+                  {COURSE_ORGANIZATIONS.map(o => (
+                    <option key={o.code} value={o.code}>{courseOrgCode2(o.code)} {o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="field-label">提出先（本局・支局）</label>
+                <select value={bureau} onChange={e => setBureau(e.target.value)} className="field-select">
+                  {TRANSPORT_BUREAUS.map(b => {
+                    const k = bureauKey(b.bureauCode, b.branchCode)
+                    return <option key={k} value={k}>{b.bureauCode}-{b.branchCode} {b.bureau} {b.branch}</option>
+                  })}
+                </select>
               </div>
             </div>
           </Section>

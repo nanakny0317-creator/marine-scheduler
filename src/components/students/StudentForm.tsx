@@ -88,6 +88,15 @@ const KANA_FIELDS: (keyof StudentInput)[] = ['last_kana', 'first_kana']
 const hiraToKata = (s: string) =>
   s.replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60))
 
+// 免許番号は13桁の数字。入力ありで13桁数字でなければ注意文を返す（全角数字も許容）
+const licenseNumberWarning = (v: string | null | undefined): string => {
+  const s = (v ?? '').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).trim()
+  if (!s) return ''
+  if (!/^\d+$/.test(s)) return '免許番号は数字13桁です（数字以外が含まれています）'
+  if (s.length !== 13) return `免許番号は13桁です（現在 ${s.length} 桁）`
+  return ''
+}
+
 const EMPTY: StudentInput = {
   student_code: null,
   license_number: null,
@@ -332,6 +341,8 @@ export default function StudentForm({ student, onSaved, onCancel, embedded = fal
   // 保存（重複なし or 確認済み）
   const handleSubmit = async () => {
     if (!validate()) return
+    const licWarn = licenseNumberWarning(form.license_number)
+    if (licWarn && !window.confirm(`${licWarn}\n\nこのまま保存しますか？`)) return
     if (showEnrollment) {
       const msg = enrollmentForm.validate()
       setEnrollmentError(msg ?? '')
@@ -656,7 +667,12 @@ export default function StudentForm({ student, onSaved, onCancel, embedded = fal
             <div className="flex flex-col gap-4">
               {/* ② 現有免許情報 */}
               <Section step="2" title="現有免許情報" hint="お持ちの場合">
-                <Field label="免許番号" placeholder="例：0300160004901" {...f('license_number')} />
+                <div>
+                  <Field label="免許番号" placeholder="例：0300160004901" {...f('license_number')} />
+                  {licenseNumberWarning(form.license_number) && (
+                    <p className="text-xs text-amber-600 mt-0.5">⚠ {licenseNumberWarning(form.license_number)}</p>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="有効期限" type="date" {...f('license_expiry')} />
                   <Field label="交付日" type="date" {...f('license_issue_date')} />

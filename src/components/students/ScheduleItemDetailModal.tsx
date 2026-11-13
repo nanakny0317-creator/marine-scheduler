@@ -3,7 +3,7 @@ import { exemptSubjectOf, missingPrevExam } from '../../lib/prevExam'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
-import { enrollmentsApi } from '../../lib/api'
+import { enrollmentsApi, venuesApi } from '../../lib/api'
 import MemberBasicInfoReadOnly from './MemberBasicInfoReadOnly'
 import StudentForm from './StudentForm'
 import EnrollmentFormModal from './EnrollmentFormModal'
@@ -198,7 +198,8 @@ export default function ScheduleItemDetailModal({ student, enrollment, onClose, 
     try {
       const res    = await fetch(formDef.layout)
       const fields = await res.json() as FieldDef[]
-      const data   = buildFormData(currentStudent, currentEnrollment)
+      const venues = await venuesApi.list(false).catch(() => [])
+      const data   = buildFormData(currentStudent, currentEnrollment, null, venues)
       await printForm(fields, data, formDef.pageCount, formDef.title)
     } catch (e) {
       console.error('印刷エラー:', e)

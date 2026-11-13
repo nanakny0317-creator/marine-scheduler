@@ -3,6 +3,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toCenterAnchor } from '../lib/formPrint'
 
 // ── PDF仕様定数 ──────────────────────────────────────────────
 const PDF_W = 592.56
@@ -29,6 +30,8 @@ interface FieldDef {
   dataKey?: string    // 参照するデータキー（例: exam_qual_type）
   matchValue?: string // この値のときにマークする（例: 一級）
   markChar?: string   // 印字する文字（デフォルト: ●）
+  // 文字マス：'center' = x,y が1枠目の中心（枠方式）。旧形式は読み込み時に変換する
+  anchor?: 'center'
 }
 
 interface ClickPoint { x: number; y: number }
@@ -91,6 +94,19 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
   { value: 'prev_exam_location', label: '過去合格試験：試験地' },
   { value: 'prev_exam_number',   label: '過去合格試験：受験番号' },
   { value: 'prev_exam_id',       label: '過去合格試験：試験ID' },
+  { value: 'course_org_code',      label: '更新講習：講習機関コード（2桁）' },
+  { value: 'course_pref_code',     label: '更新講習：講習実施都道府県コード（2桁）' },
+  { value: 'course_date_era_year', label: '更新講習：講習実施日 和暦年（2桁）' },
+  { value: 'course_date_month',    label: '更新講習：講習実施日 月' },
+  { value: 'course_date_day',      label: '更新講習：講習実施日 日' },
+  { value: 'bureau_code',          label: '本局コード（2桁）' },
+  { value: 'branch_code',          label: '支局コード（2桁）' },
+  { value: 'license_return_yes',   label: '免許証返納：有（●）' },
+  { value: 'license_return_no',    label: '免許証返納：無（●）' },
+  { value: 'license_return',       label: '免許証返納', values: ['yes', 'no'] },
+  { value: 'training_req_1',       label: '講習要件：一号乗船履歴（●）' },
+  { value: 'training_req_2',       label: '講習要件：二号特別（●）' },
+  { value: 'training_req_3',       label: '講習要件：三号講習（●・更新は自動）' },
   { value: 'menu',            label: 'メニュー' },
   { value: 'application_type',label: '申込種別',  values: ['new', 'renewal', 'lapsed'] },
   { value: 'status',          label: 'ステータス',values: ['pending', 'confirmed', 'completed', 'cancelled'] },
@@ -103,18 +119,42 @@ const DEFAULT_PREVIEW: Record<FieldType, string> = {
   mark:  '●',
 }
 
+// ラベル先頭の欄番号（①〜⑳）でグループ分けする。番号がなければ「その他」
+const OTHER_GROUP = 'その他'
+function fieldGroup(label: string): string {
+  const m = label.match(/^[①-⑳]/)
+  return m ? m[0] : OTHER_GROUP
+}
+
 function uid() { return Math.random().toString(36).slice(2, 8) }
 
 function loadFields(): FieldDef[] {
   try {
     const s = localStorage.getItem(STORAGE_KEY)
-    if (s) return JSON.parse(s) as FieldDef[]
+    if (s) return (JSON.parse(s) as FieldDef[]).map(toCenterAnchor)
   } catch { /* ignore */ }
   return []
 }
 
 function saveFields(fields: FieldDef[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(fields))
+}
+
+// 書式レイアウトJSONの page は「その書式内のページ（1=表面）」。
+// キャリブレーション画面の画像ページ（pdf-pages/page-N.png）とは別なので、読み込み時に対応付ける。
+const FORM_IMAGE_PAGE: Record<string, number> = {
+  shiken: 1, menkyo: 2, koshin: 3, saikofu: 4, teisei: 5,
+}
+const LOADED_FORM_KEY = 'formCalibration_loadedForm'
+
+function loadLoadedForm(): string | null {
+  try { return localStorage.getItem(LOADED_FORM_KEY) } catch { return null }
+}
+function saveLoadedForm(form: string | null) {
+  try {
+    if (form) localStorage.setItem(LOADED_FORM_KEY, form)
+    else localStorage.removeItem(LOADED_FORM_KEY)
+  } catch { /* ignore */ }
 }
 
 // ── ポイント表示バッジ ────────────────────────────────────────
@@ -135,7 +175,7 @@ function FieldRow({ field, onEdit, onDelete, highlighted }: {
   highlighted: boolean
 }) {
   return (
-    <div className={`px-3 py-2 border-b border-gray-50 last:border-0 text-xs flex items-center gap-2 hover:bg-lavender-50/40 ${highlighted ? 'bg-lavender-50' : ''}`}>
+    <div id={`field-row-${field.id}`} className={`px-3 py-2 border-b border-gray-50 last:border-0 text-xs flex items-center gap-2 hover:bg-lavender-50/40 ${highlighted ? 'bg-lavender-50' : ''}`}>
       <span className="font-mono text-gray-400 w-4">{field.page}</span>
       <span className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] font-medium ${
         field.type === 'chars' ? 'bg-mint-50 text-mint-600' :
@@ -166,8 +206,12 @@ export default function FormCalibrationPage() {
   const importRef   = useRef<HTMLInputElement>(null)
 
   const [page,    setPage]    = useState(1)
+  const [groupTab, setGroupTab] = useState<string>('all')   // 一覧の欄番号タブ
+  const [listQuery, setListQuery] = useState('')            // 一覧の絞り込み
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
   const [fields,  setFields]  = useState<FieldDef[]>(loadFields)
+  // 書式レイアウトから読み込んだ場合、その書式名（書き出し時に page を書式内ページへ戻すため）
+  const [loadedForm, setLoadedForm] = useState<string | null>(loadLoadedForm)
   const [hover,   setHover]   = useState<ClickPoint | null>(null)
   const [ptA,     setPtA]     = useState<ClickPoint | null>(null)
   const [ptB,     setPtB]     = useState<ClickPoint | null>(null)
@@ -190,22 +234,44 @@ export default function FormCalibrationPage() {
   const [fMarkChar,   setFMarkChar]   = useState('●')
 
   // 編集フォームへ読み込み
+  // 編集読み込みで種別が変わるとき、下の「種別切り替えでリセット」を1回スキップする
+  const skipTypeResetRef = useRef(false)
+  // 枠が1つだけの文字マスを編集するとき、元の枠幅を保持する（B点がないため）
+  const editCharWidthRef = useRef<number | undefined>(undefined)
+
   const startEdit = (f: FieldDef) => {
+    if (f.type !== fType) skipTypeResetRef.current = true
     setEditId(f.id)
     setFKey(f.key); setFLabel(f.label); setFType(f.type)
     setFMaxChars(f.maxChars ?? 20); setFFontSize(f.fontSize)
     setFWidth(f.width ?? 200)
     setFDataKey(f.dataKey ?? ''); setFMatchValue(f.matchValue ?? ''); setFMarkChar(f.markChar ?? '●')
     setPtA({ x: f.x, y: f.y })
-    if (f.type === 'chars' && f.charWidth) {
-      setPtB({ x: f.x + f.charWidth, y: f.y })
+    const n = f.maxChars ?? 1
+    if (f.type === 'chars' && f.charWidth && n > 1) {
+      setPtB({ x: parseFloat((f.x + f.charWidth * (n - 1)).toFixed(2)), y: f.y })
+    } else {
+      setPtB(null)
     }
+    editCharWidthRef.current = f.charWidth
+  }
+
+  // 画像上のマーカーから選択：編集フォームに読み込み、一覧の該当行を表示
+  const selectFromImage = (f: FieldDef) => {
+    startEdit(f)
+    setClickSeq(0)
+    setGroupTab(fieldGroup(f.label))
+    setListQuery('')
+    setTimeout(() => {
+      document.getElementById(`field-row-${f.id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }, 0)
   }
 
   const cancelEdit = () => {
     setEditId(null); setFKey(''); setFLabel(''); setFType('chars')
     setFDataKey(''); setFMatchValue(''); setFMarkChar('●')
     setPtA(null); setPtB(null); setClickSeq(0)
+    editCharWidthRef.current = undefined
   }
 
   // 画像クリック → PDF座標計算（ドラッグ直後は無視）
@@ -220,11 +286,12 @@ export default function FormCalibrationPage() {
     }
     if (clickSeq === 0) {
       setPtA(px); setPtB(null)
-      setClickSeq(fType === 'chars' ? 1 : 2)
+      setClickSeq(fType === 'chars' && fMaxChars > 1 ? 1 : 2)
     } else if (clickSeq === 1) {
-      setPtB(px); setClickSeq(2)
+      // 最後の枠：縦位置は1枠目に揃える
+      setPtB({ x: px.x, y: ptA?.y ?? px.y }); setClickSeq(2)
     }
-  }, [clickSeq, fType, dragging])
+  }, [clickSeq, fType, fMaxChars, dragging, ptA])
 
   // ホバー座標
   const handleImgMove = useCallback((e: React.MouseEvent<HTMLImageElement>) => {
@@ -241,8 +308,11 @@ export default function FormCalibrationPage() {
   const handleSave = () => {
     if (!ptA || !fKey.trim() || !fLabel.trim()) return
 
-    const charWidth = (ptA && ptB && fType === 'chars')
-      ? parseFloat(Math.abs(ptB.x - ptA.x).toFixed(2))
+    // 枠の間隔 = (最後の枠 − 1枠目) ÷ (枠の数 − 1)。枠が1つなら元の値（なければ文字サイズから）
+    const charWidth = fType === 'chars'
+      ? (ptB && fMaxChars > 1
+          ? parseFloat((Math.abs(ptB.x - ptA.x) / (fMaxChars - 1)).toFixed(3))
+          : editCharWidthRef.current ?? parseFloat((fFontSize * 1.4).toFixed(2)))
       : undefined
 
     const fieldData: Omit<FieldDef, 'id'> = {
@@ -252,7 +322,7 @@ export default function FormCalibrationPage() {
       type: fType,
       x: ptA.x, y: ptA.y,
       fontSize: fFontSize,
-      ...(fType === 'chars' ? { charWidth, maxChars: fMaxChars } : {}),
+      ...(fType === 'chars' ? { charWidth, maxChars: fMaxChars, anchor: 'center' as const } : {}),
       ...(fType === 'text'  ? { width: fWidth } : {}),
       ...(fType === 'mark'  ? {
         dataKey:    fDataKey.trim()    || undefined,
@@ -277,8 +347,11 @@ export default function FormCalibrationPage() {
 
   // JSON出力
   const exportJson = () => {
+    // 書式レイアウト読み込み中は、画像ページ → 書式内ページ（表面=1）に戻して書き出す
+    const imgPage = loadedForm ? FORM_IMAGE_PAGE[loadedForm] : undefined
+    const out = imgPage ? fields.map(f => (f.page === imgPage ? { ...f, page: 1 } : f)) : fields
     const grouped: Record<number, FieldDef[]> = {}
-    for (const f of fields) {
+    for (const f of out) {
       (grouped[f.page] ??= []).push(f)
     }
     return JSON.stringify(grouped, null, 2)
@@ -304,8 +377,11 @@ export default function FormCalibrationPage() {
         } else {
           flat = Object.values(parsed as Record<string, FieldDef[]>).flat()
         }
+        flat = flat.map(toCenterAnchor)
         setFields(flat)
         saveFields(flat)
+        setLoadedForm(null)
+        saveLoadedForm(null)
         alert(`${flat.length} 件のフィールドを読み込みました`)
       } catch {
         alert('JSONの読み込みに失敗しました。ファイルを確認してください。')
@@ -317,8 +393,36 @@ export default function FormCalibrationPage() {
 
   // ページ切り替え or 種別切り替え時にリセット
   useEffect(() => {
+    if (skipTypeResetRef.current) { skipTypeResetRef.current = false; return }
     setPtA(null); setPtB(null); setClickSeq(0)
   }, [page, fType])
+
+  // 矢印キーで位置を微調整（A・B を一緒に移動）。0.5pt、Shift で 5pt
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!ptA) return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
+      const step = e.shiftKey ? 5 : 0.5
+      let dx = 0, dy = 0
+      switch (e.key) {
+        case 'ArrowLeft':  dx = -step; break
+        case 'ArrowRight': dx =  step; break
+        case 'ArrowUp':    dy =  step; break   // PDF座標は上向きが +y
+        case 'ArrowDown':  dy = -step; break
+        default: return
+      }
+      e.preventDefault()
+      const mv = (p: ClickPoint): ClickPoint => ({
+        x: parseFloat(Math.max(0, Math.min(PDF_W, p.x + dx)).toFixed(2)),
+        y: parseFloat(Math.max(0, Math.min(PDF_H, p.y + dy)).toFixed(2)),
+      })
+      setPtA(p => (p ? mv(p) : p))
+      setPtB(p => (p ? mv(p) : p))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [ptA])
 
   // 種別切り替え時にデフォルトプレビューテキストを更新
   useEffect(() => {
@@ -372,8 +476,21 @@ export default function FormCalibrationPage() {
   }, [])
 
   const pageFields  = fields.filter(f => f.page === page)
-  const charWidthCalc = ptA && ptB && fType === 'chars'
-    ? Math.abs(ptB.x - ptA.x).toFixed(2)
+  // 欄番号タブ（①→⑳、その他は最後）
+  const groupCounts = new Map<string, number>()
+  for (const f of pageFields) {
+    const g = fieldGroup(f.label)
+    groupCounts.set(g, (groupCounts.get(g) ?? 0) + 1)
+  }
+  const groups = Array.from(groupCounts.keys()).sort((a, b) =>
+    a === OTHER_GROUP ? 1 : b === OTHER_GROUP ? -1 : a.localeCompare(b))
+  const activeGroup = groupTab !== 'all' && groupCounts.has(groupTab) ? groupTab : 'all'
+  const q = listQuery.trim()
+  const listFields = pageFields.filter(f =>
+    (activeGroup === 'all' || fieldGroup(f.label) === activeGroup) &&
+    (!q || f.label.includes(q) || f.key.includes(q) || (f.dataKey ?? '').includes(q) || (f.matchValue ?? '').includes(q)))
+  const charWidthCalc = ptA && ptB && fType === 'chars' && fMaxChars > 1
+    ? (Math.abs(ptB.x - ptA.x) / (fMaxChars - 1)).toFixed(2)
     : null
 
   return (
@@ -433,17 +550,24 @@ export default function FormCalibrationPage() {
               const rect = imgRef.current!.getBoundingClientRect()
               const dispX = (f.x / PDF_W) * rect.width
               const dispY = ((PDF_H - f.y) / PDF_H) * rect.height
+              const selected = editId === f.id
+              // 2点目（B）を指定中はマーカーをクリック不可にして、画像へのクリックを優先
+              const clickable = clickSeq !== 1 && !dragging
               return (
                 <div
                   key={f.id}
-                  className="absolute pointer-events-none"
+                  className={`absolute ${selected ? 'z-20' : 'z-10'} ${clickable ? 'cursor-pointer' : 'pointer-events-none'}`}
                   style={{ left: dispX, top: dispY }}
+                  onClick={e => { e.stopPropagation(); selectFromImage(f) }}
+                  title={`${f.label}（クリックで編集）`}
                 >
                   <div className={`w-2 h-2 -translate-x-1 -translate-y-1 rounded-full ${
                     f.type === 'chars' ? 'bg-mint-500' :
                     f.type === 'text'  ? 'bg-blue-500' : 'bg-orange-500'
-                  } opacity-70`} />
-                  <div className="absolute left-2.5 -top-0.5 text-[10px] font-bold text-white bg-black/50 rounded px-1 whitespace-nowrap">
+                  } ${selected ? 'ring-2 ring-lavender-500 opacity-100' : 'opacity-70'}`} />
+                  <div className={`absolute left-2.5 -top-0.5 text-[10px] font-bold text-white rounded px-1 whitespace-nowrap ${
+                    selected ? 'bg-lavender-500' : 'bg-black/50 hover:bg-lavender-500/90'
+                  }`}>
                     {f.label}
                   </div>
                 </div>
@@ -460,30 +584,45 @@ export default function FormCalibrationPage() {
 
               return (
                 <div className="absolute inset-0 pointer-events-none">
-                  {fType === 'chars' && (
-                    <div
-                      onMouseDown={e => startDrag(e, 'A')}
-                      className={`absolute flex items-end pointer-events-auto select-none
-                        ${dragging === 'A' ? 'cursor-grabbing' : 'cursor-grab'}`}
-                      style={{ left: dispX, top: dispY - fontPx * 1.1 }}
-                    >
-                      {previewText.slice(0, fMaxChars).split('').map((ch, i) => (
-                        <span
-                          key={i}
-                          className="text-red-500 font-bold leading-none"
-                          style={{
-                            fontSize: fontPx,
-                            width: cwPx,
-                            textAlign: 'center',
-                            display: 'inline-block',
-                            opacity: 0.85,
-                          }}
-                        >
-                          {ch}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {fType === 'chars' && (() => {
+                    const n = Math.max(1, fMaxChars)
+                    const pitchPx = n > 1 && ptB ? ((ptB.x - ptA.x) / (n - 1)) * sx : cwPx
+                    const boxW = Math.max(Math.abs(pitchPx), fontPx)
+                    const boxH = fontPx * 1.4
+                    const chars = Array.from(previewText)
+                    return (
+                      <>
+                        {Array.from({ length: n }, (_, i) => {
+                          const cx = dispX + i * pitchPx
+                          return (
+                            <div
+                              key={i}
+                              onMouseDown={i === 0 ? (e => startDrag(e, 'A')) : undefined}
+                              className={`absolute flex items-center justify-center border border-dashed border-red-300 select-none ${
+                                i === 0 ? `pointer-events-auto ${dragging === 'A' ? 'cursor-grabbing' : 'cursor-grab'}` : ''
+                              }`}
+                              style={{ left: cx - boxW / 2, top: dispY - boxH / 2, width: boxW, height: boxH }}
+                            >
+                              <span className="text-red-500 font-bold leading-none" style={{ fontSize: fontPx, opacity: 0.85 }}>
+                                {chars[i] ?? ''}
+                              </span>
+                            </div>
+                          )
+                        })}
+                        {/* 最後の枠（B）：ドラッグで間隔を調整 */}
+                        {n > 1 && ptB && (
+                          <div
+                            onMouseDown={e => startDrag(e, 'B')}
+                            className={`absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500 ring-2 ring-white pointer-events-auto ${
+                              dragging === 'B' ? 'cursor-grabbing' : 'cursor-ew-resize'
+                            }`}
+                            style={{ left: ptB.x * sx, top: dispY }}
+                            title="最後の枠（ドラッグで間隔を調整）"
+                          />
+                        )}
+                      </>
+                    )
+                  })()}
                   {fType === 'text' && (
                     <div
                       onMouseDown={e => startDrag(e, 'A')}
@@ -530,12 +669,16 @@ export default function FormCalibrationPage() {
             <div className="space-y-0.5 text-xs text-gray-600">
               <div className={`flex items-center gap-2 ${clickSeq === 0 ? 'font-semibold text-red-500' : 'text-gray-400'}`}>
                 <span className="w-4 h-4 rounded-full bg-red-400 inline-block shrink-0" />
-                {clickSeq === 0 ? '← 1クリック目：フィールド開始位置（左端）' : '点A 取得済'}
+                {clickSeq === 0
+                  ? (fType === 'chars' ? '← 1クリック目：1枠目の中心' : '← 1クリック目：フィールド開始位置（左端）')
+                  : '点A 取得済'}
               </div>
               {fType === 'chars' && (
                 <div className={`flex items-center gap-2 ${clickSeq === 1 ? 'font-semibold text-blue-500' : 'text-gray-400'}`}>
                   <span className="w-4 h-4 rounded-full bg-blue-400 inline-block shrink-0" />
-                  {clickSeq === 1 ? '← 2クリック目：2文字目の位置（文字間隔の計算用）' : clickSeq === 2 ? '点B 取得済' : '2クリック目'}
+                  {fMaxChars <= 1
+                    ? '枠が1つなので2クリック目は不要'
+                    : clickSeq === 1 ? '← 2クリック目：最後の枠の中心（枠の数で均等に割ります）' : clickSeq === 2 ? '点B 取得済' : '2クリック目：最後の枠の中心'}
                 </div>
               )}
               {fType !== 'chars' && (
@@ -548,10 +691,13 @@ export default function FormCalibrationPage() {
             <div className="mt-2 flex gap-2">
               <PtBadge label="A" pt={ptA} />
               <PtBadge label="B" pt={ptB} />
+              {ptA && (
+                <span className="text-[11px] text-gray-400">矢印キーで移動（Shift で大きく）</span>
+              )}
             </div>
             {charWidthCalc && (
               <p className="mt-1 text-xs font-mono text-mint-700 bg-mint-50 border border-mint-200 rounded px-2 py-0.5">
-                文字間隔 = {charWidthCalc} pt
+                枠の間隔 = {charWidthCalc} pt（{fMaxChars} 枠）
               </p>
             )}
             <button
@@ -622,11 +768,12 @@ export default function FormCalibrationPage() {
               </div>
               {fType === 'chars' && (
                 <div>
-                  <label className="block text-[11px] text-gray-400 mb-0.5">最大文字数</label>
+                  <label className="block text-[11px] text-gray-400 mb-0.5">枠の数</label>
                   <input
                     type="number"
+                    min={1}
                     value={fMaxChars}
-                    onChange={e => setFMaxChars(Number(e.target.value))}
+                    onChange={e => setFMaxChars(Math.max(1, Number(e.target.value) || 1))}
                     className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-lavender-400"
                   />
                 </div>
@@ -764,12 +911,42 @@ export default function FormCalibrationPage() {
               <p className="text-xs font-semibold text-gray-500">
                 定義済みフィールド（ページ{page}）
               </p>
-              <span className="text-xs text-gray-400">{pageFields.length} 件</span>
+              <span className="text-xs text-gray-400">
+                {listFields.length !== pageFields.length && `${listFields.length} / `}{pageFields.length} 件
+              </span>
             </div>
+            {pageFields.length > 0 && (
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-3 py-2 space-y-2">
+                <div className="flex flex-wrap gap-1">
+                  {['all', ...groups].map(g => (
+                    <button
+                      key={g}
+                      onClick={() => setGroupTab(g)}
+                      className={`px-2 py-0.5 rounded text-xs font-medium transition ${
+                        activeGroup === g
+                          ? 'bg-lavender-400 text-white'
+                          : 'bg-gray-100 text-gray-500 hover:bg-lavender-100'
+                      }`}
+                    >
+                      {g === 'all' ? 'すべて' : g}
+                      <span className="ml-1 opacity-70 text-[10px]">{g === 'all' ? pageFields.length : groupCounts.get(g)}</span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  value={listQuery}
+                  onChange={e => setListQuery(e.target.value)}
+                  placeholder="ラベル・キーで絞り込み（例：東京、郵便）"
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:border-lavender-300"
+                />
+              </div>
+            )}
             {pageFields.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-6">このページにフィールドがありません</p>
+            ) : listFields.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">該当するフィールドがありません</p>
             ) : (
-              pageFields.map(f => (
+              listFields.map(f => (
                 <FieldRow
                   key={f.id}
                   field={f}
@@ -797,10 +974,16 @@ export default function FormCalibrationPage() {
                   onClick={async () => {
                     try {
                       const res  = await fetch(`/form-layouts/${file}.json`)
-                      const data = await res.json() as FieldDef[]
+                      const raw  = await res.json() as FieldDef[]
+                      // 表面（page 1）をこの書式の画像ページに割り当てる
+                      const imgPage = FORM_IMAGE_PAGE[file]
+                      const data = raw.map(toCenterAnchor).map(f => (f.page === 1 ? { ...f, page: imgPage } : f))
                       setFields(data)
                       saveFields(data)
-                      alert(`${label}：${data.length} 件読み込みました`)
+                      setLoadedForm(file)
+                      saveLoadedForm(file)
+                      setPage(imgPage)
+                      alert(`${label}：${data.length} 件読み込みました（ページ${imgPage}）`)
                     } catch {
                       alert('読み込みに失敗しました')
                     }

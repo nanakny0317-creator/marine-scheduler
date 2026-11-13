@@ -5,11 +5,12 @@
     "label": "旧小文字",
     "page": 2,
     "type": "chars",
-    "x": 73.0,
-    "y": 602.67,
+    "x": 84.28,
+    "y": 606.17,
     "charWidth": 22.57,
     "maxChars": 21,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0002",
@@ -17,11 +18,12 @@
     "label": "旧小文字",
     "page": 2,
     "type": "chars",
-    "x": 549.81,
-    "y": 599.78,
+    "x": 555.21,
+    "y": 603.28,
     "charWidth": 10.81,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0003",
@@ -29,11 +31,12 @@
     "label": "旧カナ",
     "page": 2,
     "type": "chars",
-    "x": 68.91,
-    "y": 579.87,
+    "x": 80.31,
+    "y": 583.37,
     "charWidth": 22.8,
     "maxChars": 13,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0004",
@@ -41,11 +44,12 @@
     "label": "旧カナ",
     "page": 2,
     "type": "chars",
-    "x": 364.23,
-    "y": 578.16,
+    "x": 375.39,
+    "y": 581.66,
     "charWidth": 22.32,
     "maxChars": 9,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0005",
@@ -53,11 +57,12 @@
     "label": "旧漢字",
     "page": 2,
     "type": "chars",
-    "x": 70.12,
-    "y": 514.77,
+    "x": 90.04,
+    "y": 518.27,
     "charWidth": 39.84,
     "maxChars": 7,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0006",
@@ -65,11 +70,12 @@
     "label": "旧漢字",
     "page": 2,
     "type": "chars",
-    "x": 348.37,
-    "y": 513.33,
+    "x": 368.18,
+    "y": 516.83,
     "charWidth": 39.62,
     "maxChars": 5,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0007",
@@ -77,11 +83,12 @@
     "label": "旧出生_平成",
     "page": 2,
     "type": "chars",
-    "x": 44.89,
-    "y": 401.63,
+    "x": 50.41,
+    "y": 405.13,
     "charWidth": 11.03,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0008",
@@ -89,11 +96,12 @@
     "label": "旧出生_昭和",
     "page": 2,
     "type": "chars",
-    "x": 61.71,
-    "y": 401.63,
+    "x": 67.11,
+    "y": 405.13,
     "charWidth": 10.81,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0009",
@@ -101,11 +109,12 @@
     "label": "旧出生_大正",
     "page": 2,
     "type": "chars",
-    "x": 78.75,
-    "y": 401.63,
+    "x": 84.16,
+    "y": 405.13,
     "charWidth": 10.81,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0010",
@@ -113,11 +122,12 @@
     "label": "旧出生_明治",
     "page": 2,
     "type": "chars",
-    "x": 96.05,
-    "y": 401.6,
+    "x": 101.33,
+    "y": 405.1,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0011",
@@ -125,11 +135,12 @@
     "label": "旧出生_西暦",
     "page": 2,
     "type": "chars",
-    "x": 119.81,
-    "y": 393.43,
+    "x": 126.53,
+    "y": 396.93,
     "charWidth": 13.43,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0012",
@@ -137,11 +148,12 @@
     "label": "旧出生年",
     "page": 2,
     "type": "chars",
-    "x": 152.46,
-    "y": 392.95,
+    "x": 161.11,
+    "y": 396.45,
     "charWidth": 17.3,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0013",
@@ -149,11 +161,12 @@
     "label": "旧出生月",
     "page": 2,
     "type": "chars",
-    "x": 202.18,
-    "y": 392.72,
+    "x": 210.81,
+    "y": 396.22,
     "charWidth": 17.27,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0014",
@@ -161,11 +174,12 @@
     "label": "旧出生日",
     "page": 2,
     "type": "chars",
-    "x": 252.57,
-    "y": 392.47,
+    "x": 261.11,
+    "y": 395.97,
     "charWidth": 17.07,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0015",
@@ -173,11 +187,12 @@
     "label": "旧本籍",
     "page": 2,
     "type": "chars",
-    "x": 46.33,
-    "y": 260.38,
+    "x": 64.7,
+    "y": 263.88,
     "charWidth": 36.74,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0016",
@@ -185,11 +200,12 @@
     "label": "旧国籍_韓国",
     "page": 2,
     "type": "chars",
-    "x": 48.25,
-    "y": 153.48,
+    "x": 53.66,
+    "y": 156.98,
     "charWidth": 10.81,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0017",
@@ -197,11 +213,12 @@
     "label": "旧国籍_朝鮮",
     "page": 2,
     "type": "chars",
-    "x": 65.29,
-    "y": 153.48,
+    "x": 70.57,
+    "y": 156.98,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0018",
@@ -209,11 +226,12 @@
     "label": "旧国籍_米国",
     "page": 2,
     "type": "chars",
-    "x": 82.37,
-    "y": 153.48,
+    "x": 87.78,
+    "y": 156.98,
     "charWidth": 10.81,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0019",
@@ -221,10 +239,11 @@
     "label": "旧国コード",
     "page": 2,
     "type": "chars",
-    "x": 107.56,
-    "y": 145.08,
+    "x": 116.21,
+    "y": 148.58,
     "charWidth": 17.3,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   }
 ]

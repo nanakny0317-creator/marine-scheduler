@@ -16,11 +16,12 @@
     "label": "①湖川",
     "page": 1,
     "type": "chars",
-    "x": 122.07,
-    "y": 728.75,
+    "x": 127.46,
+    "y": 732.25,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0019",
@@ -28,11 +29,12 @@
     "label": "①特殊",
     "page": 1,
     "type": "chars",
-    "x": 144.84,
-    "y": 728.75,
+    "x": 150.23,
+    "y": 732.25,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0016",
@@ -40,11 +42,12 @@
     "label": "①一級A",
     "page": 1,
     "type": "chars",
-    "x": 48.67,
-    "y": 728.49,
+    "x": 54.06,
+    "y": 731.99,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0017",
@@ -52,11 +55,12 @@
     "label": "①二級A",
     "page": 1,
     "type": "chars",
-    "x": 88.24,
-    "y": 728.49,
+    "x": 93.63,
+    "y": 731.99,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0029",
@@ -64,11 +68,12 @@
     "label": "①設備等限定",
     "page": 1,
     "type": "chars",
-    "x": 71.47,
-    "y": 691.76,
+    "x": 76.75,
+    "y": 695.26,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0028",
@@ -76,11 +81,12 @@
     "label": "①旅客",
     "page": 1,
     "type": "chars",
-    "x": 48.67,
-    "y": 691.51,
+    "x": 54.06,
+    "y": 695.01,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0015",
@@ -88,11 +94,12 @@
     "label": "④受験番号",
     "page": 1,
     "type": "chars",
-    "x": 331.41,
-    "y": 663.88,
+    "x": 341.25,
+    "y": 667.38,
     "charWidth": 19.67,
     "maxChars": 4,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0001",
@@ -100,11 +107,12 @@
     "label": "③試験ID",
     "page": 1,
     "type": "chars",
-    "x": 190.41,
-    "y": 663.65,
+    "x": 200.35,
+    "y": 667.15,
     "charWidth": 19.89,
     "maxChars": 6,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0027",
@@ -112,11 +120,12 @@
     "label": "②１級２級A",
     "page": 1,
     "type": "chars",
-    "x": 147.97,
-    "y": 663.62,
+    "x": 154.8,
+    "y": 667.12,
     "charWidth": 13.66,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0037",
@@ -124,11 +133,12 @@
     "label": "④受験番号",
     "page": 1,
     "type": "chars",
-    "x": 331.41,
-    "y": 632.62,
+    "x": 341.36,
+    "y": 636.12,
     "charWidth": 19.89,
     "maxChars": 4,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0036",
@@ -136,11 +146,12 @@
     "label": "③試験ID",
     "page": 1,
     "type": "chars",
-    "x": 190.41,
-    "y": 632.4,
+    "x": 200.35,
+    "y": 635.9,
     "charWidth": 19.89,
     "maxChars": 6,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0035",
@@ -148,11 +159,12 @@
     "label": "②特殊B",
     "page": 1,
     "type": "chars",
-    "x": 148.2,
-    "y": 632.17,
+    "x": 155.03,
+    "y": 635.67,
     "charWidth": 13.66,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0002",
@@ -160,11 +172,12 @@
     "label": "⑤_小文字",
     "page": 1,
     "type": "chars",
-    "x": 74.1,
-    "y": 592.52,
+    "x": 85.38,
+    "y": 596.02,
     "charWidth": 22.55,
     "maxChars": 22,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0004",
@@ -172,11 +185,12 @@
     "label": "⑤_氏名カナ",
     "page": 1,
     "type": "chars",
-    "x": 160.67,
-    "y": 569.94,
+    "x": 171.94,
+    "y": 573.44,
     "charWidth": 22.55,
     "maxChars": 18,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0003",
@@ -184,11 +198,12 @@
     "label": "⑤_氏名カナ",
     "page": 1,
     "type": "chars",
-    "x": 70.03,
-    "y": 569.68,
+    "x": 81.42,
+    "y": 573.18,
     "charWidth": 22.77,
     "maxChars": 4,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0026",
@@ -196,11 +211,12 @@
     "label": "⑤_氏名漢字",
     "page": 1,
     "type": "chars",
-    "x": 348.68,
-    "y": 504.59,
+    "x": 368.46,
+    "y": 508.09,
     "charWidth": 39.56,
     "maxChars": 5,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0025",
@@ -208,11 +224,12 @@
     "label": "⑤_氏名漢字",
     "page": 1,
     "type": "chars",
-    "x": 71.7,
-    "y": 504.36,
+    "x": 91.48,
+    "y": 507.86,
     "charWidth": 39.56,
     "maxChars": 7,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0030",
@@ -220,11 +237,12 @@
     "label": "⑥_郵便番号上",
     "page": 1,
     "type": "chars",
-    "x": 68.82,
-    "y": 455.58,
+    "x": 77.32,
+    "y": 459.08,
     "charWidth": 17.01,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0031",
@@ -232,11 +250,12 @@
     "label": "⑥_郵便番号下",
     "page": 1,
     "type": "chars",
-    "x": 136.94,
-    "y": 455.58,
+    "x": 145.34,
+    "y": 459.08,
     "charWidth": 16.79,
     "maxChars": 4,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0033",
@@ -244,11 +263,12 @@
     "label": "⑥_電話番号",
     "page": 1,
     "type": "chars",
-    "x": 367.13,
-    "y": 455.09,
+    "x": 375.52,
+    "y": 458.59,
     "charWidth": 16.79,
     "maxChars": 5,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0032",
@@ -256,11 +276,12 @@
     "label": "⑥_電話番号",
     "page": 1,
     "type": "chars",
-    "x": 282.48,
-    "y": 454.84,
+    "x": 290.76,
+    "y": 458.34,
     "charWidth": 16.56,
     "maxChars": 11,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0020",
@@ -268,11 +289,12 @@
     "label": "⑥_都道府県",
     "page": 1,
     "type": "chars",
-    "x": 50.59,
-    "y": 416.41,
+    "x": 68.93,
+    "y": 419.91,
     "charWidth": 36.68,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0021",
@@ -280,11 +302,12 @@
     "label": "⑥_住所",
     "page": 1,
     "type": "chars",
-    "x": 197.6,
-    "y": 416.41,
+    "x": 215.94,
+    "y": 419.91,
     "charWidth": 36.68,
     "maxChars": 10,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0022",
@@ -292,11 +315,12 @@
     "label": "⑥_住所",
     "page": 1,
     "type": "chars",
-    "x": 50.59,
-    "y": 376.75,
+    "x": 68.93,
+    "y": 380.25,
     "charWidth": 36.68,
     "maxChars": 14,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0023",
@@ -304,11 +328,12 @@
     "label": "⑥_住所",
     "page": 1,
     "type": "chars",
-    "x": 50.59,
-    "y": 337.13,
+    "x": 68.93,
+    "y": 340.63,
     "charWidth": 36.68,
     "maxChars": 14,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0024",
@@ -316,11 +341,12 @@
     "label": "⑥_住所",
     "page": 1,
     "type": "chars",
-    "x": 50.59,
-    "y": 297.0,
+    "x": 68.93,
+    "y": 300.5,
     "charWidth": 36.68,
     "maxChars": 14,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0008",
@@ -328,11 +354,12 @@
     "label": "⑧_男",
     "page": 1,
     "type": "chars",
-    "x": 341.71,
-    "y": 250.85,
+    "x": 346.98,
+    "y": 254.35,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0009",
@@ -340,11 +367,12 @@
     "label": "⑧_女",
     "page": 1,
     "type": "chars",
-    "x": 365.69,
-    "y": 250.85,
+    "x": 371.08,
+    "y": 254.35,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0005",
@@ -352,11 +380,12 @@
     "label": "⑦_出生年",
     "page": 1,
     "type": "chars",
-    "x": 153.73,
-    "y": 243.39,
+    "x": 162.23,
+    "y": 246.89,
     "charWidth": 17.01,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0006",
@@ -364,11 +393,12 @@
     "label": "⑦_出生月",
     "page": 1,
     "type": "chars",
-    "x": 203.11,
-    "y": 243.39,
+    "x": 211.63,
+    "y": 246.89,
     "charWidth": 17.04,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0007",
@@ -376,11 +406,12 @@
     "label": "⑦_出生日",
     "page": 1,
     "type": "chars",
-    "x": 253.25,
-    "y": 243.39,
+    "x": 261.75,
+    "y": 246.89,
     "charWidth": 17.01,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0071",
@@ -388,11 +419,12 @@
     "label": "⑦_出生年西暦千",
     "page": 1,
     "type": "chars",
-    "x": 119.67,
-    "y": 243.39,
+    "x": 126.5,
+    "y": 246.89,
     "charWidth": 13.66,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0072",
@@ -400,11 +432,12 @@
     "label": "⑦_出生年西暦百",
     "page": 1,
     "type": "chars",
-    "x": 136.68,
-    "y": 243.39,
+    "x": 143.51,
+    "y": 246.89,
     "charWidth": 13.66,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0034",
@@ -412,11 +445,12 @@
     "label": "⑨本籍",
     "page": 1,
     "type": "chars",
-    "x": 427.8,
-    "y": 237.4,
+    "x": 446.27,
+    "y": 240.9,
     "charWidth": 36.94,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0010",
@@ -424,11 +458,12 @@
     "label": "⑩_韓国",
     "page": 1,
     "type": "chars",
-    "x": 49.15,
-    "y": 191.97,
+    "x": 54.54,
+    "y": 195.47,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0011",
@@ -436,11 +471,12 @@
     "label": "⑩_朝鮮",
     "page": 1,
     "type": "chars",
-    "x": 65.94,
-    "y": 191.97,
+    "x": 71.33,
+    "y": 195.47,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0012",
@@ -448,11 +484,12 @@
     "label": "⑩_米国",
     "page": 1,
     "type": "chars",
-    "x": 82.99,
-    "y": 191.97,
+    "x": 88.5,
+    "y": 195.47,
     "charWidth": 11.03,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0014",
@@ -460,11 +497,12 @@
     "label": "⑪_免許証番号",
     "page": 1,
     "type": "chars",
-    "x": 201.67,
-    "y": 189.58,
+    "x": 212.94,
+    "y": 193.08,
     "charWidth": 22.55,
     "maxChars": 13,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0013",
@@ -472,11 +510,12 @@
     "label": "⑩_国コード",
     "page": 1,
     "type": "chars",
-    "x": 108.38,
-    "y": 183.8,
+    "x": 116.9,
+    "y": 187.3,
     "charWidth": 17.04,
     "maxChars": 3,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0038",
@@ -484,11 +523,12 @@
     "label": "⑫_航海一級",
     "page": 1,
     "type": "chars",
-    "x": 65.94,
-    "y": 145.85,
+    "x": 71.33,
+    "y": 149.35,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0039",
@@ -496,11 +536,12 @@
     "label": "⑫_航海二級",
     "page": 1,
     "type": "chars",
-    "x": 82.99,
-    "y": 145.85,
+    "x": 88.38,
+    "y": 149.35,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0040",
@@ -508,11 +549,12 @@
     "label": "⑫_航海三級",
     "page": 1,
     "type": "chars",
-    "x": 99.75,
-    "y": 145.85,
+    "x": 105.27,
+    "y": 149.35,
     "charWidth": 11.03,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0041",
@@ -520,11 +562,12 @@
     "label": "⑫_航海四級",
     "page": 1,
     "type": "chars",
-    "x": 117.02,
-    "y": 145.85,
+    "x": 122.3,
+    "y": 149.35,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0042",
@@ -532,11 +575,12 @@
     "label": "⑫_航海五級",
     "page": 1,
     "type": "chars",
-    "x": 134.06,
-    "y": 145.85,
+    "x": 139.34,
+    "y": 149.35,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0043",
@@ -544,11 +588,12 @@
     "label": "⑫_航海六級",
     "page": 1,
     "type": "chars",
-    "x": 150.85,
-    "y": 145.85,
+    "x": 156.24,
+    "y": 149.35,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0044",
@@ -556,11 +601,12 @@
     "label": "⑫_航海三級当",
     "page": 1,
     "type": "chars",
-    "x": 263.77,
-    "y": 145.85,
+    "x": 269.28,
+    "y": 149.35,
     "charWidth": 11.03,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0064",
@@ -568,11 +614,12 @@
     "label": "⑬申請月日_月",
     "page": 1,
     "type": "chars",
-    "x": 320.38,
-    "y": 132.88,
+    "x": 328.9,
+    "y": 136.38,
     "charWidth": 17.04,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0065",
@@ -580,11 +627,12 @@
     "label": "⑬申請月日_日",
     "page": 1,
     "type": "chars",
-    "x": 368.57,
-    "y": 132.88,
+    "x": 376.96,
+    "y": 136.38,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0045",
@@ -592,11 +640,12 @@
     "label": "⑫_機関一級",
     "page": 1,
     "type": "chars",
-    "x": 65.94,
-    "y": 109.09,
+    "x": 71.33,
+    "y": 112.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0046",
@@ -604,11 +653,12 @@
     "label": "⑫_機関二級",
     "page": 1,
     "type": "chars",
-    "x": 82.99,
-    "y": 109.09,
+    "x": 88.38,
+    "y": 112.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0047",
@@ -616,11 +666,12 @@
     "label": "⑫_機関三級",
     "page": 1,
     "type": "chars",
-    "x": 100.0,
-    "y": 109.09,
+    "x": 105.39,
+    "y": 112.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0048",
@@ -628,11 +679,12 @@
     "label": "⑫_機関四級",
     "page": 1,
     "type": "chars",
-    "x": 117.02,
-    "y": 109.09,
+    "x": 122.3,
+    "y": 112.59,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0049",
@@ -640,11 +692,12 @@
     "label": "⑫_機関五級",
     "page": 1,
     "type": "chars",
-    "x": 134.06,
-    "y": 109.09,
+    "x": 139.34,
+    "y": 112.59,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0050",
@@ -652,11 +705,12 @@
     "label": "⑫_機関六級",
     "page": 1,
     "type": "chars",
-    "x": 150.85,
-    "y": 109.09,
+    "x": 156.24,
+    "y": 112.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0051",
@@ -664,11 +718,12 @@
     "label": "⑫_機関内二級",
     "page": 1,
     "type": "chars",
-    "x": 173.62,
-    "y": 109.09,
+    "x": 178.9,
+    "y": 112.59,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0052",
@@ -676,11 +731,12 @@
     "label": "⑫_機関内三級",
     "page": 1,
     "type": "chars",
-    "x": 190.41,
-    "y": 109.09,
+    "x": 195.8,
+    "y": 112.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0053",
@@ -688,11 +744,12 @@
     "label": "⑫_機関内四級",
     "page": 1,
     "type": "chars",
-    "x": 207.42,
-    "y": 109.09,
+    "x": 212.69,
+    "y": 112.59,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0054",
@@ -700,11 +757,12 @@
     "label": "⑫_機関内五級",
     "page": 1,
     "type": "chars",
-    "x": 224.21,
-    "y": 109.09,
+    "x": 229.6,
+    "y": 112.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0055",
@@ -712,11 +770,12 @@
     "label": "⑫_機関内六級",
     "page": 1,
     "type": "chars",
-    "x": 241.26,
-    "y": 109.09,
+    "x": 246.65,
+    "y": 112.59,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0056",
@@ -724,11 +783,12 @@
     "label": "⑫_機関内三級当",
     "page": 1,
     "type": "chars",
-    "x": 263.77,
-    "y": 109.09,
+    "x": 269.28,
+    "y": 112.59,
     "charWidth": 11.03,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0069",
@@ -736,11 +796,12 @@
     "label": "⑮免許証返納有",
     "page": 1,
     "type": "chars",
-    "x": 515.33,
-    "y": 98.02,
+    "x": 520.72,
+    "y": 101.52,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0070",
@@ -748,11 +809,12 @@
     "label": "⑮免許証返納無",
     "page": 1,
     "type": "chars",
-    "x": 535.25,
-    "y": 98.02,
+    "x": 540.64,
+    "y": 101.52,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0066",
@@ -760,11 +822,12 @@
     "label": "⑭免許証交付_年",
     "page": 1,
     "type": "chars",
-    "x": 331.89,
-    "y": 89.86,
+    "x": 340.28,
+    "y": 93.36,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0067",
@@ -772,11 +835,12 @@
     "label": "⑭免許証交付_月",
     "page": 1,
     "type": "chars",
-    "x": 376.98,
-    "y": 89.86,
+    "x": 385.49,
+    "y": 93.36,
     "charWidth": 17.01,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0068",
@@ -784,11 +848,12 @@
     "label": "⑭免許証交付_日",
     "page": 1,
     "type": "chars",
-    "x": 422.07,
-    "y": 89.63,
+    "x": 430.57,
+    "y": 93.13,
     "charWidth": 17.01,
     "maxChars": 2,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0057",
@@ -796,11 +861,12 @@
     "label": "⑫_通信一級",
     "page": 1,
     "type": "chars",
-    "x": 65.94,
-    "y": 72.33,
+    "x": 71.33,
+    "y": 75.83,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0058",
@@ -808,11 +874,12 @@
     "label": "⑫_通信二級",
     "page": 1,
     "type": "chars",
-    "x": 82.99,
-    "y": 72.33,
+    "x": 88.38,
+    "y": 75.83,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0059",
@@ -820,11 +887,12 @@
     "label": "⑫_通信三級",
     "page": 1,
     "type": "chars",
-    "x": 99.75,
-    "y": 72.33,
+    "x": 105.27,
+    "y": 75.83,
     "charWidth": 11.03,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0060",
@@ -832,11 +900,12 @@
     "label": "⑫_電子通信一級",
     "page": 1,
     "type": "chars",
-    "x": 150.85,
-    "y": 72.33,
+    "x": 156.24,
+    "y": 75.83,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0061",
@@ -844,11 +913,12 @@
     "label": "⑫_電子通信二級",
     "page": 1,
     "type": "chars",
-    "x": 167.86,
-    "y": 72.33,
+    "x": 173.14,
+    "y": 75.83,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0062",
@@ -856,11 +926,12 @@
     "label": "⑫_電子通信三級",
     "page": 1,
     "type": "chars",
-    "x": 184.65,
-    "y": 72.33,
+    "x": 190.04,
+    "y": 75.83,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   },
   {
     "id": "cvt0063",
@@ -868,10 +939,11 @@
     "label": "⑫_電子通信四級",
     "page": 1,
     "type": "chars",
-    "x": 201.67,
-    "y": 72.33,
+    "x": 207.06,
+    "y": 75.83,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7
+    "fontSize": 7,
+    "anchor": "center"
   }
 ]

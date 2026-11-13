@@ -4,8 +4,8 @@
  * printForm() の第2引数 FormData として渡す。
  * フォームのキーは public/form-layouts/*.json の "key" フィールドと対応している。
  */
-import type { Student, Enrollment, ExamSession } from '../types'
-import { licenseSummary } from '../data/masterData'
+import type { Student, Enrollment, ExamSession, Venue } from '../types'
+import { PREFECTURES, courseOrgCode2, licenseSummary } from '../data/masterData'
 
 export type FormData = Record<string, string>
 
@@ -61,6 +61,24 @@ function parseExamDate(d: string | null): { year: string; month: string; day: st
   return { year: m[1], month: m[2], day: m[3] }
 }
 
+// ── 更新講習：講習実施日（和暦・申請書は年2桁） ───────────────────────
+function parseCourseDate(d: string | null): { eraYear: string; month: string; day: string } {
+  const m = (d ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return { eraYear: '', month: '', day: '' }
+  const y = parseInt(m[1])
+  const ey = y >= 2019 ? y - 2018 : y >= 1989 ? y - 1988 : y - 1925
+  return { eraYear: String(ey).padStart(2, '0'), month: m[2], day: m[3] }
+}
+
+/** 講習地（会場名）→ 都道府県コード（JIS 2桁）。会場マスターの都道府県から引く */
+function coursePrefCode(venueName: string, venues: Venue[]): string {
+  const pref = venues.find(v => v.name === venueName)?.prefecture
+    // 会場マスターにない場合は名称の先頭の都道府県名で判定（例：「大阪府大阪市」）
+    ?? PREFECTURES.find(p => venueName.startsWith(p))
+  const i = pref ? PREFECTURES.indexOf(pref) : -1
+  return i >= 0 ? String(i + 1).padStart(2, '0') : ''
+}
+
 // ── extra_json から安全に取得 ────────────────────────────────────
 function getExtra(enrollment: Enrollment): Record<string, unknown> {
   try { return JSON.parse(enrollment.extra_json) as Record<string, unknown> }
@@ -74,11 +92,13 @@ function getExtra(enrollment: Enrollment): Record<string, unknown> {
  * @param student    受講者情報
  * @param enrollment 申込情報
  * @param examSession 試験日程（任意）
+ * @param venues      会場マスター（任意。更新講習の講習実施都道府県コードに使う）
  */
 export function buildFormData(
   student: Student,
   enrollment: Enrollment,
   examSession?: ExamSession | null,
+  venues: Venue[] = [],
 ): FormData {
   const extra  = getExtra(enrollment)
   const bd     = parseBirthDate(student.birth_date)
@@ -109,6 +129,11 @@ export function buildFormData(
   const licIssue = parseBirthDate(student.license_issue_date ?? null)
   const licOpts  = (student.license_options ?? '').split(',').map(x => x.trim())
   const flag = (b: boolean) => (b ? 'true' : '')
+
+  // 更新講習（更新申請書 ⑫〜⑮・⑰）
+  const courseVenue = (typeof extra.course_location === 'string' ? extra.course_location : enrollment.venue) ?? ''
+  const courseDate  = parseCourseDate(enrollment.course_date)
+  const licReturn   = extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : ''
 
   return {
     // ── 氏名 ──
@@ -200,6 +225,22 @@ export function buildFormData(
     prev_exam_location:  prev.location,
     prev_exam_number:    prev.number,
     prev_exam_id:        prev.examId,
+
+    // ── 更新講習（更新申請書） ──
+    course_org_code:       typeof extra.course_org_code === 'number' ? courseOrgCode2(extra.course_org_code) : '',
+    course_pref_code:      courseVenue ? coursePrefCode(courseVenue, venues) : '',
+    course_date_era_year:  courseDate.eraYear,
+    course_date_month:     courseDate.month,
+    course_date_day:       courseDate.day,
+    bureau_code:           typeof extra.bureau_code === 'string' ? extra.bureau_code : '',
+    branch_code:           typeof extra.branch_code === 'string' ? extra.branch_code : '',
+    license_return:        licReturn,
+    license_return_yes:    licReturn === 'yes' ? '●' : '',
+    license_return_no:     licReturn === 'no'  ? '●' : '',
+    // 講習要件（⑪ 一号乗船履歴／二号特別／三号講習）：更新講習の受講者は三号
+    training_req_1:        '',
+    training_req_2:        '',
+    training_req_3:        appType === 'renewal' ? '●' : '',
 
     // ── mark 型対応（条件チェック） ──
     // 性別チェック

@@ -270,6 +270,102 @@ export const TRAINING_REQUIREMENTS: MasterItem[] = [
   { code: 3, label: '三号講習' },
 ]
 
+// ── 運輸局・支局コード（申請書の本局コード・支局コード欄） ──────────────
+// うーみーくん.xlsx Sheet9 より。元データのまま（新潟運輸局の下に関東の支局が並ぶ箇所も含む）
+export interface TransportBureau {
+  bureauCode: string   // 本局コード（2桁）
+  branchCode: string   // 支局コード（2桁）
+  bureau: string       // 運輸局名
+  branch: string       // 支局名
+}
+
+export const TRANSPORT_BUREAUS: TransportBureau[] = [
+  { bureauCode: '01', branchCode: '01', bureau: '北海道運輸局', branch: '本部' },
+  { bureauCode: '01', branchCode: '02', bureau: '北海道運輸局', branch: '函館海運支局' },
+  { bureauCode: '01', branchCode: '03', bureau: '北海道運輸局', branch: '室蘭海運支局' },
+  { bureauCode: '01', branchCode: '04', bureau: '北海道運輸局', branch: '釧路海運支局' },
+  { bureauCode: '01', branchCode: '05', bureau: '北海道運輸局', branch: '稚内海運支局' },
+  { bureauCode: '02', branchCode: '01', bureau: '東北運輸局', branch: '本部' },
+  { bureauCode: '02', branchCode: '02', bureau: '東北運輸局', branch: '釜石海運支局' },
+  { bureauCode: '02', branchCode: '03', bureau: '東北運輸局', branch: '気仙沼海運支局' },
+  { bureauCode: '02', branchCode: '04', bureau: '東北運輸局', branch: '八戸海運支局' },
+  { bureauCode: '02', branchCode: '05', bureau: '東北運輸局', branch: '青森海運支局' },
+  { bureauCode: '02', branchCode: '06', bureau: '東北運輸局', branch: '小名浜海運支局' },
+  { bureauCode: '02', branchCode: '07', bureau: '東北運輸局', branch: '宮古海運支局' },
+  { bureauCode: '02', branchCode: '08', bureau: '東北運輸局', branch: '石巻海運支局' },
+  { bureauCode: '03', branchCode: '01', bureau: '新潟運輸局', branch: '本部' },
+  { bureauCode: '03', branchCode: '02', bureau: '新潟運輸局', branch: '秋田海運支局' },
+  { bureauCode: '03', branchCode: '03', bureau: '新潟運輸局', branch: '酒田海運支局' },
+  { bureauCode: '03', branchCode: '04', bureau: '新潟運輸局', branch: '東京海運支局' },
+  { bureauCode: '03', branchCode: '05', bureau: '新潟運輸局', branch: '川崎海運支局' },
+  { bureauCode: '03', branchCode: '06', bureau: '新潟運輸局', branch: '千葉海運支局' },
+  { bureauCode: '03', branchCode: '07', bureau: '新潟運輸局', branch: '銚子海運支局' },
+  { bureauCode: '03', branchCode: '08', bureau: '新潟運輸局', branch: '那珂湊海運支局' },
+  { bureauCode: '05', branchCode: '01', bureau: '中部運輸局', branch: '本部' },
+  { bureauCode: '05', branchCode: '02', bureau: '中部運輸局', branch: '伏木海運支局' },
+  { bureauCode: '05', branchCode: '03', bureau: '中部運輸局', branch: '清水海運支局' },
+  { bureauCode: '05', branchCode: '04', bureau: '中部運輸局', branch: '下田海運支局' },
+  { bureauCode: '05', branchCode: '05', bureau: '中部運輸局', branch: '四日市海運支局' },
+  { bureauCode: '05', branchCode: '06', bureau: '中部運輸局', branch: '鳥羽海運支局' },
+  { bureauCode: '05', branchCode: '07', bureau: '中部運輸局', branch: '七尾海運支局' },
+  { bureauCode: '06', branchCode: '00', bureau: '近畿運輸局', branch: '本部' },
+  { bureauCode: '06', branchCode: '02', bureau: '近畿運輸局', branch: '敦賀海運支局' },
+  { bureauCode: '06', branchCode: '03', bureau: '近畿運輸局', branch: '舞鶴海運支局' },
+  { bureauCode: '06', branchCode: '04', bureau: '近畿運輸局', branch: '和歌山海運支局' },
+  { bureauCode: '06', branchCode: '05', bureau: '近畿運輸局', branch: '勝浦海運支局' },
+  { bureauCode: '07', branchCode: '01', bureau: '神戸海運監理部', branch: '本部' },
+  { bureauCode: '07', branchCode: '02', bureau: '神戸海運監理部', branch: '相生海運支局' },
+  { bureauCode: '08', branchCode: '01', bureau: '中国運輸局', branch: '本部' },
+  { bureauCode: '08', branchCode: '02', bureau: '中国運輸局', branch: '尾道海運支局' },
+  { bureauCode: '08', branchCode: '03', bureau: '中国運輸局', branch: '因島海運支局' },
+  { bureauCode: '08', branchCode: '04', bureau: '中国運輸局', branch: '木江海運支局' },
+  { bureauCode: '08', branchCode: '05', bureau: '中国運輸局', branch: '呉海運支局' },
+  { bureauCode: '08', branchCode: '06', bureau: '中国運輸局', branch: '境海運支局' },
+  { bureauCode: '08', branchCode: '07', bureau: '中国運輸局', branch: '松江海運支局' },
+  { bureauCode: '08', branchCode: '08', bureau: '中国運輸局', branch: '玉野海運支局' },
+  { bureauCode: '08', branchCode: '09', bureau: '中国運輸局', branch: '徳山海運支局' },
+  { bureauCode: '09', branchCode: '01', bureau: '四国運輸局', branch: '本部' },
+  { bureauCode: '09', branchCode: '02', bureau: '四国運輸局', branch: '徳島海運支局' },
+  { bureauCode: '09', branchCode: '03', bureau: '四国運輸局', branch: '松山海運支局' },
+  { bureauCode: '09', branchCode: '04', bureau: '四国運輸局', branch: '今治海運支局' },
+  { bureauCode: '09', branchCode: '05', bureau: '四国運輸局', branch: '宇和島海運支局' },
+  { bureauCode: '09', branchCode: '06', bureau: '四国運輸局', branch: '新居浜海運支局' },
+  { bureauCode: '09', branchCode: '07', bureau: '四国運輸局', branch: '高知海運支局' },
+  { bureauCode: '10', branchCode: '01', bureau: '九州運輸局', branch: '本部' },
+  { bureauCode: '10', branchCode: '02', bureau: '九州運輸局', branch: '若松海運支局' },
+  { bureauCode: '10', branchCode: '03', bureau: '九州運輸局', branch: '福岡海運支局' },
+  { bureauCode: '10', branchCode: '04', bureau: '九州運輸局', branch: '長崎海運支局' },
+  { bureauCode: '10', branchCode: '05', bureau: '九州運輸局', branch: '佐世保海運支局' },
+  { bureauCode: '10', branchCode: '06', bureau: '九州運輸局', branch: '三角海運支局' },
+  { bureauCode: '10', branchCode: '07', bureau: '九州運輸局', branch: '大分海運支局' },
+  { bureauCode: '10', branchCode: '08', bureau: '九州運輸局', branch: '油津海運支局' },
+  { bureauCode: '10', branchCode: '09', bureau: '九州運輸局', branch: '鹿児島海運支局' },
+  { bureauCode: '10', branchCode: '10', bureau: '九州運輸局', branch: '名瀬海運支局' },
+  { bureauCode: '10', branchCode: '11', bureau: '九州運輸局', branch: '下関海運支局' },
+  { bureauCode: '04', branchCode: '01', bureau: '関東運輸局', branch: '本部' },
+  { bureauCode: '11', branchCode: '01', bureau: '沖縄運輸局', branch: '本部' },
+]
+
+/** 普段の提出先：近畿運輸局 本部 */
+export const DEFAULT_TRANSPORT_BUREAU: TransportBureau =
+  TRANSPORT_BUREAUS.find(b => b.bureauCode === '06' && b.branchCode === '00')!
+
+export function findTransportBureau(bureauCode: string, branchCode: string): TransportBureau | undefined {
+  return TRANSPORT_BUREAUS.find(b => b.bureauCode === bureauCode && b.branchCode === branchCode)
+}
+
+// ── 講習機関（更新講習の実施機関。申請書の講習機関欄はコード2桁） ───────────
+// うーみーくん.xlsx Sheet2 より
+export const COURSE_ORGANIZATIONS: MasterItem[] = [
+  { code: 1,  label: '海レ協' },
+  { code: 2,  label: '養成協会' },
+  { code: 31, label: 'マリンテクノ' },
+  { code: 67, label: '西日本海技専門学院' },
+]
+
+/** 講習機関コードを申請書用の2桁文字列に（例：1 → "01"） */
+export const courseOrgCode2 = (code: number): string => String(code).padStart(2, '0')
+
 // ── ユーティリティ ───────────────────────────────────────────────
 export function findNationality(code: number): MasterItem | undefined {
   return NATIONALITIES.find(n => n.code === code)
