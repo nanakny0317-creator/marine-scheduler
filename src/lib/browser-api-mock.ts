@@ -299,7 +299,11 @@ export const browserApiMock: ElectronAPI = {
 
   dev: {
     counts: () =>
-      Promise.resolve({ students: students.length, enrollments: enrollments.length, pendingReviews: pendingReviews.length }),
+      Promise.resolve({
+        students: students.length, enrollments: enrollments.length, pendingReviews: pendingReviews.length,
+        examSessions: examSessions.length, renewalSessions: renewalSessions.length,
+        examRecords: examRecords.length, physicalExams: physicalExams.length,
+      }),
     resetAll: () => {
       students = []; enrollments = []; venues = []; examSessions = []; examRecords = []; pendingReviews = []; nextId = 1
       return Promise.resolve(true)
@@ -385,7 +389,7 @@ export const browserApiMock: ElectronAPI = {
         { ...pr2, student: s[16], candidate: s[17] },
       )
 
-      return Promise.resolve({ students: s.length, enrollments: es.length, pendingReviews: 2 })
+      return Promise.resolve({ students: s.length, enrollments: es.length, pendingReviews: 2, examSessions: 0, renewalSessions: 0, examRecords: 0, physicalExams: 0 })
     },
   },
 }

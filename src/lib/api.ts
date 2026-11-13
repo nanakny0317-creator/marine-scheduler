@@ -12,7 +12,7 @@ import type {
   ExamRecord, ExamRecordInput,
   PhysicalExam, PhysicalExamInput,
   PendingReview, PendingReviewInput, PendingReviewWithStudents,
-  DupImportRow,
+  DupImportRow, DevCounts,
 } from '../types'
 
 export const venuesApi = {
@@ -172,11 +172,11 @@ export const pendingReviewsApi = {
 }
 
 export const devApi = {
-  counts: (): Promise<{ students: number; enrollments: number; pendingReviews: number }> =>
+  counts: (): Promise<DevCounts> =>
     window.api.dev.counts(),
   resetAll: (): Promise<boolean> =>
     window.api.dev.resetAll(),
-  seed: (): Promise<{ students: number; enrollments: number; pendingReviews: number }> =>
+  seed: (): Promise<DevCounts> =>
     window.api.dev.seed(),
 }
 

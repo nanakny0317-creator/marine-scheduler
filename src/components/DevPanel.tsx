@@ -4,12 +4,21 @@
  */
 import { useEffect, useState } from 'react'
 import { devApi } from '../lib/api'
+import type { DevCounts } from '../types'
 
-interface Counts {
-  students: number
-  enrollments: number
-  pendingReviews: number
-}
+type Counts = DevCounts
+
+const COUNT_ROWS: { key: keyof DevCounts; label: string }[] = [
+  { key: 'students',        label: '会員' },
+  { key: 'enrollments',     label: '申込' },
+  { key: 'examSessions',    label: '試験日程' },
+  { key: 'renewalSessions', label: '更新講習日程' },
+  { key: 'examRecords',     label: '試験記録' },
+  { key: 'physicalExams',   label: '身体検査' },
+  { key: 'pendingReviews',  label: '要対応' },
+]
+const summary = (r: DevCounts) =>
+  `会員 ${r.students} / 申込 ${r.enrollments} / 試験日程 ${r.examSessions} / 更新講習日程 ${r.renewalSessions} / 要対応 ${r.pendingReviews}`
 
 interface Props {
   onDataChanged: () => void
@@ -44,14 +53,14 @@ export default function DevPanel({ onDataChanged }: Props) {
   const handleSeed = () =>
     run(async () => {
       const r = await devApi.seed()
-      setLastMsg(`✓ テストデータを生成しました（会員 ${r.students} 件 / 申込 ${r.enrollments} 件 / 要対応 ${r.pendingReviews} 件）`)
+      setLastMsg(`✓ テストデータを追加しました（${summary(r)}）`)
     }, '')
 
   const handleResetAndSeed = () =>
     run(async () => {
       await devApi.resetAll()
       const r = await devApi.seed()
-      setLastMsg(`✓ リセット＆生成完了（会員 ${r.students} 件 / 申込 ${r.enrollments} 件 / 要対応 ${r.pendingReviews} 件）`)
+      setLastMsg(`✓ リセット＆生成完了（${summary(r)}）`)
     }, '')
 
   return (
@@ -79,9 +88,12 @@ export default function DevPanel({ onDataChanged }: Props) {
               {counts && (
                 <div className="bg-gray-800 rounded-xl px-4 py-3 space-y-1 text-xs">
                   <p className="text-gray-400 text-[11px] uppercase tracking-widest mb-1">現在のデータ</p>
-                  <div className="flex justify-between"><span className="text-gray-400">会員</span><span className="text-white font-bold">{counts.students} 件</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">申込</span><span className="text-white font-bold">{counts.enrollments} 件</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">要対応</span><span className="text-yellow-400 font-bold">{counts.pendingReviews} 件</span></div>
+                  {COUNT_ROWS.map(({ key, label }) => (
+                    <div key={key} className="flex justify-between">
+                      <span className="text-gray-400">{label}</span>
+                      <span className={`font-bold ${key === 'pendingReviews' ? 'text-yellow-400' : 'text-white'}`}>{counts[key]} 件</span>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -106,18 +118,19 @@ export default function DevPanel({ onDataChanged }: Props) {
                   disabled={busy}
                   className="w-full py-2 bg-red-700 hover:bg-red-600 disabled:opacity-40 rounded-xl text-sm transition"
                 >
-                  🗑 全データ削除
+                  🗑 全データ削除（会場マスターは残す）
                 </button>
               </div>
 
               {/* テストデータの内容説明 */}
               <div className="bg-gray-800 rounded-xl px-3 py-2.5 text-[11px] text-gray-400 space-y-0.5">
                 <p className="text-gray-300 font-bold mb-1">生成データの内容</p>
-                <p>・通常会員 16名（氏名/住所/電話/生年月日）</p>
-                <p>・申込 9件（日程・会場・種別あり）</p>
-                <p>・同姓同名・別人ペア 1組（佐藤 健）</p>
-                <p>・旧字体ペア 2組（要対応リスト入り）</p>
-                <p className="text-yellow-400 mt-1">　髙橋↔高橋　齊藤↔斉藤</p>
+                <p>・日程：試験 7件（未来5・過去2）、更新講習 4件、教室 3件</p>
+                <p>・試験申請 7名：二級/一級/特殊/湖川、学科免除、身体検査あり/期限切れ、外国籍＋送付先、17歳</p>
+                <p>・更新講習 3名・失効再交付 2名（返納 有/無/未選択）</p>
+                <p>・入力チェック用 6名：免許番号 12桁/14桁/ハイフン/全角、姓名のみ、長い氏名・住所</p>
+                <p>・重複確認：同姓同名の別人 1組、旧字体ペア 2組（要対応）</p>
+                <p className="text-yellow-400 mt-1">　すべて架空。備考に「【テストデータ】」と目的を記載</p>
               </div>
 
               {/* 結果メッセージ */}

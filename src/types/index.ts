@@ -361,9 +361,9 @@ export interface ElectronAPI {
     html: (html: string) => Promise<void>
   }
   dev: {
-    counts: () => Promise<{ students: number; enrollments: number; pendingReviews: number }>
+    counts: () => Promise<DevCounts>
     resetAll: () => Promise<boolean>
-    seed: () => Promise<{ students: number; enrollments: number; pendingReviews: number }>
+    seed: () => Promise<DevCounts>
   }
 }
 
@@ -371,4 +371,15 @@ declare global {
   interface Window {
     api: ElectronAPI
   }
+}
+
+// ===== 開発用：テストデータの件数 =====
+export interface DevCounts {
+  students: number
+  enrollments: number
+  pendingReviews: number
+  examSessions: number
+  renewalSessions: number
+  examRecords: number
+  physicalExams: number
 }

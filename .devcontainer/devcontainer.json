@@ -10,8 +10,7 @@
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
         "ms-vscode.vscode-typescript-next",
-        "formulahendry.auto-rename-tag",
-        "ckolkman.vscode-postgres"
+        "formulahendry.auto-rename-tag"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
@@ -21,15 +20,13 @@
   },
   "remoteUser": "node",
   "postCreateCommand": "npm install",
-  "forwardPorts": [5173, 5432],
+  "forwardPorts": [
+    5173
+  ],
   "portsAttributes": {
     "5173": {
       "label": "Vite Dev Server",
       "onAutoForward": "notify"
-    },
-    "5432": {
-      "label": "PostgreSQL",
-      "onAutoForward": "silent"
     }
   }
 }
