@@ -30,6 +30,11 @@ export function listExamRecords(studentId: number): ExamRecord[] {
   ).map(toExamRecord)
 }
 
+/** 全員分（免許申請の画面で、試験日程ごとの合否を出すため） */
+export function listAllExamRecords(): ExamRecord[] {
+  return query('SELECT * FROM exam_records ORDER BY created_at DESC', []).map(toExamRecord)
+}
+
 export function createExamRecord(input: ExamRecordInput): ExamRecord {
   const id = run(
     `INSERT INTO exam_records

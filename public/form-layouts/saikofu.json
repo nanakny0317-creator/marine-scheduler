@@ -1,7 +1,7 @@
 [
   {
     "id": "cvt0044",
-    "key": "期限切",
+    "key": "reissue_expired",
     "label": "①期限切",
     "page": 1,
     "type": "chars",
@@ -79,7 +79,7 @@
   },
   {
     "id": "cvt0019",
-    "key": "免許種類",
+    "key": "lic_class_1",
     "label": "②一級A",
     "page": 1,
     "type": "chars",
@@ -92,7 +92,7 @@
   },
   {
     "id": "cvt0020",
-    "key": "免許種類",
+    "key": "lic_class_2",
     "label": "②二級A",
     "page": 1,
     "type": "chars",
@@ -105,7 +105,7 @@
   },
   {
     "id": "cvt0021",
-    "key": "免許種類",
+    "key": "lic_class_kokawa",
     "label": "②湖川",
     "page": 1,
     "type": "chars",
@@ -118,7 +118,7 @@
   },
   {
     "id": "cvt0022",
-    "key": "免許種類",
+    "key": "lic_class_tokushu",
     "label": "②特殊",
     "page": 1,
     "type": "chars",
@@ -131,7 +131,7 @@
   },
   {
     "id": "cvt0036",
-    "key": "免許証番号",
+    "key": "license_digits",
     "label": "③_免許証番号",
     "page": 1,
     "type": "chars",
@@ -144,7 +144,7 @@
   },
   {
     "id": "cvt0037",
-    "key": "免許証番号",
+    "key": "license_digits",
     "label": "③_免許証番号",
     "page": 1,
     "type": "chars",
@@ -153,83 +153,45 @@
     "charWidth": 22.52,
     "maxChars": 7,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 6
   },
   {
     "id": "cvt0001",
-    "key": "小文字",
+    "key": "full_kana_small",
     "label": "④_小文字",
     "page": 1,
     "type": "chars",
     "x": 85.58,
-    "y": 562.69,
-    "charWidth": 22.55,
-    "maxChars": 16,
-    "fontSize": 7,
-    "anchor": "center"
-  },
-  {
-    "id": "cvt0002",
-    "key": "小文字",
-    "label": "④_小文字",
-    "page": 1,
-    "type": "chars",
-    "x": 446.1,
-    "y": 560.53,
-    "charWidth": 22.55,
-    "maxChars": 6,
+    "y": 561.61,
+    "charWidth": 22.54,
+    "maxChars": 22,
     "fontSize": 7,
     "anchor": "center"
   },
   {
     "id": "cvt0003",
-    "key": "カナ",
+    "key": "full_kana",
     "label": "④_氏名カナ",
     "page": 1,
     "type": "chars",
     "x": 81.62,
-    "y": 539.86,
-    "charWidth": 22.77,
-    "maxChars": 4,
-    "fontSize": 7,
-    "anchor": "center"
-  },
-  {
-    "id": "cvt0004",
-    "key": "カナ",
-    "label": "④_氏名カナ",
-    "page": 1,
-    "type": "chars",
-    "x": 171.87,
-    "y": 539.37,
-    "charWidth": 22.52,
-    "maxChars": 18,
+    "y": 539.62,
+    "charWidth": 22.53,
+    "maxChars": 22,
     "fontSize": 7,
     "anchor": "center"
   },
   {
     "id": "cvt0030",
-    "key": "last_name",
+    "key": "full_name",
     "label": "④_氏名漢字",
     "page": 1,
     "type": "chars",
     "x": 91.45,
-    "y": 474.53,
-    "charWidth": 39.56,
-    "maxChars": 2,
-    "fontSize": 7,
-    "anchor": "center"
-  },
-  {
-    "id": "cvt0031",
-    "key": "last_name",
-    "label": "④_氏名漢字",
-    "page": 1,
-    "type": "chars",
-    "x": 170.32,
-    "y": 474.05,
-    "charWidth": 39.56,
-    "maxChars": 10,
+    "y": 474.29,
+    "charWidth": 39.54,
+    "maxChars": 12,
     "fontSize": 7,
     "anchor": "center"
   },
@@ -248,7 +210,7 @@
   },
   {
     "id": "cvt0032",
-    "key": "postal_code",
+    "key": "postal_digits",
     "label": "⑤_郵便番号上",
     "page": 1,
     "type": "chars",
@@ -261,7 +223,7 @@
   },
   {
     "id": "cvt0033",
-    "key": "postal_code",
+    "key": "postal_digits",
     "label": "⑤_郵便番号下",
     "page": 1,
     "type": "chars",
@@ -270,11 +232,12 @@
     "charWidth": 17.01,
     "maxChars": 4,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 3
   },
   {
     "id": "cvt0034",
-    "key": "phone",
+    "key": "phone_any",
     "label": "⑤_電話番号",
     "page": 1,
     "type": "chars",
@@ -287,7 +250,7 @@
   },
   {
     "id": "cvt0023",
-    "key": "都道府県",
+    "key": "address_pref_stem",
     "label": "⑤_都道府県",
     "page": 1,
     "type": "chars",
@@ -300,7 +263,7 @@
   },
   {
     "id": "cvt0024",
-    "key": "address1",
+    "key": "address_body",
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
@@ -313,7 +276,7 @@
   },
   {
     "id": "cvt0025",
-    "key": "address1",
+    "key": "address_body",
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
@@ -322,11 +285,12 @@
     "charWidth": 36.46,
     "maxChars": 14,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 10
   },
   {
     "id": "cvt0026",
-    "key": "address1",
+    "key": "address_body",
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
@@ -335,11 +299,12 @@
     "charWidth": 36.46,
     "maxChars": 9,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 24
   },
   {
     "id": "cvt0027",
-    "key": "address1",
+    "key": "address_body",
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
@@ -348,11 +313,12 @@
     "charWidth": 36.46,
     "maxChars": 5,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 33
   },
   {
     "id": "cvt0028",
-    "key": "address1",
+    "key": "address_body",
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
@@ -361,11 +327,12 @@
     "charWidth": 36.2,
     "maxChars": 4,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 38
   },
   {
     "id": "cvt0029",
-    "key": "address1",
+    "key": "address_body",
     "label": "⑤_住所",
     "page": 1,
     "type": "chars",
@@ -374,7 +341,8 @@
     "charWidth": 36.91,
     "maxChars": 10,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 42
   },
   {
     "id": "cvt0038",
@@ -391,7 +359,7 @@
   },
   {
     "id": "cvt0035",
-    "key": "domicile_pref",
+    "key": "domicile_stem",
     "label": "⑧本籍",
     "page": 1,
     "type": "chars",
@@ -404,7 +372,7 @@
   },
   {
     "id": "cvt0005",
-    "key": "平成",
+    "key": "birth_era_heisei",
     "label": "⑥_平成",
     "page": 1,
     "type": "chars",
@@ -417,7 +385,7 @@
   },
   {
     "id": "cvt0006",
-    "key": "昭和",
+    "key": "birth_era_showa",
     "label": "⑥_昭和",
     "page": 1,
     "type": "chars",
@@ -430,7 +398,7 @@
   },
   {
     "id": "cvt0007",
-    "key": "大正",
+    "key": "birth_era_taisho",
     "label": "⑥_大正",
     "page": 1,
     "type": "chars",
@@ -443,7 +411,7 @@
   },
   {
     "id": "cvt0008",
-    "key": "明治",
+    "key": "birth_era_meiji",
     "label": "⑥_明治",
     "page": 1,
     "type": "chars",
@@ -456,7 +424,7 @@
   },
   {
     "id": "cvt0013",
-    "key": "男",
+    "key": "gender_male",
     "label": "⑦_男",
     "page": 1,
     "type": "chars",
@@ -469,7 +437,7 @@
   },
   {
     "id": "cvt0014",
-    "key": "女",
+    "key": "gender_female",
     "label": "⑦_女",
     "page": 1,
     "type": "chars",
@@ -495,7 +463,7 @@
   },
   {
     "id": "cvt0010",
-    "key": "生年月日年",
+    "key": "birth_era_year2",
     "label": "⑥_出生年",
     "page": 1,
     "type": "chars",
@@ -508,7 +476,7 @@
   },
   {
     "id": "cvt0011",
-    "key": "生年月日月",
+    "key": "birth_month",
     "label": "⑥_出生月",
     "page": 1,
     "type": "chars",
@@ -521,7 +489,7 @@
   },
   {
     "id": "cvt0012",
-    "key": "生年月日日",
+    "key": "birth_day",
     "label": "⑥_出生日",
     "page": 1,
     "type": "chars",
@@ -547,7 +515,7 @@
   },
   {
     "id": "cvt0016",
-    "key": "韓国",
+    "key": "nat_kankoku",
     "label": "⑨_韓国",
     "page": 1,
     "type": "chars",
@@ -560,7 +528,7 @@
   },
   {
     "id": "cvt0017",
-    "key": "朝鮮",
+    "key": "nat_chosen",
     "label": "⑨_朝鮮",
     "page": 1,
     "type": "chars",
@@ -573,7 +541,7 @@
   },
   {
     "id": "cvt0015",
-    "key": "米国",
+    "key": "nat_beikoku",
     "label": "⑨_米国",
     "page": 1,
     "type": "chars",
@@ -586,7 +554,7 @@
   },
   {
     "id": "cvt0018",
-    "key": "nationality",
+    "key": "nationality_code",
     "label": "⑨_国コード",
     "page": 1,
     "type": "chars",
@@ -599,7 +567,7 @@
   },
   {
     "id": "cvt0042",
-    "key": "Text",
+    "key": "app_date_month",
     "label": "⑩申請月日_月",
     "page": 1,
     "type": "chars",
@@ -612,7 +580,7 @@
   },
   {
     "id": "cvt0043",
-    "key": "Text",
+    "key": "app_date_day",
     "label": "⑩申請月日_日",
     "page": 1,
     "type": "chars",
@@ -638,7 +606,7 @@
   },
   {
     "id": "cvt0053",
-    "key": "Text",
+    "key": "license_return_yes",
     "label": "⑫免許証返納有",
     "page": 1,
     "type": "chars",
@@ -651,7 +619,7 @@
   },
   {
     "id": "cvt0054",
-    "key": "Text",
+    "key": "license_return_no",
     "label": "⑫免許証返納無",
     "page": 1,
     "type": "chars",

@@ -9,6 +9,9 @@ import RenewalSessionsPage from './pages/RenewalSessionsPage'
 import ClassroomsPage from './pages/ClassroomsPage'
 import SettingsHubPage from './pages/SettingsHubPage'
 import FormCalibrationPage from './pages/FormCalibrationPage'
+import FeesPage from './pages/FeesPage'
+import ExamApplicationsPage from './pages/ExamApplicationsPage'
+import LicenseApplicationsPage from './pages/LicenseApplicationsPage'
 
 export default function App() {
   return (
@@ -27,6 +30,13 @@ export default function App() {
 
       {/* 更新講習日程管理（サイドバーなし） */}
       <Route path="/renewal-sessions" element={<RenewalSessionsPage />} />
+
+      {/* 試験申請の作業画面 */}
+      <Route path="/exam-applications" element={<ExamApplicationsPage />} />
+      <Route path="/license-applications" element={<LicenseApplicationsPage />} />
+
+      {/* 受験料・登録免許税（サイドバーなし） */}
+      <Route path="/fees" element={<FeesPage />} />
 
       {/* 授業会場管理（サイドバーなし） */}
       <Route path="/classrooms" element={<ClassroomsPage />} />

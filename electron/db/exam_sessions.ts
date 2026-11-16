@@ -12,6 +12,8 @@ function toExamSession(row: Row): ExamSession {
     exam_type:          String(row.exam_type ?? '学科+実技') as '学科' | '実技' | '学科+実技',
     gakka_venue:        String(row.gakka_venue ?? ''),
     jitsugi_venue:      String(row.jitsugi_venue ?? ''),
+    result_date:        String(row.result_date ?? ''),
+    result_checked:     Number(row.result_checked ?? 0) === 1,
     created_at:         String(row.created_at ?? ''),
     updated_at:         String(row.updated_at ?? ''),
   }
@@ -26,17 +28,20 @@ export function listExamSessions(): ExamSession[] {
 
 export function createExamSession(input: ExamSessionInput): ExamSession {
   const id = run(
-    `INSERT INTO exam_sessions (exam_date, exam_location, qualification_type, exam_id, exam_type, gakka_venue, jitsugi_venue)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [input.exam_date, normalizeExamLocation(input.exam_location), input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '']
+    `INSERT INTO exam_sessions (exam_date, exam_location, qualification_type, exam_id, exam_type, gakka_venue, jitsugi_venue, result_date, result_checked)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [input.exam_date, normalizeExamLocation(input.exam_location), input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '', input.result_date ?? '', input.result_checked ? 1 : 0]
   )
   return query('SELECT * FROM exam_sessions WHERE id = ?', [id]).map(toExamSession)[0]
 }
 
 export function updateExamSession(id: number, input: ExamSessionInput): ExamSession {
   run(
-    `UPDATE exam_sessions SET exam_date=?, exam_location=?, qualification_type=?, exam_id=?, exam_type=?, gakka_venue=?, jitsugi_venue=? WHERE id=?`,
-    [input.exam_date, normalizeExamLocation(input.exam_location), input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '', id]
+    // 合格発表日・確認済みは、渡されたときだけ変える
+    `UPDATE exam_sessions SET exam_date=?, exam_location=?, qualification_type=?, exam_id=?, exam_type=?, gakka_venue=?, jitsugi_venue=?,
+       result_date=COALESCE(?, result_date), result_checked=COALESCE(?, result_checked) WHERE id=?`,
+    [input.exam_date, normalizeExamLocation(input.exam_location), input.qualification_type, input.exam_id, input.exam_type, input.gakka_venue ?? '', input.jitsugi_venue ?? '',
+     input.result_date ?? null, input.result_checked == null ? null : input.result_checked ? 1 : 0, id]
   )
   return query('SELECT * FROM exam_sessions WHERE id = ?', [id]).map(toExamSession)[0]
 }

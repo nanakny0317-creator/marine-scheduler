@@ -1,7 +1,7 @@
 [
   {
     "id": "cvt0013",
-    "key": "免許種類",
+    "key": "lic_class_2",
     "label": "①二級A",
     "page": 1,
     "type": "chars",
@@ -14,7 +14,7 @@
   },
   {
     "id": "cvt0015",
-    "key": "免許種類",
+    "key": "lic_class_tokushu",
     "label": "①特殊",
     "page": 1,
     "type": "chars",
@@ -27,7 +27,7 @@
   },
   {
     "id": "cvt0014",
-    "key": "免許種類",
+    "key": "lic_class_kokawa",
     "label": "①湖川",
     "page": 1,
     "type": "chars",
@@ -40,7 +40,7 @@
   },
   {
     "id": "cvt0012",
-    "key": "免許種類",
+    "key": "lic_class_1",
     "label": "①一級A",
     "page": 1,
     "type": "chars",
@@ -53,7 +53,7 @@
   },
   {
     "id": "cvt0026",
-    "key": "免許証番号",
+    "key": "license_digits",
     "label": "②_免許証番号",
     "page": 1,
     "type": "chars",
@@ -66,7 +66,7 @@
   },
   {
     "id": "cvt0001",
-    "key": "小文字",
+    "key": "full_kana_small",
     "label": "③_小文字",
     "page": 1,
     "type": "chars",
@@ -79,7 +79,7 @@
   },
   {
     "id": "cvt0002",
-    "key": "カナ",
+    "key": "full_kana",
     "label": "③_氏名カナ",
     "page": 1,
     "type": "chars",
@@ -92,7 +92,7 @@
   },
   {
     "id": "cvt0021",
-    "key": "last_name",
+    "key": "full_name",
     "label": "③_氏名漢字",
     "page": 1,
     "type": "chars",
@@ -118,7 +118,7 @@
   },
   {
     "id": "cvt0022",
-    "key": "postal_code",
+    "key": "postal_digits",
     "label": "④_郵便番号上",
     "page": 1,
     "type": "chars",
@@ -131,7 +131,7 @@
   },
   {
     "id": "cvt0023",
-    "key": "postal_code",
+    "key": "postal_digits",
     "label": "④_郵便番号下",
     "page": 1,
     "type": "chars",
@@ -140,11 +140,12 @@
     "charWidth": 17.24,
     "maxChars": 4,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 3
   },
   {
     "id": "cvt0024",
-    "key": "phone",
+    "key": "phone_any",
     "label": "④_電話番号",
     "page": 1,
     "type": "chars",
@@ -157,7 +158,7 @@
   },
   {
     "id": "cvt0017",
-    "key": "address1",
+    "key": "address_body",
     "label": "④_住所",
     "page": 1,
     "type": "chars",
@@ -170,7 +171,7 @@
   },
   {
     "id": "cvt0016",
-    "key": "都道府県",
+    "key": "address_pref_stem",
     "label": "④_都道府県",
     "page": 1,
     "type": "chars",
@@ -183,7 +184,7 @@
   },
   {
     "id": "cvt0018",
-    "key": "address1",
+    "key": "address_body",
     "label": "④_住所",
     "page": 1,
     "type": "chars",
@@ -192,11 +193,12 @@
     "charWidth": 36.68,
     "maxChars": 14,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 10
   },
   {
     "id": "cvt0019",
-    "key": "address1",
+    "key": "address_body",
     "label": "④_住所",
     "page": 1,
     "type": "chars",
@@ -205,11 +207,12 @@
     "charWidth": 36.68,
     "maxChars": 14,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 24
   },
   {
     "id": "cvt0020",
-    "key": "address1",
+    "key": "address_body",
     "label": "④_住所",
     "page": 1,
     "type": "chars",
@@ -218,7 +221,8 @@
     "charWidth": 36.68,
     "maxChars": 14,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 38
   },
   {
     "id": "cvt0027",
@@ -235,7 +239,7 @@
   },
   {
     "id": "cvt0025",
-    "key": "domicile_pref",
+    "key": "domicile_stem",
     "label": "⑦本籍",
     "page": 1,
     "type": "chars",
@@ -248,7 +252,7 @@
   },
   {
     "id": "cvt0006",
-    "key": "男",
+    "key": "gender_male",
     "label": "⑥_男",
     "page": 1,
     "type": "chars",
@@ -261,7 +265,7 @@
   },
   {
     "id": "cvt0007",
-    "key": "女",
+    "key": "gender_female",
     "label": "⑥_女",
     "page": 1,
     "type": "chars",
@@ -274,7 +278,7 @@
   },
   {
     "id": "cvt0003",
-    "key": "生年月日年",
+    "key": "birth_year_last2",
     "label": "⑤_出生年",
     "page": 1,
     "type": "chars",
@@ -287,7 +291,7 @@
   },
   {
     "id": "cvt0004",
-    "key": "生年月日月",
+    "key": "birth_month",
     "label": "⑤_出生月",
     "page": 1,
     "type": "chars",
@@ -300,7 +304,7 @@
   },
   {
     "id": "cvt0050",
-    "key": "(追加)",
+    "key": "birth_year_1",
     "label": "⑤_出生年西暦千",
     "page": 1,
     "type": "chars",
@@ -313,7 +317,7 @@
   },
   {
     "id": "cvt0051",
-    "key": "(追加)",
+    "key": "birth_year_2",
     "label": "⑤_出生年西暦百",
     "page": 1,
     "type": "chars",
@@ -326,7 +330,7 @@
   },
   {
     "id": "cvt0005",
-    "key": "生年月日日",
+    "key": "birth_day",
     "label": "⑤_出生日",
     "page": 1,
     "type": "chars",
@@ -417,7 +421,7 @@
   },
   {
     "id": "cvt0009",
-    "key": "韓国",
+    "key": "nat_kankoku",
     "label": "⑧_韓国",
     "page": 1,
     "type": "chars",
@@ -430,7 +434,7 @@
   },
   {
     "id": "cvt0008",
-    "key": "米国",
+    "key": "nat_beikoku",
     "label": "⑧_米国",
     "page": 1,
     "type": "chars",
@@ -443,7 +447,7 @@
   },
   {
     "id": "cvt0010",
-    "key": "朝鮮",
+    "key": "nat_chosen",
     "label": "⑧_朝鮮",
     "page": 1,
     "type": "chars",
@@ -469,7 +473,7 @@
   },
   {
     "id": "cvt0011",
-    "key": "nationality",
+    "key": "nationality_code",
     "label": "⑧_国コード",
     "page": 1,
     "type": "chars",
@@ -573,7 +577,7 @@
   },
   {
     "id": "cvt0031",
-    "key": "Text",
+    "key": "app_date_month",
     "label": "⑨申請月日_月",
     "page": 1,
     "type": "chars",
@@ -586,7 +590,7 @@
   },
   {
     "id": "cvt0032",
-    "key": "Text",
+    "key": "app_date_day",
     "label": "⑨申請月日_日",
     "page": 1,
     "type": "chars",

@@ -20,6 +20,7 @@ export interface FieldDef {
   y: number      // PDF points from bottom
   charWidth?: number   // 文字マス：枠の間隔（枠の中心から次の枠の中心まで）
   maxChars?: number    // 文字マス：枠の数
+  startChar?: number   // 文字マス：値の何文字目（0始まり）から印字するか（複数行・複数ブロックに分かれた欄用）
   width?: number
   fontSize: number
   dataKey?: string
@@ -75,7 +76,7 @@ function fieldToHtml(field: FieldDef, data: FormData): string {
       ? data[dk] === field.matchValue
       : Boolean(value)
     if (!hit) return ''
-    const ch = field.markChar ?? '●'
+    const ch = field.markChar ?? '×'
     return `<span style="position:absolute;left:${px(field.x)}pt;bottom:${py(field.y)}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;">${esc(ch)}</span>`
   }
 
@@ -89,7 +90,8 @@ function fieldToHtml(field: FieldDef, data: FormData): string {
   // chars: 1 文字ずつ、各枠の中心に配置（縦も中央）
   const f       = toCenterAnchor(field)
   const cw      = f.charWidth ?? fs * 1.2
-  const chars   = Array.from(value).slice(0, f.maxChars ?? 20)
+  const start   = f.startChar ?? 0
+  const chars   = Array.from(value).slice(start, start + (f.maxChars ?? 20))
   return chars.map((ch, i) => {
     const cx = f.x + i * cw
     return `<span style="position:absolute;left:${px(cx - cw / 2)}pt;bottom:${py(f.y - fs / 2)}pt;width:${px(cw)}pt;height:${fs}pt;text-align:center;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:${fs}pt;">${esc(ch)}</span>`
@@ -107,28 +109,31 @@ ${fieldHtml}
 }
 
 // ── メイン: フォーム印刷 ────────────────────────────────────────
-/**
- * @param fields       変換済み FieldDef[] (複数ページ対応)
- * @param data         フォームデータ { キー: 値 }
- * @param pageCount    印刷するページ数
- * @param formTitle    PDF のタイトル
- */
-export async function printForm(
-  fields: FieldDef[],
-  data: FormData,
-  pageCount: number,
-  formTitle: string,
-): Promise<void> {
-  // ページ別にグループ化
+/** 1枚分（1人分）の印刷ジョブ */
+export interface FormPrintJob {
+  fields: FieldDef[]
+  data: FormData
+  pageCount: number
+}
+
+function jobPagesHtml({ fields, data, pageCount }: FormPrintJob): string {
   const byPage = new Map<number, FieldDef[]>()
   for (const f of fields) {
     if (!byPage.has(f.page)) byPage.set(f.page, [])
     byPage.get(f.page)!.push(f)
   }
-
-  const pagesHtml = Array.from({ length: pageCount }, (_, i) =>
+  return Array.from({ length: pageCount }, (_, i) =>
     buildPageHtml(byPage.get(i + 1) ?? [], data)
   ).join('\n')
+}
+
+/**
+ * 複数人分の申請書を1つのPDFにまとめて印刷する
+ * @param jobs      1人分ずつの { 位置データ, フォームデータ, ページ数 }
+ * @param formTitle PDF のタイトル
+ */
+export async function printForms(jobs: FormPrintJob[], formTitle: string): Promise<void> {
+  const pagesHtml = jobs.map(jobPagesHtml).join('\n')
 
   const html = `<!DOCTYPE html>
 <html lang="ja">
@@ -164,4 +169,9 @@ ${pagesHtml}
     win.document.close()
     win.onload = () => win.print()
   }
+}
+
+/** 1人分の申請書を印刷する */
+export function printForm(fields: FieldDef[], data: FormData, pageCount: number, formTitle: string): Promise<void> {
+  return printForms([{ fields, data, pageCount }], formTitle)
 }

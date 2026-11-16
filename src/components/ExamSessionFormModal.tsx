@@ -5,6 +5,9 @@ import { useEffect, useState } from 'react'
 import type { ExamSessionInput } from '../types'
 import { examSessionsApi } from '../lib/api'
 import { normalizeExamLocation } from '../lib/examLocation'
+import { defaultResultDate } from '../lib/examResult'
+import { format } from 'date-fns'
+import { ja } from 'date-fns/locale'
 
 export { normalizeExamLocation }
 
@@ -20,8 +23,12 @@ const DEFAULT_EXAM_LOCATIONS = [
 ]
 
 
+function fmtWithDow(d: string): string {
+  try { return format(new Date(d + 'T00:00'), 'M/d(E)', { locale: ja }) } catch { return d }
+}
+
 export function makeEmptyExamSession(): ExamSessionInput {
-  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技', gakka_venue: '', jitsugi_venue: '' }
+  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技', gakka_venue: '', jitsugi_venue: '', result_date: '' }
 }
 
 // ── 追加/編集フォームモーダル ─────────────────────────────────
@@ -142,6 +149,28 @@ export default function ExamSessionFormModal({ initial, editId, onSave, onCancel
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">
+              合格発表日
+              <span className="ml-2 note-text">
+                {form.exam_date
+                  ? `空欄なら自動：${fmtWithDow(defaultResultDate(form.exam_date))}（水〜日→木曜、月・火→翌月曜）`
+                  : '空欄なら試験日の曜日から自動で決まります'}
+              </span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={form.result_date ?? ''}
+                onChange={e => set('result_date', e.target.value)}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
+              />
+              {form.result_date && (
+                <button type="button" onClick={() => set('result_date', '')} className="btn-secondary btn-sm shrink-0">自動に戻す</button>
+              )}
+            </div>
           </div>
 
           {/* 試験区分は入力しない（日程は「学科+実技」として登録。誰がどちらを受けるかは申込側で選ぶ） */}

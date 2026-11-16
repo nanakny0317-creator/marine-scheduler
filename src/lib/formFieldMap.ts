@@ -5,7 +5,7 @@
  * フォームのキーは public/form-layouts/*.json の "key" フィールドと対応している。
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
-import { PREFECTURES, courseOrgCode2, licenseSummary } from '../data/masterData'
+import { PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode } from '../data/masterData'
 
 export type FormData = Record<string, string>
 
@@ -53,6 +53,75 @@ export function labelAddress(s: Student): { postal_code: string; line1: string; 
   return { postal_code: zip, line1, line2 }
 }
 
+// ── 氏名（OCR欄の書き方） ─────────────────────────────────────────
+// 申請書の記入要領：
+//  ・氏と名は1マスあける
+//  ・全てカタカナの大文字で記入し、小文字にあたる文字は直上の小文字区分欄に×
+//  ・濁点、半濁点は1マスに記入（例：ジュン → シ゛ユン、ユの上に×）
+const SMALL_TO_LARGE: Record<string, string> = {
+  'ァ': 'ア', 'ィ': 'イ', 'ゥ': 'ウ', 'ェ': 'エ', 'ォ': 'オ',
+  'ッ': 'ツ', 'ャ': 'ヤ', 'ュ': 'ユ', 'ョ': 'ヨ', 'ヮ': 'ワ',
+  'ヵ': 'カ', 'ヶ': 'ケ',
+}
+
+/** カナ1語をOCR欄の並び（マスごとの文字と、小文字区分の×）に変換する */
+function kanaCells(s: string): { kana: string[]; small: string[] } {
+  const kana: string[] = [], small: string[] = []
+  // 半角カナ→全角、ひらがな→カタカナ、濁点・半濁点を分解
+  const norm = s.normalize('NFKC')
+    .replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60))
+    .normalize('NFD')
+  for (const ch of norm) {
+    if (/\s/.test(ch)) continue
+    if (ch === '゙' || ch === '゛') { kana.push('゛'); small.push(' '); continue }
+    if (ch === '゚' || ch === '゜') { kana.push('゜'); small.push(' '); continue }
+    const large = SMALL_TO_LARGE[ch]
+    kana.push(large ?? ch)
+    small.push(large ? '×' : ' ')
+  }
+  return { kana, small }
+}
+
+/** 姓・名カナ → { kana: OCR欄のカナ, small: 小文字区分（×の位置） }。姓と名の間は1マスあける */
+export function ocrKanaName(lastKana: string | null | undefined, firstKana: string | null | undefined): { kana: string; small: string } {
+  const a = kanaCells(lastKana ?? '')
+  const b = kanaCells(firstKana ?? '')
+  const sep = a.kana.length && b.kana.length ? [' '] : []
+  const kana  = [...a.kana,  ...sep, ...b.kana].join('')
+  const small = [...a.small, ...sep, ...b.small].join('')
+  return { kana, small: small.includes('×') ? small : '' }
+}
+
+/** 姓・名（漢字） → 「姓 名」（1マスあける） */
+export function ocrKanjiName(last: string | null | undefined, first: string | null | undefined): string {
+  return [last ?? '', first ?? ''].map(x => x.replace(/\s/g, '')).filter(Boolean).join(' ')
+}
+
+// ── OCR欄のチェック（×）・文字マス用の小物 ───────────────────────────
+const X = (b: boolean) => (b ? '×' : '')
+
+/** 「京都府」→「京都」、「北海道」→「北海」（OCR欄は後ろに「都道府県」が印刷済み） */
+export function prefStem(pref: string | null | undefined): string {
+  const p = (pref ?? '').trim()
+  if (!p) return ''
+  if (p === '北海道') return '北海'
+  return p.replace(/[都府県]$/, '')
+}
+
+/** 資格の表記（'１級特殊'・'2級' など）→ 申請書の「受験する試験」のどれに当たるか */
+function examClassOf(qual: string): { c1: boolean; c2: boolean; kokawa: boolean; jakunen: boolean; tokushu: boolean } {
+  const q = qual.normalize('NFKC')
+  const jakunen = /若年/.test(q)
+  return {
+    c1: /1級|一級/.test(q),
+    c2: /2級|二級/.test(q) && !jakunen,
+    kokawa: /湖川/.test(q),
+    jakunen,
+    // 「1級特殊」などの組み合わせは①に1級・②（同時申請）に特殊なので、特殊単独のときだけ
+    tokushu: q === '特殊',
+  }
+}
+
 // ── 試験日パース ─────────────────────────────────────────────────
 function parseExamDate(d: string | null): { year: string; month: string; day: string } {
   if (!d) return { year: '', month: '', day: '' }
@@ -93,14 +162,17 @@ function getExtra(enrollment: Enrollment): Record<string, unknown> {
  * @param enrollment 申込情報
  * @param examSession 試験日程（任意）
  * @param venues      会場マスター（任意。更新講習の講習実施都道府県コードに使う）
+ * @param joint       同時申請で後に受験する試験の申込（任意。試験申請書の②欄に印字）
  */
 export function buildFormData(
   student: Student,
   enrollment: Enrollment,
   examSession?: ExamSession | null,
   venues: Venue[] = [],
+  joint: Enrollment | null = null,
 ): FormData {
   const extra  = getExtra(enrollment)
+  const jx     = joint ? getExtra(joint) : null
   const bd     = parseBirthDate(student.birth_date)
   const prevRaw = (extra.prev_exam ?? {}) as Record<string, unknown>
   const prev = {
@@ -123,6 +195,28 @@ export function buildFormData(
   const label = labelAddress(student)
 
   const appType = (extra.application_type as string) ?? enrollment.menu
+  const kana = ocrKanaName(student.last_kana, student.first_kana)
+
+  // OCR欄用の住所：都道府県は別欄なので、市区町村から（建物名は入れず「番地-部屋番号」）
+  const addrBody = [student.city ?? '', joinRoom(student.address1, student.address_room)].join('').replace(/\s/g, '')
+  const postalDigits = (student.postal_code ?? '').normalize('NFKC').replace(/\D/g, '')
+  const licenseDigits = (student.license_number ?? '').normalize('NFKC').replace(/[^0-9A-Za-z]/g, '')
+  const domicile = student.domicile || (extra.domicile as string) || ''
+  const nationality = student.nationality || (extra.nationality as string) || ''
+  const natCode = nationality && !['日本', '韓国', '朝鮮', '米国'].includes(nationality)
+    ? String(nationalityCode(nationality) ?? '') : ''
+  const domicileIdx = PREFECTURES.findIndex(p => domicile && (domicile === p || prefStem(domicile) === prefStem(p)))
+  const examQual = examSession?.qualification_type ?? (extra.exam_qual_type as string) ?? ''
+  const ex  = examClassOf(examQual)
+  // 試験申請書②欄：同時申請（後に受験する試験）だけ。免除の根拠（過去に合格した試験）は
+  // OCR申請書には印字せず、試験申請者名簿に記入する
+  const exam2 = jx
+    ? { qual: String(jx.exam_qual_type ?? ''), date: String(jx.exam_date ?? ''), location: String(jx.exam_location ?? ''), number: '' }
+    : { qual: '', date: '', location: '', number: '' }
+  const pex = examClassOf(exam2.qual)
+  const exam2Date = parseExamDate(exam2.date || null)
+  // 旧免許（旧一級〜旧五級・旧湖川）は今の種類への読み替えが要るので、ここでは印字しない
+  const licClass = student.license_class ?? ''
 
   // 現有免許
   const licExp   = parseBirthDate(student.license_expiry ?? null)      // 和暦変換を流用
@@ -133,6 +227,10 @@ export function buildFormData(
   // 更新講習（更新申請書 ⑫〜⑮・⑰）
   const courseVenue = (typeof extra.course_location === 'string' ? extra.course_location : enrollment.venue) ?? ''
   const courseDate  = parseCourseDate(enrollment.course_date)
+  // 申請日：申込ごとに設定した日付（未設定は空欄）。年は和暦
+  const appDateIso = typeof extra.application_date === 'string' ? extra.application_date
+    : typeof jx?.application_date === 'string' ? jx.application_date : null
+  const appDate = parseBirthDate(appDateIso)
   const licReturn   = extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : ''
 
   return {
@@ -141,6 +239,13 @@ export function buildFormData(
     first_name:   student.first_name ?? '',
     last_kana:    student.last_kana  ?? '',
     first_kana:   student.first_kana ?? '',
+    // OCR欄用：姓と名の間を1マスあけた氏名・カナ、小文字区分
+    full_name:       ocrKanjiName(student.last_name, student.first_name),
+    full_kana:       kana.kana,
+    full_kana_small: kana.small,
+    // 帳票レイアウト（PDFから変換）側のキー名
+    'カナ':   kana.kana,
+    '小文字': kana.small,
 
     // ── 生年月日 ──
     birth_date:       student.birth_date ?? '',
@@ -235,21 +340,82 @@ export function buildFormData(
     bureau_code:           typeof extra.bureau_code === 'string' ? extra.bureau_code : '',
     branch_code:           typeof extra.branch_code === 'string' ? extra.branch_code : '',
     license_return:        licReturn,
-    license_return_yes:    licReturn === 'yes' ? '●' : '',
-    license_return_no:     licReturn === 'no'  ? '●' : '',
+    license_return_yes:    licReturn === 'yes' ? '×' : '',
+    license_return_no:     licReturn === 'no'  ? '×' : '',
     // 講習要件（⑪ 一号乗船履歴／二号特別／三号講習）：更新講習の受講者は三号
     training_req_1:        '',
     training_req_2:        '',
-    training_req_3:        appType === 'renewal' ? '●' : '',
+    training_req_3:        appType === 'renewal' ? '×' : '',
+
+    // ── 申請日（申請書の申請日・申請月日） ──
+    app_date_era_year: appDate.eraYear ? appDate.eraYear.padStart(2, '0') : '',   // 令和の年2桁（例：08）
+    app_date_month:    appDate.month,
+    app_date_day:      appDate.day,
+
+    // ── OCR欄（文字マス）用 ──
+    postal_digits:     postalDigits,              // 上3桁は1文字目から、下4桁は4文字目から
+    address_body:      addrBody,                  // 都道府県の後ろから。2行目以降は「何文字目から」でつなぐ
+    address_pref_stem: prefStem(student.prefecture),
+    domicile_stem:     prefStem(domicile),
+    nationality_code:  natCode,                   // 韓国・朝鮮・米国以外の国籍のコード番号
+    license_digits:    licenseDigits,
+    phone_any:         student.phone || student.mobile || '',
+    birth_era_year2:   bd.eraYear ? bd.eraYear.padStart(2, '0') : '',
+    birth_year_1:      bd.year.slice(0, 1),       // 西暦の千の位
+    birth_year_2:      bd.year.slice(1, 2),       // 西暦の百の位
+    birth_year_last2:  bd.year.slice(2),          // 西暦の下2桁
+
+    // ── チェック欄（×） ──
+    // 生年月日の元号
+    birth_era_heisei: X(bd.era === '平成'),
+    birth_era_showa:  X(bd.era === '昭和'),
+    birth_era_taisho: X(bd.era === '大正'),
+    birth_era_meiji:  X(bd.era === '明治'),
+    // 国籍
+    nat_kankoku: X(nationality === '韓国'),
+    nat_chosen:  X(nationality === '朝鮮'),
+    nat_beikoku: X(nationality === '米国'),
+    // 本籍（都道府県ごとの枠）：domicile_mark_01（北海道）〜 domicile_mark_47（沖縄県）
+    ...Object.fromEntries(PREFECTURES.map((_, i) =>
+      [`domicile_mark_${String(i + 1).padStart(2, '0')}`, X(i === domicileIdx)])),
+    // 受験する試験（試験申請書①）
+    exam_class_1:       X(ex.c1),
+    exam_class_2:       X(ex.c2),
+    exam_class_kokawa:  X(ex.kokawa),
+    exam_class_jakunen: X(ex.jakunen),
+    exam_class_tokushu: X(ex.tokushu),
+    // 試験申請書②：同時申請（後に受験する試験）
+    exam2_class_1:       X(pex.c1),
+    exam2_class_2:       X(pex.c2),
+    exam2_class_kokawa:  X(pex.kokawa),
+    exam2_class_jakunen: X(pex.jakunen),
+    exam2_class_tokushu: X(pex.tokushu),
+    exam2_year:          exam2Date.year,
+    exam2_month:         exam2Date.month,
+    exam2_day:           exam2Date.day,
+    exam2_location:      exam2.location,
+    exam2_number:        exam2.number,
+    // 受験内容（試験申請書③）：同時申請はどちらかで受けるものに×
+    shintai_none:  X(extra.shintai === 'need' || jx?.shintai === 'need'),
+    shintai_have:  X(extra.shintai === 'have' && (!jx || jx.shintai !== 'need')),
+    exam_gakka_x:  X(extra.exam_gakka !== false || (!!jx && jx.exam_gakka !== false)),
+    exam_jitsugi_x: X(extra.exam_jitsugi !== false || (!!jx && jx.exam_jitsugi !== false)),
+    // 現有免許の種類（更新・失効再交付①②）
+    lic_class_1:      X(licClass === '一級'),
+    lic_class_2:      X(licClass === '二級'),
+    lic_class_kokawa: X(licClass === '湖川'),
+    lic_class_tokushu: X(licOpts.includes('特殊')),
+    // 再交付の事由（失効再交付①）：失効再交付の申込は「期限切」
+    reissue_expired: X(appType === 'lapsed'),
 
     // ── mark 型対応（条件チェック） ──
     // 性別チェック
-    gender_male:   student.gender === 'male'   ? '●' : '',
-    gender_female: student.gender === 'female' ? '●' : '',
+    gender_male:   student.gender === 'male'   ? '×' : '',
+    gender_female: student.gender === 'female' ? '×' : '',
 
     // 申込種別チェック
-    app_new:     appType === 'new'     ? '●' : '',
-    app_renewal: appType === 'renewal' ? '●' : '',
-    app_lapsed:  appType === 'lapsed'  ? '●' : '',
+    app_new:     appType === 'new'     ? '×' : '',
+    app_renewal: appType === 'renewal' ? '×' : '',
+    app_lapsed:  appType === 'lapsed'  ? '×' : '',
   }
 }

@@ -138,6 +138,8 @@ export const renewalSessionsApi = {
 export const examRecordsApi = {
   list:   (studentId: number): Promise<ExamRecord[]> =>
     window.api.examRecords.list(studentId),
+  listAll: (): Promise<ExamRecord[]> =>
+    window.api.examRecords.listAll(),
   create: (input: ExamRecordInput): Promise<ExamRecord> =>
     window.api.examRecords.create(input),
   update: (id: number, input: ExamRecordInput): Promise<ExamRecord> =>
@@ -155,6 +157,18 @@ export const physicalExamsApi = {
     window.api.physicalExams.update(id, input),
   delete: (id: number): Promise<boolean> =>
     window.api.physicalExams.delete(id),
+}
+
+/** アプリの設定（値はJSONで保存） */
+export const settingsApi = {
+  get: async <T>(key: string, fallback: T): Promise<T> => {
+    try {
+      const raw = await window.api.settings.get(key)
+      return raw == null ? fallback : (JSON.parse(raw) as T)
+    } catch { return fallback }
+  },
+  set: (key: string, value: unknown): Promise<boolean> =>
+    window.api.settings.set(key, JSON.stringify(value)),
 }
 
 export const pendingReviewsApi = {

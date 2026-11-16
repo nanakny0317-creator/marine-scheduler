@@ -24,12 +24,13 @@ interface FieldDef {
   y: number
   charWidth?: number
   maxChars?: number
+  startChar?: number  // 文字マス：値の何文字目（0始まり）から印字するか。1つの欄が複数行・複数ブロックに分かれているとき用
   width?: number
   fontSize: number
   // mark型専用
   dataKey?: string    // 参照するデータキー（例: exam_qual_type）
   matchValue?: string // この値のときにマークする（例: 一級）
-  markChar?: string   // 印字する文字（デフォルト: ●）
+  markChar?: string   // 印字する文字（デフォルト: ×）
   // 文字マス：'center' = x,y が1枠目の中心（枠方式）。旧形式は読み込み時に変換する
   anchor?: 'center'
 }
@@ -65,6 +66,9 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
   { value: 'license_issue_era',       label: '現有免許：交付日（元号）', values: ['昭和', '平成', '令和'] },
   { value: 'license_expiry_era',      label: '現有免許：有効期限（元号）', values: ['平成', '令和'] },
   // ── テキスト系 ──
+  { value: 'full_name',       label: '氏名（姓 名・1マスあけ）' },
+  { value: 'full_kana',       label: '氏名カナ（OCR欄用・1マスあけ）' },
+  { value: 'full_kana_small', label: '氏名カナの小文字区分（×）' },
   { value: 'last_name',       label: '姓' },
   { value: 'first_name',      label: '名' },
   { value: 'last_kana',       label: '姓（カナ）' },
@@ -101,12 +105,12 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
   { value: 'course_date_day',      label: '更新講習：講習実施日 日' },
   { value: 'bureau_code',          label: '本局コード（2桁）' },
   { value: 'branch_code',          label: '支局コード（2桁）' },
-  { value: 'license_return_yes',   label: '免許証返納：有（●）' },
-  { value: 'license_return_no',    label: '免許証返納：無（●）' },
+  { value: 'license_return_yes',   label: '免許証返納：有（×）' },
+  { value: 'license_return_no',    label: '免許証返納：無（×）' },
   { value: 'license_return',       label: '免許証返納', values: ['yes', 'no'] },
-  { value: 'training_req_1',       label: '講習要件：一号乗船履歴（●）' },
-  { value: 'training_req_2',       label: '講習要件：二号特別（●）' },
-  { value: 'training_req_3',       label: '講習要件：三号講習（●・更新は自動）' },
+  { value: 'training_req_1',       label: '講習要件：一号乗船履歴（×）' },
+  { value: 'training_req_2',       label: '講習要件：二号特別（×）' },
+  { value: 'training_req_3',       label: '講習要件：三号講習（×・更新は自動）' },
   { value: 'menu',            label: 'メニュー' },
   { value: 'application_type',label: '申込種別',  values: ['new', 'renewal', 'lapsed'] },
   { value: 'status',          label: 'ステータス',values: ['pending', 'confirmed', 'completed', 'cancelled'] },
@@ -116,7 +120,7 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
 const DEFAULT_PREVIEW: Record<FieldType, string> = {
   chars: 'アイウエオカキクケコ',
   text:  '大阪府大阪市北区梅田１丁目',
-  mark:  '●',
+  mark:  '×',
 }
 
 // ラベル先頭の欄番号（①〜⑳）でグループ分けする。番号がなければ「その他」
@@ -186,7 +190,7 @@ function FieldRow({ field, onEdit, onDelete, highlighted }: {
         <div className="font-medium text-gray-700 truncate">{field.label}</div>
         {field.type === 'mark' && field.dataKey && (
           <div className="text-[11px] text-orange-500 truncate">
-            {field.dataKey} = {field.matchValue} → {field.markChar ?? '●'}
+            {field.dataKey} = {field.matchValue} → {field.markChar ?? '×'}
           </div>
         )}
       </div>
@@ -227,11 +231,12 @@ export default function FormCalibrationPage() {
   const [fLabel,      setFLabel]      = useState('')
   const [fType,       setFType]       = useState<FieldType>('chars')
   const [fMaxChars,   setFMaxChars]   = useState(20)
+  const [fStartChar,  setFStartChar]  = useState(0)
   const [fFontSize,   setFFontSize]   = useState(7)
   const [fWidth,      setFWidth]      = useState(200)
   const [fDataKey,    setFDataKey]    = useState('')
   const [fMatchValue, setFMatchValue] = useState('')
-  const [fMarkChar,   setFMarkChar]   = useState('●')
+  const [fMarkChar,   setFMarkChar]   = useState('×')
 
   // 編集フォームへ読み込み
   // 編集読み込みで種別が変わるとき、下の「種別切り替えでリセット」を1回スキップする
@@ -243,9 +248,9 @@ export default function FormCalibrationPage() {
     if (f.type !== fType) skipTypeResetRef.current = true
     setEditId(f.id)
     setFKey(f.key); setFLabel(f.label); setFType(f.type)
-    setFMaxChars(f.maxChars ?? 20); setFFontSize(f.fontSize)
+    setFMaxChars(f.maxChars ?? 20); setFStartChar(f.startChar ?? 0); setFFontSize(f.fontSize)
     setFWidth(f.width ?? 200)
-    setFDataKey(f.dataKey ?? ''); setFMatchValue(f.matchValue ?? ''); setFMarkChar(f.markChar ?? '●')
+    setFDataKey(f.dataKey ?? ''); setFMatchValue(f.matchValue ?? ''); setFMarkChar(f.markChar ?? '×')
     setPtA({ x: f.x, y: f.y })
     const n = f.maxChars ?? 1
     if (f.type === 'chars' && f.charWidth && n > 1) {
@@ -268,8 +273,8 @@ export default function FormCalibrationPage() {
   }
 
   const cancelEdit = () => {
-    setEditId(null); setFKey(''); setFLabel(''); setFType('chars')
-    setFDataKey(''); setFMatchValue(''); setFMarkChar('●')
+    setEditId(null); setFKey(''); setFLabel(''); setFType('chars'); setFStartChar(0)
+    setFDataKey(''); setFMatchValue(''); setFMarkChar('×')
     setPtA(null); setPtB(null); setClickSeq(0)
     editCharWidthRef.current = undefined
   }
@@ -322,12 +327,12 @@ export default function FormCalibrationPage() {
       type: fType,
       x: ptA.x, y: ptA.y,
       fontSize: fFontSize,
-      ...(fType === 'chars' ? { charWidth, maxChars: fMaxChars, anchor: 'center' as const } : {}),
+      ...(fType === 'chars' ? { charWidth, maxChars: fMaxChars, ...(fStartChar > 0 ? { startChar: fStartChar } : {}), anchor: 'center' as const } : {}),
       ...(fType === 'text'  ? { width: fWidth } : {}),
       ...(fType === 'mark'  ? {
         dataKey:    fDataKey.trim()    || undefined,
         matchValue: fMatchValue.trim() || undefined,
-        markChar:   fMarkChar.trim()   || '●',
+        markChar:   fMarkChar.trim()   || '×',
       } : {}),
     }
 
@@ -778,6 +783,18 @@ export default function FormCalibrationPage() {
                   />
                 </div>
               )}
+              {fType === 'chars' && (
+                <div>
+                  <label className="block text-[11px] text-gray-400 mb-0.5" title="住所のように1つの項目が何行かに分かれているとき、2行目以降は前の行の枠の数だけずらす">何文字目から（続きの行用）</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={fStartChar + 1}
+                    onChange={e => setFStartChar(Math.max(0, (Number(e.target.value) || 1) - 1))}
+                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-lavender-400"
+                  />
+                </div>
+              )}
               {fType === 'text' && (
                 <div>
                   <label className="block text-[11px] text-gray-400 mb-0.5">フィールド幅(pt)</label>
@@ -796,7 +813,7 @@ export default function FormCalibrationPage() {
                     value={fMarkChar}
                     onChange={e => setFMarkChar(e.target.value)}
                     className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-lavender-400"
-                    placeholder="●"
+                    placeholder="×"
                   />
                 </div>
               )}
@@ -851,7 +868,7 @@ export default function FormCalibrationPage() {
                   <p className="text-[11px] text-orange-600 bg-orange-100 rounded px-2 py-1">
                     「{DATA_KEY_OPTIONS.find(o => o.value === fDataKey)?.label}」が
                     <strong> {fMatchValue} </strong>
-                    のとき、この位置に <strong>{fMarkChar || '●'}</strong> を印字
+                    のとき、この位置に <strong>{fMarkChar || '×'}</strong> を印字
                   </p>
                 )}
               </div>

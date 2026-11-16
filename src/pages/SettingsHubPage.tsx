@@ -13,6 +13,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
     items: [
       { icon: '📋', title: '試験日程',   desc: '試験日・試験地・試験IDの登録／JMRAのExcelインポート', path: '/exam-sessions' },
       { icon: '🏫', title: '授業会場',   desc: '試験前の講習で使う教室の登録',                     path: '/classrooms' },
+      { icon: '💴', title: '受験料・登録免許税', desc: '試験申請者名簿の料金・団体名',              path: '/fees' },
     ],
   },
   {

@@ -1,5 +1,5 @@
 /**
- * 免除（学科のみ／実技のみの受験）の根拠になる「過去に合格した試験」（申請書②欄）
+ * 免除（学科のみ／実技のみの受験）の根拠になる「過去に合格した試験」（試験申請者名簿に記入。OCR申請書には印字しない）
  * 本人が覚えていないことが多く、試験機関に問い合わせてから後で入力するため、
  * 申込時点では必須にしない。その代わり、未入力の項目を各画面で目立たせる。
  */
@@ -8,6 +8,7 @@ import type { Enrollment } from '../types'
 export const PREV_EXAM_FIELDS = [
   { key: 'qual',     label: '資格' },
   { key: 'date',     label: '試験開始日' },
+  { key: 'result_date', label: '合格日' },
   { key: 'location', label: '試験地' },
   { key: 'number',   label: '受験番号' },
   { key: 'exam_id',  label: '試験ID' },

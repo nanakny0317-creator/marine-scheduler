@@ -9,6 +9,9 @@ import ScheduleItemDetailModal from './ScheduleItemDetailModal'
 import ReceiptPrintModal from './ReceiptPrintModal'
 import MultiReceiptSelectModal from './MultiReceiptSelectModal'
 import CalendarModal from './CalendarModal'
+import ApplicationDateModal from './ApplicationDateModal'
+import { getApplicationDate, formatApplicationDate } from '../../lib/applicationDate'
+import { jointIdOf } from '../../lib/jointApplication'
 import { useSession, TABS } from '../../contexts/SessionContext'
 import type { SessionItem } from '../../contexts/SessionContext'
 
@@ -30,6 +33,7 @@ function getAppType(enrollment: Enrollment): string {
   try { return JSON.parse(enrollment.extra_json).application_type ?? 'new' } catch { return 'new' }
 }
 
+
 export default function SessionView() {
   // activeTab はコンテキスト管理（サイドバーのフィルタと共有）
   const { allItems, sessions, selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
@@ -41,6 +45,7 @@ export default function SessionView() {
   const [showMultiSelect, setShowMultiSelect] = useState(false)
   const [multiReceiptItems, setMultiReceiptItems] = useState<SessionItem[]>([])
   const [showCalendar, setShowCalendar] = useState(false)
+  const [showAppDate, setShowAppDate] = useState(false)
 
   // sessions はコンテキスト側で activeTab フィルタ済みのため、items をそのまま使う
   const filteredItems = selectedSession?.items ?? []
@@ -154,6 +159,16 @@ export default function SessionView() {
           {someChecked && (
             <button
               type="button"
+              onClick={() => setShowAppDate(true)}
+              className="btn-secondary btn-sm shrink-0"
+              title="申請書に印字する申請日をまとめて設定"
+            >
+              申請日を設定（{checkedItems.length}名）
+            </button>
+          )}
+          {someChecked && (
+            <button
+              type="button"
               onClick={() => setShowReceipt(true)}
               className="btn-primary btn-sm shrink-0"
             >
@@ -228,6 +243,13 @@ export default function SessionView() {
                     )}
                   </div>
 
+                  {/* 同時申請 */}
+                  {appType === 'new' && jointIdOf(enrollment) != null && (
+                    <span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-600" title="別の試験と1枚の申請書で同時申請">
+                      同時申請
+                    </span>
+                  )}
+
                   {/* 過去合格歴の未入力 */}
                   <PrevExamMissingBadge enrollment={enrollment} />
 
@@ -235,6 +257,13 @@ export default function SessionView() {
                   <span className="text-xs text-gray-400 truncate flex-1 hidden sm:block">
                     {appType === 'new' ? enrollment.menu : ''}
                   </span>
+
+                  {/* 申請日 */}
+                  {getApplicationDate(enrollment) && (
+                    <span className="text-[11px] text-gray-400 shrink-0" title="申請書に印字する申請日">
+                      申請日 {formatApplicationDate(getApplicationDate(enrollment))}
+                    </span>
+                  )}
 
                   {/* 電話 */}
                   <span className="text-xs text-gray-400 shrink-0">
@@ -314,6 +343,15 @@ export default function SessionView() {
         <ReceiptPrintModal
           items={multiReceiptItems}
           onClose={() => setMultiReceiptItems([])}
+        />
+      )}
+
+      {/* 申請日の一括設定 */}
+      {showAppDate && (
+        <ApplicationDateModal
+          items={checkedItems}
+          onClose={() => setShowAppDate(false)}
+          onSaved={() => { setShowAppDate(false); reload() }}
         />
       )}
 

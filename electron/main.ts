@@ -12,6 +12,7 @@ import { registerRenewalSessionHandlers } from './handlers/renewalSessionHandler
 import { registerClassroomHandlers } from './handlers/classroomHandlers'
 import { registerExamRecordHandlers } from './handlers/examRecordHandlers'
 import { registerPhysicalExamHandlers } from './handlers/physicalExamHandlers'
+import { registerSettingsHandlers } from './handlers/settingsHandlers'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -48,9 +49,27 @@ function createWindow() {
 }
 
 // 出力先ディレクトリ（DBと同じ場所に合わせる）
-function getOutputPath() {
+function getOutputPath(n = 0) {
   const dir = isDev ? process.cwd() : app.getPath('userData')
-  return path.join(dir, 'receipt.pdf')
+  return path.join(dir, n === 0 ? 'receipt.pdf' : `receipt-${n}.pdf`)
+}
+
+/**
+ * PDFを書き出す。前に印刷したPDFがビューアで開いたまま（ロック中）なら、
+ * receipt-1.pdf, receipt-2.pdf … と別の名前で保存する。
+ */
+function writePdf(buf: Buffer): string {
+  for (let n = 0; n < 20; n++) {
+    const p = getOutputPath(n)
+    try {
+      writeFileSync(p, buf)
+      return p
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException).code
+      if (code !== 'EBUSY' && code !== 'EPERM') throw e
+    }
+  }
+  throw new Error('印刷用のPDFを保存できませんでした。開いているPDFを閉じてからもう一度印刷してください。')
 }
 
 // ── 印刷ハンドラー（HTML → PDF → システムPDFビューアで開く）──
@@ -75,8 +94,7 @@ ipcMain.handle('print:html', async (_event, html: string) => {
   renderWin.close()
 
   // DBと同じディレクトリに固定名で上書き保存（tempフォルダ不使用）
-  const pdfPath = getOutputPath()
-  writeFileSync(pdfPath, pdfBuffer)
+  const pdfPath = writePdf(pdfBuffer)
 
   await shell.openPath(pdfPath)
 })
@@ -98,6 +116,7 @@ app.whenReady().then(async () => {
   registerClassroomHandlers()
   registerExamRecordHandlers()
   registerPhysicalExamHandlers()
+  registerSettingsHandlers()
   if (isDev) registerDevHandlers()
   createWindow()
 

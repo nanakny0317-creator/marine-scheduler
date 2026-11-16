@@ -166,7 +166,7 @@ function newExamExtra(o: {
   courseDates: string[]
   gakka?: boolean
   jitsugi?: boolean
-  shintai?: 'need' | 'have'
+  shintai?: 'need' | 'have' | 'omit'
   prevExam?: Record<string, unknown>
 }): Record<string, unknown> {
   const sessions = o.courseDates.map((date, i) => ({

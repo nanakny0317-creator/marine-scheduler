@@ -98,8 +98,16 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
   exam_type          TEXT NOT NULL DEFAULT '学科+実技',
   gakka_venue        TEXT NOT NULL DEFAULT '',   -- 学科試験会場
   jitsugi_venue      TEXT NOT NULL DEFAULT '',   -- 実技試験会場
+  result_date        TEXT NOT NULL DEFAULT '',   -- 合格発表日（空＝曜日から自動）
+  result_checked     INTEGER NOT NULL DEFAULT 0, -- 合格発表を確認済み
   created_at         TEXT NOT NULL DEFAULT (datetime('now','localtime')),
   updated_at         TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+-- アプリの設定（キーと値。値はJSON文字列）
+CREATE TABLE IF NOT EXISTS app_settings (
+  key    TEXT PRIMARY KEY,
+  value  TEXT NOT NULL
 );
 
 -- 授業会場マスター（試験申請の講習日程で使う教室）

@@ -131,7 +131,7 @@
   },
   {
     "id": "cvt0001",
-    "key": "小文字",
+    "key": "full_kana_small",
     "label": "④_小文字",
     "page": 1,
     "type": "chars",
@@ -144,7 +144,7 @@
   },
   {
     "id": "cvt0002",
-    "key": "カナ",
+    "key": "full_kana",
     "label": "④_氏名カナ",
     "page": 1,
     "type": "chars",
@@ -157,7 +157,7 @@
   },
   {
     "id": "cvt0029",
-    "key": "last_name",
+    "key": "full_name",
     "label": "④_氏名漢字",
     "page": 1,
     "type": "chars",

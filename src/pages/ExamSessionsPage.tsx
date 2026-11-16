@@ -4,7 +4,10 @@ import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import * as XLSX from 'xlsx'
 import type { ExamSession, ExamSessionInput } from '../types'
-import { examSessionsApi } from '../lib/api'
+import { enrollmentsApi, examSessionsApi } from '../lib/api'
+import { buildRosterHtml, rosterEntriesFor, type RosterEntry } from '../lib/rosterPrint'
+import { loadFees, loadOrgName } from '../lib/examFees'
+import { resultDateOf } from '../lib/examResult'
 import ExamSessionFormModal, { makeEmptyExamSession as makeEmpty } from '../components/ExamSessionFormModal'
 import { normalizeExamLocation } from '../lib/examLocation'
 
@@ -240,6 +243,34 @@ export default function ExamSessionsPage() {
     load()
   }
 
+  const toggleResultChecked = async (s: ExamSession) => {
+    const { id: _id, created_at: _c, updated_at: _u, ...input } = s
+    await examSessionsApi.update(s.id, { ...input, result_checked: !s.result_checked })
+    load()
+  }
+
+  // ── 試験申請者名簿 ──
+  const [applicants, setApplicants] = useState<RosterEntry[]>([])
+  const [printingId, setPrintingId] = useState<number | null>(null)
+  useEffect(() => {
+    enrollmentsApi.listAll('new').then(setApplicants).catch(() => setApplicants([]))
+  }, [])
+
+  const handlePrintRoster = async (s: ExamSession) => {
+    const entries = rosterEntriesFor(s, applicants)
+    if (entries.length === 0 && !window.confirm('この試験日程に申し込んでいる受験者がいません。空欄の名簿を印刷しますか？')) return
+    setPrintingId(s.id)
+    try {
+      const [fees, orgName] = await Promise.all([loadFees(), loadOrgName()])
+      await window.api.print.html(buildRosterHtml(s, entries, fees, orgName))
+    } catch (e) {
+      alert(`名簿を印刷できませんでした。
+${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setPrintingId(null)
+    }
+  }
+
   // 日付でグルーピング
   const grouped = sessions.reduce<Record<string, ExamSession[]>>((acc, s) => {
     (acc[s.exam_date] ??= []).push(s)
@@ -327,7 +358,21 @@ export default function ExamSessionsPage() {
                       <span className="font-mono text-sm text-gray-600 bg-gray-50 border border-gray-100 rounded px-2 py-0.5">
                         {s.exam_id}
                       </span>
+                      <span className="text-xs shrink-0 text-right w-24" title={s.result_date ? '合格発表日（手で変更）' : '合格発表日（曜日から自動）'}>
+                        <span className="block text-gray-400">発表 {resultDateOf(s) ? format(new Date(resultDateOf(s) + 'T00:00'), 'M/d(E)', { locale: ja }) : '—'}{s.result_date ? '＊' : ''}</span>
+                        {s.result_checked && (
+                          <button type="button" onClick={() => toggleResultChecked(s)} className="block ml-auto text-mint-600 font-semibold hover:underline" title="クリックで未確認に戻す">✓ 確認済み</button>
+                        )}
+                      </span>
                       <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={() => handlePrintRoster(s)}
+                          disabled={printingId != null}
+                          className="btn-secondary btn-sm disabled:opacity-40"
+                          title="試験申請者名簿（海レ協の様式）を印刷"
+                        >
+                          {printingId === s.id ? '⏳' : '🖨'} 名簿（{rosterEntriesFor(s, applicants).length}名）
+                        </button>
                         <button
                           onClick={() => { setEditTarget(s); setFormOpen(true) }}
                           className="btn-secondary btn-sm"
@@ -355,7 +400,7 @@ export default function ExamSessionsPage() {
       {formOpen && (
         <ExamSessionFormModal
           initial={editTarget
-            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id, exam_type: editTarget.exam_type, gakka_venue: editTarget.gakka_venue, jitsugi_venue: editTarget.jitsugi_venue }
+            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id, exam_type: editTarget.exam_type, gakka_venue: editTarget.gakka_venue, jitsugi_venue: editTarget.jitsugi_venue, result_date: editTarget.result_date }
             : makeEmpty()
           }
           editId={editTarget?.id ?? null}

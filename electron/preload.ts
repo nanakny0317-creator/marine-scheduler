@@ -57,6 +57,7 @@ const api = {
   },
   examRecords: {
     list:   (studentId: number) => ipcRenderer.invoke('examRecords:list', studentId),
+    listAll: () => ipcRenderer.invoke('examRecords:listAll'),
     create: (input: unknown) => ipcRenderer.invoke('examRecords:create', input),
     update: (id: number, input: unknown) => ipcRenderer.invoke('examRecords:update', id, input),
     delete: (id: number) => ipcRenderer.invoke('examRecords:delete', id),
@@ -66,6 +67,10 @@ const api = {
     create: (input: unknown) => ipcRenderer.invoke('physicalExams:create', input),
     update: (id: number, input: unknown) => ipcRenderer.invoke('physicalExams:update', id, input),
     delete: (id: number) => ipcRenderer.invoke('physicalExams:delete', id),
+  },
+  settings: {
+    get: (key: string) => ipcRenderer.invoke('settings:get', key),
+    set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
   },
   print: {
     html: (html: string) => ipcRenderer.invoke('print:html', html),

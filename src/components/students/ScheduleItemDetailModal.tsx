@@ -3,12 +3,13 @@ import { exemptSubjectOf, missingPrevExam } from '../../lib/prevExam'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
-import { enrollmentsApi, venuesApi } from '../../lib/api'
+import { enrollmentsApi } from '../../lib/api'
 import MemberBasicInfoReadOnly from './MemberBasicInfoReadOnly'
 import StudentForm from './StudentForm'
 import EnrollmentFormModal from './EnrollmentFormModal'
-import { printForm, type FieldDef } from '../../lib/formPrint'
-import { buildFormData } from '../../lib/formFieldMap'
+import { getApplicationDate, setApplicationDate } from '../../lib/applicationDate'
+import { PRINT_FORM_MAP, printApplicationForms } from '../../lib/applicationPrint'
+import DateTextInput from '../DateTextInput'
 
 const TYPE_LABEL: Record<string, string> = {
   new: '試験申請', renewal: '更新講習', lapsed: '失効再交付',
@@ -172,12 +173,6 @@ interface Props {
   onUpdated: () => void
 }
 
-// 申込種別 → フォームレイアウトと説明
-const PRINT_FORM_MAP: Record<string, { layout: string; title: string; pageCount: number }> = {
-  new:     { layout: '/form-layouts/shiken.json',  title: '試験申請書',       pageCount: 1 },
-  renewal: { layout: '/form-layouts/koshin.json',  title: '更新申請書',       pageCount: 1 },
-  lapsed:  { layout: '/form-layouts/saikofu.json', title: '失効再交付申請書', pageCount: 1 },
-}
 
 export default function ScheduleItemDetailModal({ student, enrollment, onClose, onUpdated }: Props) {
   const [currentStudent,    setCurrentStudent]    = useState(student)
@@ -194,18 +189,32 @@ export default function ScheduleItemDetailModal({ student, enrollment, onClose, 
   const handlePrint = async () => {
     const formDef = PRINT_FORM_MAP[appType]
     if (!formDef) return
+    if (!appDate &&
+        !window.confirm('申請日が設定されていません。申請日の欄は空欄で印刷しますか？')) return
     setPrinting(true)
     try {
-      const res    = await fetch(formDef.layout)
-      const fields = await res.json() as FieldDef[]
-      const venues = await venuesApi.list(false).catch(() => [])
-      const data   = buildFormData(currentStudent, currentEnrollment, null, venues)
-      await printForm(fields, data, formDef.pageCount, formDef.title)
+      // 申請日は入力欄の値を使う（保存が印刷ボタンの押下と同時になっても確実に反映するため）
+      const extra = (() => { try { return JSON.parse(currentEnrollment.extra_json) } catch { return {} } })()
+      const enr    = { ...currentEnrollment, extra_json: JSON.stringify({ ...extra, application_date: appDate || undefined }) }
+      await printApplicationForms([{ student: currentStudent, enrollment: enr }])
     } catch (e) {
       console.error('印刷エラー:', e)
       alert(`印刷に失敗しました。\n${e instanceof Error ? e.message : String(e)}`)
     } finally {
       setPrinting(false)
+    }
+  }
+
+  // 申請日：入力中は手元に持ち、欄から離れたときに保存する
+  const [appDate, setAppDate] = useState(getApplicationDate(enrollment))
+  const saveAppDate = async () => {
+    const iso = appDate
+    if (iso === getApplicationDate(currentEnrollment)) return
+    try {
+      setCurrentEnrollment(await setApplicationDate(currentEnrollment, iso))
+      onUpdated()
+    } catch (e) {
+      alert(`申請日を保存できませんでした。\n${e instanceof Error ? e.message : String(e)}`)
     }
   }
 
@@ -273,7 +282,17 @@ export default function ScheduleItemDetailModal({ student, enrollment, onClose, 
           </div>
 
           {/* フッター */}
-          <div className="shrink-0 px-6 py-4 border-t border-lavender-100 flex items-center justify-between">
+          <div className="shrink-0 px-6 py-4 border-t border-lavender-100 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs text-gray-500" title="申請書に印字する申請日" onBlur={saveAppDate}>
+              申請日
+              <DateTextInput
+                value={appDate}
+                onChange={setAppDate}
+                placeholder="未設定"
+                className="w-36"
+              />
+            </label>
             <button
               type="button"
               onClick={handlePrint}
@@ -283,6 +302,7 @@ export default function ScheduleItemDetailModal({ student, enrollment, onClose, 
             >
               {printing ? '⏳ 印刷中...' : '🖨 申請書印刷'}
             </button>
+            </div>
             <button type="button" onClick={onClose} className="btn-secondary">閉じる</button>
           </div>
         </div>

@@ -12,7 +12,7 @@
   },
   {
     "id": "cvt0092",
-    "key": "作成日",
+    "key": "app_date_day",
     "label": "出力日",
     "page": 1,
     "type": "chars",
@@ -25,7 +25,7 @@
   },
   {
     "id": "cvt0090",
-    "key": "作成年",
+    "key": "app_date_era_year",
     "label": "出力年",
     "page": 1,
     "type": "chars",
@@ -38,7 +38,7 @@
   },
   {
     "id": "cvt0091",
-    "key": "作成月",
+    "key": "app_date_month",
     "label": "出力月",
     "page": 1,
     "type": "chars",
@@ -51,7 +51,7 @@
   },
   {
     "id": "cvt0004",
-    "key": "種別",
+    "key": "exam_class_jakunen",
     "label": "①_2級若年",
     "page": 1,
     "type": "chars",
@@ -64,7 +64,7 @@
   },
   {
     "id": "cvt0005",
-    "key": "種別",
+    "key": "exam_class_tokushu",
     "label": "①_特殊",
     "page": 1,
     "type": "chars",
@@ -77,7 +77,7 @@
   },
   {
     "id": "cvt0001",
-    "key": "種別",
+    "key": "exam_class_1",
     "label": "①_1級",
     "page": 1,
     "type": "chars",
@@ -90,7 +90,7 @@
   },
   {
     "id": "cvt0003",
-    "key": "種別",
+    "key": "exam_class_kokawa",
     "label": "①_湖川",
     "page": 1,
     "type": "chars",
@@ -103,7 +103,7 @@
   },
   {
     "id": "cvt0002",
-    "key": "種別",
+    "key": "exam_class_2",
     "label": "①_2級",
     "page": 1,
     "type": "chars",
@@ -116,7 +116,7 @@
   },
   {
     "id": "cvt0086",
-    "key": "試験ID1",
+    "key": "exam_date_year",
     "label": "①_試験開始日年",
     "page": 1,
     "type": "chars",
@@ -129,7 +129,7 @@
   },
   {
     "id": "cvt0087",
-    "key": "試験ID2",
+    "key": "exam_date_month",
     "label": "①_試験開始日月",
     "page": 1,
     "type": "chars",
@@ -142,7 +142,7 @@
   },
   {
     "id": "cvt0088",
-    "key": "試験ID3",
+    "key": "exam_date_day",
     "label": "①_試験開始日日",
     "page": 1,
     "type": "chars",
@@ -155,7 +155,7 @@
   },
   {
     "id": "cvt0089",
-    "key": "試験ID4",
+    "key": "exam_location",
     "label": "①_試験地",
     "page": 1,
     "type": "text",
@@ -177,7 +177,7 @@
   },
   {
     "id": "cvt0075",
-    "key": "Text",
+    "key": "exam2_class_kokawa",
     "label": "②_湖川",
     "page": 1,
     "type": "chars",
@@ -190,7 +190,7 @@
   },
   {
     "id": "cvt0076",
-    "key": "Text",
+    "key": "exam2_class_jakunen",
     "label": "②_2級若年",
     "page": 1,
     "type": "chars",
@@ -203,7 +203,7 @@
   },
   {
     "id": "cvt0077",
-    "key": "Text",
+    "key": "exam2_class_tokushu",
     "label": "②_特殊",
     "page": 1,
     "type": "chars",
@@ -216,7 +216,7 @@
   },
   {
     "id": "cvt0073",
-    "key": "Text",
+    "key": "exam2_class_1",
     "label": "②_1級",
     "page": 1,
     "type": "chars",
@@ -229,7 +229,7 @@
   },
   {
     "id": "cvt0074",
-    "key": "Text",
+    "key": "exam2_class_2",
     "label": "②_2級",
     "page": 1,
     "type": "chars",
@@ -242,7 +242,7 @@
   },
   {
     "id": "cvt0096",
-    "key": "Text7",
+    "key": "exam2_year",
     "label": "②_試験開始日年",
     "page": 1,
     "type": "chars",
@@ -255,7 +255,7 @@
   },
   {
     "id": "cvt0097",
-    "key": "Text8",
+    "key": "exam2_month",
     "label": "②_試験開始日月",
     "page": 1,
     "type": "chars",
@@ -268,7 +268,7 @@
   },
   {
     "id": "cvt0098",
-    "key": "Text9",
+    "key": "exam2_day",
     "label": "②_試験開始日日",
     "page": 1,
     "type": "chars",
@@ -281,7 +281,7 @@
   },
   {
     "id": "cvt0099",
-    "key": "Text10",
+    "key": "exam2_location",
     "label": "②_試験地",
     "page": 1,
     "type": "text",
@@ -292,7 +292,7 @@
   },
   {
     "id": "cvt0100",
-    "key": "Text11",
+    "key": "exam2_number",
     "label": "②_受験番号",
     "page": 1,
     "type": "text",
@@ -303,7 +303,7 @@
   },
   {
     "id": "cvt0081",
-    "key": "Text",
+    "key": "shintai_have",
     "label": "③_証明書有",
     "page": 1,
     "type": "chars",
@@ -316,7 +316,7 @@
   },
   {
     "id": "cvt0082",
-    "key": "Text",
+    "key": "exam_gakka_x",
     "label": "③_学科試験",
     "page": 1,
     "type": "chars",
@@ -329,7 +329,7 @@
   },
   {
     "id": "cvt0083",
-    "key": "Text",
+    "key": "exam_jitsugi_x",
     "label": "③_実技試験",
     "page": 1,
     "type": "chars",
@@ -342,7 +342,7 @@
   },
   {
     "id": "cvt0080",
-    "key": "Text",
+    "key": "shintai_none",
     "label": "③_証明書無",
     "page": 1,
     "type": "chars",
@@ -355,7 +355,7 @@
   },
   {
     "id": "cvt0006",
-    "key": "小文字",
+    "key": "full_kana_small",
     "label": "④_濁点",
     "page": 1,
     "type": "chars",
@@ -368,7 +368,7 @@
   },
   {
     "id": "cvt0007",
-    "key": "カナ",
+    "key": "full_kana",
     "label": "④_氏名カナ",
     "page": 1,
     "type": "chars",
@@ -381,7 +381,7 @@
   },
   {
     "id": "cvt0094",
-    "key": "last_name",
+    "key": "full_name",
     "label": "④_氏名漢字",
     "page": 1,
     "type": "text",
@@ -403,7 +403,7 @@
   },
   {
     "id": "cvt0008",
-    "key": "postal_code",
+    "key": "postal_digits",
     "label": "④_郵便番号上",
     "page": 1,
     "type": "chars",
@@ -416,7 +416,7 @@
   },
   {
     "id": "cvt0072",
-    "key": "postal_code",
+    "key": "postal_digits",
     "label": "④_郵便番号下",
     "page": 1,
     "type": "chars",
@@ -425,11 +425,12 @@
     "charWidth": 17.01,
     "maxChars": 4,
     "fontSize": 7,
-    "anchor": "center"
+    "anchor": "center",
+    "startChar": 3
   },
   {
     "id": "cvt0095",
-    "key": "左電話番号",
+    "key": "phone_any",
     "label": "④_電話番号",
     "page": 1,
     "type": "text",
@@ -440,7 +441,7 @@
   },
   {
     "id": "cvt0024",
-    "key": "Text",
+    "key": "domicile_mark_10",
     "label": "⑤_群馬",
     "page": 1,
     "type": "chars",
@@ -453,7 +454,7 @@
   },
   {
     "id": "cvt0025",
-    "key": "Text",
+    "key": "domicile_mark_15",
     "label": "⑤_新潟",
     "page": 1,
     "type": "chars",
@@ -466,7 +467,7 @@
   },
   {
     "id": "cvt0026",
-    "key": "Text",
+    "key": "domicile_mark_16",
     "label": "⑤_富山",
     "page": 1,
     "type": "chars",
@@ -479,7 +480,7 @@
   },
   {
     "id": "cvt0027",
-    "key": "Text",
+    "key": "domicile_mark_17",
     "label": "⑤_石川",
     "page": 1,
     "type": "chars",
@@ -492,7 +493,7 @@
   },
   {
     "id": "cvt0028",
-    "key": "Text",
+    "key": "domicile_mark_25",
     "label": "⑤_滋賀",
     "page": 1,
     "type": "chars",
@@ -505,7 +506,7 @@
   },
   {
     "id": "cvt0029",
-    "key": "Text",
+    "key": "domicile_mark_26",
     "label": "⑤_京都",
     "page": 1,
     "type": "chars",
@@ -518,7 +519,7 @@
   },
   {
     "id": "cvt0030",
-    "key": "Text",
+    "key": "domicile_mark_28",
     "label": "⑤_兵庫",
     "page": 1,
     "type": "chars",
@@ -531,7 +532,7 @@
   },
   {
     "id": "cvt0031",
-    "key": "Text",
+    "key": "domicile_mark_31",
     "label": "⑤_鳥取",
     "page": 1,
     "type": "chars",
@@ -544,7 +545,7 @@
   },
   {
     "id": "cvt0032",
-    "key": "Text",
+    "key": "domicile_mark_32",
     "label": "⑤_島根",
     "page": 1,
     "type": "chars",
@@ -557,7 +558,7 @@
   },
   {
     "id": "cvt0033",
-    "key": "Text",
+    "key": "domicile_mark_35",
     "label": "⑤_山口",
     "page": 1,
     "type": "chars",
@@ -570,7 +571,7 @@
   },
   {
     "id": "cvt0022",
-    "key": "Text",
+    "key": "domicile_mark_01",
     "label": "⑤_北海道",
     "page": 1,
     "type": "chars",
@@ -583,7 +584,7 @@
   },
   {
     "id": "cvt0023",
-    "key": "Text",
+    "key": "domicile_mark_02",
     "label": "⑤_青森",
     "page": 1,
     "type": "chars",
@@ -596,7 +597,7 @@
   },
   {
     "id": "cvt0042",
-    "key": "Text",
+    "key": "domicile_mark_33",
     "label": "⑤_岡山",
     "page": 1,
     "type": "chars",
@@ -609,7 +610,7 @@
   },
   {
     "id": "cvt0043",
-    "key": "Text",
+    "key": "domicile_mark_34",
     "label": "⑤_広島",
     "page": 1,
     "type": "chars",
@@ -622,7 +623,7 @@
   },
   {
     "id": "cvt0034",
-    "key": "Text",
+    "key": "domicile_mark_05",
     "label": "⑤_秋田",
     "page": 1,
     "type": "chars",
@@ -635,7 +636,7 @@
   },
   {
     "id": "cvt0035",
-    "key": "Text",
+    "key": "domicile_mark_06",
     "label": "⑤_山形",
     "page": 1,
     "type": "chars",
@@ -648,7 +649,7 @@
   },
   {
     "id": "cvt0036",
-    "key": "Text",
+    "key": "domicile_mark_09",
     "label": "⑤_栃木",
     "page": 1,
     "type": "chars",
@@ -661,7 +662,7 @@
   },
   {
     "id": "cvt0037",
-    "key": "Text",
+    "key": "domicile_mark_08",
     "label": "⑤_茨城",
     "page": 1,
     "type": "chars",
@@ -674,7 +675,7 @@
   },
   {
     "id": "cvt0038",
-    "key": "Text",
+    "key": "domicile_mark_20",
     "label": "⑤_長野",
     "page": 1,
     "type": "chars",
@@ -687,7 +688,7 @@
   },
   {
     "id": "cvt0039",
-    "key": "Text",
+    "key": "domicile_mark_18",
     "label": "⑤_福井",
     "page": 1,
     "type": "chars",
@@ -700,7 +701,7 @@
   },
   {
     "id": "cvt0040",
-    "key": "Text",
+    "key": "domicile_mark_29",
     "label": "⑤_奈良",
     "page": 1,
     "type": "chars",
@@ -713,7 +714,7 @@
   },
   {
     "id": "cvt0041",
-    "key": "Text",
+    "key": "domicile_mark_27",
     "label": "⑤_大坂",
     "page": 1,
     "type": "chars",
@@ -726,7 +727,7 @@
   },
   {
     "id": "cvt0044",
-    "key": "Text",
+    "key": "domicile_mark_40",
     "label": "⑤_福岡",
     "page": 1,
     "type": "chars",
@@ -739,7 +740,7 @@
   },
   {
     "id": "cvt0045",
-    "key": "Text",
+    "key": "domicile_mark_41",
     "label": "⑤_佐賀",
     "page": 1,
     "type": "chars",
@@ -752,7 +753,7 @@
   },
   {
     "id": "cvt0054",
-    "key": "Text",
+    "key": "domicile_mark_38",
     "label": "⑤_愛媛",
     "page": 1,
     "type": "chars",
@@ -765,7 +766,7 @@
   },
   {
     "id": "cvt0047",
-    "key": "Text",
+    "key": "domicile_mark_04",
     "label": "⑤_宮城",
     "page": 1,
     "type": "chars",
@@ -778,7 +779,7 @@
   },
   {
     "id": "cvt0048",
-    "key": "Text",
+    "key": "domicile_mark_11",
     "label": "⑤_埼玉",
     "page": 1,
     "type": "chars",
@@ -791,7 +792,7 @@
   },
   {
     "id": "cvt0049",
-    "key": "Text",
+    "key": "domicile_mark_13",
     "label": "⑤_東京",
     "page": 1,
     "type": "chars",
@@ -804,7 +805,7 @@
   },
   {
     "id": "cvt0050",
-    "key": "Text",
+    "key": "domicile_mark_22",
     "label": "⑤_静岡",
     "page": 1,
     "type": "chars",
@@ -817,7 +818,7 @@
   },
   {
     "id": "cvt0051",
-    "key": "Text",
+    "key": "domicile_mark_19",
     "label": "⑤_山梨",
     "page": 1,
     "type": "chars",
@@ -830,7 +831,7 @@
   },
   {
     "id": "cvt0052",
-    "key": "Text",
+    "key": "domicile_mark_30",
     "label": "⑤_和歌山",
     "page": 1,
     "type": "chars",
@@ -843,7 +844,7 @@
   },
   {
     "id": "cvt0053",
-    "key": "Text",
+    "key": "domicile_mark_37",
     "label": "⑤_香川",
     "page": 1,
     "type": "chars",
@@ -856,7 +857,7 @@
   },
   {
     "id": "cvt0055",
-    "key": "Text",
+    "key": "domicile_mark_44",
     "label": "⑤_大分",
     "page": 1,
     "type": "chars",
@@ -869,7 +870,7 @@
   },
   {
     "id": "cvt0056",
-    "key": "Text",
+    "key": "domicile_mark_43",
     "label": "⑤_熊本",
     "page": 1,
     "type": "chars",
@@ -882,7 +883,7 @@
   },
   {
     "id": "cvt0057",
-    "key": "Text",
+    "key": "domicile_mark_42",
     "label": "⑤_長崎",
     "page": 1,
     "type": "chars",
@@ -895,7 +896,7 @@
   },
   {
     "id": "cvt0046",
-    "key": "Text",
+    "key": "domicile_mark_03",
     "label": "⑤_岩手",
     "page": 1,
     "type": "chars",
@@ -908,7 +909,7 @@
   },
   {
     "id": "cvt0058",
-    "key": "Text",
+    "key": "domicile_mark_07",
     "label": "⑤_福島",
     "page": 1,
     "type": "chars",
@@ -921,7 +922,7 @@
   },
   {
     "id": "cvt0059",
-    "key": "Text",
+    "key": "domicile_mark_12",
     "label": "⑤_千葉",
     "page": 1,
     "type": "chars",
@@ -934,7 +935,7 @@
   },
   {
     "id": "cvt0062",
-    "key": "Text",
+    "key": "domicile_mark_21",
     "label": "⑤_岐阜",
     "page": 1,
     "type": "chars",
@@ -947,7 +948,7 @@
   },
   {
     "id": "cvt0063",
-    "key": "Text",
+    "key": "domicile_mark_24",
     "label": "⑤_三重",
     "page": 1,
     "type": "chars",
@@ -960,7 +961,7 @@
   },
   {
     "id": "cvt0064",
-    "key": "Text",
+    "key": "domicile_mark_36",
     "label": "⑤_徳島",
     "page": 1,
     "type": "chars",
@@ -973,7 +974,7 @@
   },
   {
     "id": "cvt0067",
-    "key": "Text",
+    "key": "domicile_mark_46",
     "label": "⑤_鹿児島",
     "page": 1,
     "type": "chars",
@@ -986,7 +987,7 @@
   },
   {
     "id": "cvt0068",
-    "key": "Text",
+    "key": "domicile_mark_47",
     "label": "⑤_沖縄",
     "page": 1,
     "type": "chars",
@@ -999,7 +1000,7 @@
   },
   {
     "id": "cvt0060",
-    "key": "Text",
+    "key": "domicile_mark_14",
     "label": "⑤_神奈川",
     "page": 1,
     "type": "chars",
@@ -1012,7 +1013,7 @@
   },
   {
     "id": "cvt0061",
-    "key": "Text",
+    "key": "domicile_mark_23",
     "label": "⑤_愛知",
     "page": 1,
     "type": "chars",
@@ -1025,7 +1026,7 @@
   },
   {
     "id": "cvt0065",
-    "key": "Text",
+    "key": "domicile_mark_39",
     "label": "⑤_高知",
     "page": 1,
     "type": "chars",
@@ -1038,7 +1039,7 @@
   },
   {
     "id": "cvt0066",
-    "key": "Text",
+    "key": "domicile_mark_45",
     "label": "⑤_宮崎",
     "page": 1,
     "type": "chars",
@@ -1051,7 +1052,7 @@
   },
   {
     "id": "cvt0018",
-    "key": "女",
+    "key": "gender_female",
     "label": "⑧_女",
     "page": 1,
     "type": "chars",
@@ -1064,7 +1065,7 @@
   },
   {
     "id": "cvt0020",
-    "key": "韓国",
+    "key": "nat_chosen",
     "label": "⑨_朝鮮",
     "page": 1,
     "type": "chars",
@@ -1090,7 +1091,7 @@
   },
   {
     "id": "cvt0012",
-    "key": "平成",
+    "key": "birth_era_heisei",
     "label": "⑦_平成",
     "page": 1,
     "type": "chars",
@@ -1103,7 +1104,7 @@
   },
   {
     "id": "cvt0013",
-    "key": "昭和",
+    "key": "birth_era_showa",
     "label": "⑦_昭和",
     "page": 1,
     "type": "chars",
@@ -1116,7 +1117,7 @@
   },
   {
     "id": "cvt0014",
-    "key": "大正",
+    "key": "birth_era_taisho",
     "label": "⑦_大正",
     "page": 1,
     "type": "chars",
@@ -1129,7 +1130,7 @@
   },
   {
     "id": "cvt0019",
-    "key": "米国",
+    "key": "nat_kankoku",
     "label": "⑨_韓国",
     "page": 1,
     "type": "chars",
@@ -1142,7 +1143,7 @@
   },
   {
     "id": "cvt0021",
-    "key": "朝鮮",
+    "key": "nat_beikoku",
     "label": "⑨_米国",
     "page": 1,
     "type": "chars",
@@ -1155,7 +1156,7 @@
   },
   {
     "id": "cvt0015",
-    "key": "明治",
+    "key": "birth_era_meiji",
     "label": "⑦_明治",
     "page": 1,
     "type": "chars",
@@ -1168,7 +1169,7 @@
   },
   {
     "id": "cvt0017",
-    "key": "男",
+    "key": "gender_male",
     "label": "⑧_男",
     "page": 1,
     "type": "chars",
@@ -1181,7 +1182,7 @@
   },
   {
     "id": "cvt0009",
-    "key": "生年月日年",
+    "key": "birth_era_year2",
     "label": "⑦_出生年",
     "page": 1,
     "type": "chars",
@@ -1194,7 +1195,7 @@
   },
   {
     "id": "cvt0010",
-    "key": "生年月日月",
+    "key": "birth_month",
     "label": "⑦_出生月",
     "page": 1,
     "type": "chars",
@@ -1207,7 +1208,7 @@
   },
   {
     "id": "cvt0011",
-    "key": "生年月日日",
+    "key": "birth_day",
     "label": "⑦_出生日",
     "page": 1,
     "type": "chars",
@@ -1246,7 +1247,7 @@
   },
   {
     "id": "cvt0069",
-    "key": "免許",
+    "key": "license_digits",
     "label": "⑩_免許証番号",
     "page": 1,
     "type": "chars",

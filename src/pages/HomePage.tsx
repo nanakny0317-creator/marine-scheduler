@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import CsvImportModal from '../components/students/CsvImportModal'
 import StudentForm from '../components/students/StudentForm'
 import PendingReviewDetailModal from '../components/PendingReviewDetailModal'
-import type { Enrollment, PendingReviewWithStudents, Student } from '../types'
-import { enrollmentsApi, pendingReviewsApi } from '../lib/api'
+import type { Enrollment, ExamSession, PendingReviewWithStudents, Student } from '../types'
+import { enrollmentsApi, examSessionsApi, pendingReviewsApi } from '../lib/api'
+import { daysBetween, resultDateOf, todayIsoLocal } from '../lib/examResult'
+import { rosterEntriesFor } from '../lib/rosterPrint'
 import { exemptSubjectOf, missingPrevExam } from '../lib/prevExam'
 import EnrollmentFormModal from '../components/students/EnrollmentFormModal'
 import DevPanel from '../components/DevPanel'
@@ -124,7 +126,29 @@ export default function HomePage() {
       .catch(() => {})
   }
 
-  useEffect(() => { loadPending(); loadPrevMissing() }, [])
+  // 合格発表の確認：発表日を過ぎて未確認の試験、と1週間以内に発表がある試験（受験者がいるものだけ）
+  const [resultWatch, setResultWatch] = useState<{ session: ExamSession; count: number; resultDate: string; days: number }[]>([])
+  const loadResultWatch = async () => {
+    try {
+      const [sessions, applicants] = await Promise.all([examSessionsApi.list(), enrollmentsApi.listAll('new')])
+      const today = todayIsoLocal()
+      setResultWatch(sessions
+        .filter(s => !s.result_checked)
+        .map(s => {
+          const resultDate = resultDateOf(s)
+          return { session: s, count: rosterEntriesFor(s, applicants).length, resultDate, days: resultDate ? daysBetween(today, resultDate) : 999 }
+        })
+        .filter(x => x.count > 0 && x.days <= 7)
+        .sort((a, b) => a.resultDate.localeCompare(b.resultDate)))
+    } catch { /* ignore */ }
+  }
+  const markResultChecked = async (s: ExamSession) => {
+    const { id: _id, created_at: _c, updated_at: _u, ...input } = s
+    await examSessionsApi.update(s.id, { ...input, result_checked: true })
+    loadResultWatch()
+  }
+
+  useEffect(() => { loadPending(); loadPrevMissing(); loadResultWatch() }, [])
 
   const handleResolve = async (id: number, resolution: 'merged' | 'different') => {
     await pendingReviewsApi.resolve(id, resolution)
@@ -151,8 +175,36 @@ export default function HomePage() {
         <p className="text-sm text-gray-400 mt-1 tracking-widest">受 講 者 管 理 シ ス テ ム</p>
       </div>
 
-      {/* メインボタン群 */}
+      {/* メインボタン群：よく使う3つの作業 */}
       <div className="flex items-center gap-7 flex-wrap justify-center">
+        <HomeButton
+          icon="🚤"
+          title="試験申請"
+          desc={"試験前の受験者\n申請書・名簿の印刷"}
+          color="mint"
+          primary
+          onClick={() => navigate('/exam-applications')}
+        />
+        <HomeButton
+          icon="🎓"
+          title="免許申請"
+          desc={"合否の入力と\n合格者の免許申請"}
+          color="lavender"
+          primary
+          onClick={() => navigate('/license-applications')}
+        />
+        <HomeButton
+          icon="🔄"
+          title="更新・失効"
+          desc={"講習日ごとの\n受講者・申請書"}
+          color="peach"
+          primary
+          onClick={() => navigate('/students')}
+        />
+      </div>
+
+      {/* サブボタン群 */}
+      <div className="flex gap-4 flex-wrap justify-center">
         <HomeButton
           icon="📥"
           title="新規取り込み"
@@ -161,37 +213,11 @@ export default function HomePage() {
           onClick={() => setShowCsvImport(true)}
         />
         <HomeButton
-          icon="📅"
-          title="スケジュール確認"
-          desc={"講習日・会場ごとの\n申込状況を確認"}
-          color="lavender"
-          primary
-          onClick={() => navigate('/students')}
-        />
-        <HomeButton
           icon="✏️"
           title="新規個人登録"
           desc={"手動で受講者情報\nを入力"}
           color="peach"
           onClick={() => setShowNewStudent(true)}
-        />
-      </div>
-
-      {/* サブボタン群 */}
-      <div className="flex gap-5 flex-wrap justify-center">
-        <HomeButton
-          icon="🏛️"
-          title="会場・日程の設定"
-          desc={"試験日程・講習日程\n会場の登録"}
-          color="sky"
-          onClick={() => navigate('/settings')}
-        />
-        <HomeButton
-          icon="🎯"
-          title="印字位置設定"
-          desc={"OCRフォームの\n印字位置を調整"}
-          color="gray"
-          onClick={() => navigate('/calibration')}
         />
         <HomeButton
           icon="👤"
@@ -201,11 +227,25 @@ export default function HomePage() {
           onClick={() => navigate('/members')}
         />
         <HomeButton
-          icon="🖨️"
-          title="宛名印刷"
-          desc={"宛名ラベル・受講票\nの印刷"}
+          icon="📅"
+          title="講習スケジュール"
+          desc={"講習日・会場ごとの\n申込状況を確認"}
+          color="sky"
+          onClick={() => navigate('/students')}
+        />
+        <HomeButton
+          icon="🏛️"
+          title="会場・日程の設定"
+          desc={"試験日程・講習日程\n会場・料金の登録"}
+          color="sky"
+          onClick={() => navigate('/settings')}
+        />
+        <HomeButton
+          icon="🎯"
+          title="印字位置設定"
+          desc={"OCRフォームの\n印字位置を調整"}
           color="gray"
-          disabled
+          onClick={() => navigate('/calibration')}
         />
       </div>
 
@@ -310,6 +350,33 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      {/* ─── ダッシュボード：合格発表の確認 ─── */}
+      {resultWatch.length > 0 && (
+        <div className="w-full max-w-3xl -mt-6">
+          <div className="rounded-2xl border-2 border-blue-200 bg-white overflow-hidden shadow-sm">
+            <div className="px-5 py-3 flex items-center gap-2 border-b bg-blue-50 border-blue-200">
+              <span className="text-base">📣</span>
+              <span className="font-bold text-sm text-blue-700">合格発表の確認</span>
+              <span className="ml-1 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">{resultWatch.filter(x => x.days <= 0).length}</span>
+              <span className="ml-auto note-text">発表日を過ぎたら結果を確認して「確認済み」にしてください</span>
+            </div>
+            {resultWatch.map(({ session: s, count, resultDate, days }) => (
+              <div key={s.id} className={`px-5 py-2.5 flex items-center gap-3 border-b border-blue-50 last:border-0 ${days <= 0 ? '' : 'opacity-70'}`}>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 w-24 text-center ${days < 0 ? 'bg-red-50 text-red-600' : days === 0 ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-500'}`}>
+                  {days < 0 ? `発表済み ${-days}日` : days === 0 ? '今日発表' : `あと${days}日`}
+                </span>
+                <span className="text-sm text-gray-700 shrink-0">発表 {resultDate.slice(5).replace('-', '/')}</span>
+                <span className="text-sm font-semibold text-gray-800">{s.qualification_type}</span>
+                <span className="text-xs text-gray-500 truncate">試験 {s.exam_date.slice(5).replace('-', '/')}　{s.exam_location}　{count}名</span>
+                {days <= 0 && (
+                  <button type="button" onClick={() => markResultChecked(s)} className="ml-auto btn-secondary btn-sm shrink-0">確認済みにする</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ─── ダッシュボード：過去合格歴の未入力 ─── */}
       {prevMissing.length > 0 && (

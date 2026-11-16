@@ -6,6 +6,8 @@ import { classroomsApi, enrollmentsApi, examRecordsApi, examSessionsApi, physica
 import ExamSessionFormModal, { makeEmptyExamSession } from '../ExamSessionFormModal'
 import DateTextInput from '../DateTextInput'
 import { PREV_EXAM_FIELDS } from '../../lib/prevExam'
+import { examDateOf, findJointPartner, isExamEnrollment, syncJointLinks } from '../../lib/jointApplication'
+import { resultDateOf } from '../../lib/examResult'
 import { PASS_VALID_YEARS, expiryAfterYears, fmtYmd, isValidOn, todayIso } from '../../lib/validity'
 import Section from '../FormSection'
 import VenueSelect from '../VenueSelect'
@@ -88,14 +90,31 @@ interface ExtraResult {
   examQualType: string
   examGakka: boolean      // 学科試験を受ける
   examJitsugi: boolean    // 実技試験を受ける
-  prevExam: PrevExam      // 免除の根拠：過去に合格した試験（申請書②欄）
-  shintai: '' | 'need' | 'have'
+  prevExam: PrevExam      // 免除の根拠：過去に合格した試験（試験申請者名簿に記入）
+  shintai: Shintai
+  shintaiPass: ShintaiPass  // 身体検査を省略するとき：合格した試験
   licenseReturn: '' | 'yes' | 'no'   // 免許証返納 有／無（更新・失効）
   courseOrg: number                  // 講習機関コード（更新・失効）
   bureau: string                     // 提出先 "本局-支局"（更新・失効）
 }
 
-// 免除の根拠：過去に合格した試験（申請書②欄：資格・試験開始日・試験地・受験番号）
+// 身体検査：当日検査（証明書なし）／提出（予備身あり＝医師の証明書）／省略（過去の試験で合格済み・1年有効）
+type Shintai = '' | 'need' | 'have' | 'omit'
+interface ShintaiPass { date: string; location: string; number: string }
+const EMPTY_SHINTAI_PASS: ShintaiPass = { date: '', location: '', number: '' }
+function readShintaiPass(v: unknown): ShintaiPass {
+  if (!v || typeof v !== 'object') return { ...EMPTY_SHINTAI_PASS }
+  const o = v as Record<string, unknown>
+  const str = (x: unknown) => (typeof x === 'string' ? x : '')
+  return { date: str(o.date), location: str(o.location), number: str(o.number) }
+}
+const SHINTAI_OPTIONS: [Exclude<Shintai, ''>, string, string][] = [
+  ['need', '当日検査',  '証明書なし（試験当日に受検）'],
+  ['have', '提出',      '予備身あり（医師の身体検査証明書を提出）'],
+  ['omit', '省略',      '過去の試験で身体検査に合格済み（1年有効）'],
+]
+
+// 免除の根拠：過去に合格した試験（試験申請者名簿に記入：資格・試験開始日・試験地・受験番号）
 interface PrevExam {
   recordId: number | null   // 試験記録から選んだ場合
   qual: string
@@ -126,7 +145,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       renewalCourseDate: '',
       courseLocation: '', courseTime: '',
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
-      examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '',
+      examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
       licenseReturn: '', courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
@@ -175,7 +194,8 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       examGakka:     extra.exam_gakka   !== false,
       examJitsugi:   extra.exam_jitsugi !== false,
       prevExam:      readPrevExam(extra.prev_exam),
-      shintai:       extra.shintai === 'need' || extra.shintai === 'have' ? extra.shintai : '',
+      shintai:       extra.shintai === 'need' || extra.shintai === 'have' || extra.shintai === 'omit' ? extra.shintai : '',
+      shintaiPass:   readShintaiPass(extra.shintai_pass),
       licenseReturn: '', courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
@@ -191,7 +211,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     renewalCourseDate: enrollment.course_date ?? '',
     courseLocation, courseTime,
     examDate: '', examLocation: '', examStartTime: '', examQualType: '',
-    examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '',
+    examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
     licenseReturn: extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : '',
     courseOrg: typeof extra.course_org_code === 'number' ? extra.course_org_code : DEFAULT_COURSE_ORG,
     bureau: typeof extra.bureau_code === 'string' && typeof extra.branch_code === 'string'
@@ -223,7 +243,11 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   const [examRecords,    setExamRecords]    = useState<ExamRecord[]>([])
   const [physicalExams,  setPhysicalExams]  = useState<PhysicalExam[]>([])
   const [physicalLoaded, setPhysicalLoaded] = useState(false)
-  const [shintai,        setShintai]        = useState<'' | 'need' | 'have'>('')   // 身体検査：受検が必要／有効な証明書あり
+  const [shintai,        setShintai]        = useState<Shintai>('')   // 身体検査：当日検査／提出／省略
+  const [shintaiPass,    setShintaiPass]    = useState<ShintaiPass>({ ...EMPTY_SHINTAI_PASS })
+  // 同時申請：同じ人の別の試験申込と1枚の申請書で申請する（null = 単独で申請）
+  const [jointId,        setJointId]        = useState<number | null>(null)
+  const [siblings,       setSiblings]       = useState<Enrollment[]>([])
 
   // 更新・失効専用
   const [renewalCourseDate, setRenewalCourseDate] = useState('')
@@ -253,6 +277,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   useEffect(() => {
     examSessionsApi.list().then(setExamSessions).catch(() => setExamSessions([]))
     if (studentId) examRecordsApi.list(studentId).then(setExamRecords).catch(() => setExamRecords([]))
+    if (studentId) enrollmentsApi.list(studentId).then(setSiblings).catch(() => setSiblings([]))
     if (studentId) physicalExamsApi.list(studentId).then(setPhysicalExams).catch(() => setPhysicalExams([])).finally(() => setPhysicalLoaded(true))
     else setPhysicalLoaded(true)
     renewalSessionsApi.list().then(setRenewalSessions).catch(() => setRenewalSessions([]))
@@ -275,7 +300,8 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
         location: ses?.exam_location ?? '',
         number: (exemptSubject === '学科' ? r.gakka_exam_number : r.jitsugi_exam_number) ?? '',
         examId: ses?.exam_id ?? '',
-        resultDate: (exemptSubject === '学科' ? r.gakka_result_date : r.jitsugi_result_date) ?? '',
+        // 試験記録に合格日が無ければ、試験日程の合格発表日
+        resultDate: (exemptSubject === '学科' ? r.gakka_result_date : r.jitsugi_result_date) || (ses ? resultDateOf(ses) : ''),
       } satisfies PrevExam
     })
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -284,15 +310,37 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   const checkDate = examDate || todayIso()
   const prevExpiry = passExpiryOf(prevExam)
   const prevMissing = exemptSubject
-    ? PREV_EXAM_FIELDS.filter(f => !String({ qual: prevExam.qual, date: prevExam.date, location: prevExam.location, number: prevExam.number, exam_id: prevExam.examId }[f.key] ?? '').trim()).map(f => f.label)
+    ? PREV_EXAM_FIELDS.filter(f => !String({ qual: prevExam.qual, date: prevExam.date, result_date: prevExam.resultDate, location: prevExam.location, number: prevExam.number, exam_id: prevExam.examId }[f.key] ?? '').trim()).map(f => f.label)
     : []
 
-  // ── 身体検査：有効な記録（今回の試験日時点）があれば「証明書あり」、無ければ「受検が必要」 ──
+  // ── 身体検査：有効な合格記録（今回の試験日時点）があれば「省略」、無ければ「当日検査」 ──
   const validPhysical = physicalExams.find(p => isValidOn(p.valid_until, checkDate)) ?? null
   useEffect(() => {
-    if (shintai === '' && physicalLoaded) setShintai(validPhysical ? 'have' : 'need')
+    if (shintai === '' && physicalLoaded) {
+      setShintai(validPhysical ? 'omit' : 'need')
+      if (validPhysical?.exam_date) setShintaiPass(p => p.date ? p : { ...p, date: validPhysical.exam_date ?? '' })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [physicalLoaded, validPhysical?.id])
+  // 過去合格歴を手入力したとき：試験開始日・資格（・試験地）が登録済みの試験日程と合えば、空の合格日・試験IDを補う
+  useEffect(() => {
+    if (!exemptSubject || !prevExam.date || (prevExam.resultDate && prevExam.examId)) return
+    const hits = examSessions.filter(s =>
+      s.exam_date === prevExam.date
+      && (!prevExam.qual || s.qualification_type === prevExam.qual)
+      && (!prevExam.location.trim() || s.exam_location === prevExam.location.trim()))
+    if (hits.length === 0) return
+    const s = hits[0]
+    setPrevExam(p => ({
+      ...p,
+      resultDate: p.resultDate || resultDateOf(s),
+      examId: p.examId || (hits.length === 1 ? s.exam_id : ''),
+      location: p.location || (hits.length === 1 ? s.exam_location : ''),
+      qual: p.qual || (hits.length === 1 ? s.qualification_type : ''),
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exemptSubject, prevExam.date, prevExam.qual, prevExam.location, examSessions.length])
+
   // 免除を選んだとき、まだ空なら一番新しい合格記録を自動で入れる
   useEffect(() => {
     if (exemptSubject && !prevExam.date && !prevExam.number && prevCandidates.length > 0) {
@@ -375,6 +423,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
     setExamJitsugi(ex.examJitsugi)
     setPrevExam(ex.prevExam)
     setShintai(ex.shintai)
+    setShintaiPass(ex.shintaiPass)
     setLicenseReturn(ex.licenseReturn)
     setCourseOrg(ex.courseOrg)
     setBureau(ex.bureau)
@@ -382,6 +431,18 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
     setNote(enrollment?.note ?? '')
     setMenuError(false)
   }, [enrollment])
+
+  // 同時申請の相手（相手側だけにリンクが残っている場合も拾う）
+  useEffect(() => {
+    setJointId(enrollment ? findJointPartner(enrollment, siblings)?.id ?? null : null)
+  }, [enrollment, siblings])
+  const jointCandidates = siblings.filter(x => x.id !== enrollment?.id && isExamEnrollment(x))
+  const jointLabel = (x: Enrollment) => {
+    let q = ''
+    try { q = String(JSON.parse(x.extra_json).exam_qual_type ?? '') } catch { /* ignore */ }
+    const d = examDateOf(x)
+    return `${q || '資格未定'}　${d ? fmtShortDate(d) : '試験日未定'}${x.menu ? `　${x.menu}` : ''}`
+  }
 
   useEffect(() => {
     if (showAddMenu) setTimeout(() => newMenuRef.current?.focus(), 50)
@@ -468,6 +529,10 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
         }
       } else delete extra.prev_exam
       if (shintai) extra.shintai = shintai; else delete extra.shintai
+      if (shintai === 'omit') {
+        extra.shintai_pass = { date: shintaiPass.date, location: shintaiPass.location.trim(), number: shintaiPass.number.trim() }
+      } else delete extra.shintai_pass
+      if (jointId != null) extra.joint_enrollment_id = jointId; else delete extra.joint_enrollment_id
       if (matchedExamSession) {
         extra.exam_session_id = matchedExamSession.id
         extra.exam_id         = matchedExamSession.exam_id
@@ -504,6 +569,8 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       delete extra.exam_jitsugi
       delete extra.prev_exam
       delete extra.shintai
+      delete extra.shintai_pass
+      delete extra.joint_enrollment_id
       delete extra.exam_session_id
       delete extra.exam_id
       delete extra.exam_gakka_venue
@@ -638,7 +705,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                 <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-amber-800">過去に{exemptSubject}に合格した試験</span>
-                    <span className="note-text">申請書の②欄に印字</span>
+                    <span className="note-text">試験申請者名簿に記入</span>
                   </div>
                   {prevCandidates.length > 0 ? (
                     <select
@@ -661,7 +728,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                       {studentId ? `試験記録に${exemptSubject}の合格がありません。` : ''}下に直接入力してください（試験記録に登録しておくと次回から選べます）
                     </p>
                   )}
-                  <div className="grid grid-cols-[6rem_9rem_1fr_7rem_7rem] gap-2">
+                  <div className="grid grid-cols-[6rem_9rem_9rem_1fr_7rem_7rem] gap-2">
                     <div>
                       <label className="field-label">資格</label>
                       <select value={prevExam.qual} onChange={e => setPrev('qual', e.target.value)} className="field-select">
@@ -672,6 +739,10 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                     <div>
                       <label className="field-label">試験開始日</label>
                       <DateTextInput value={prevExam.date} onChange={v => setPrev('date', v)} placeholder="2025/07/01" />
+                    </div>
+                    <div>
+                      <label className="field-label" title="合格発表の日。試験申請者名簿の「合格の履歴」に印字します">合格日（発表日）</label>
+                      <DateTextInput value={prevExam.resultDate} onChange={v => setPrev('resultDate', v)} placeholder="2025/07/05" />
                     </div>
                     <div>
                       <label className="field-label">試験地</label>
@@ -706,11 +777,15 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
               <div>
                 <label className="field-label">身体検査</label>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {([['need', '受検が必要'], ['have', '有効な証明書あり']] as const).map(([v, label]) => (
+                  {SHINTAI_OPTIONS.map(([v, label, tip]) => (
                     <button
                       key={v}
                       type="button"
-                      onClick={() => setShintai(v)}
+                      title={tip}
+                      onClick={() => {
+                        setShintai(v)
+                        if (v === 'omit' && !shintaiPass.date && validPhysical?.exam_date) setShintaiPass(p => ({ ...p, date: validPhysical.exam_date ?? '' }))
+                      }}
                       className={[
                         'px-4 py-1.5 rounded-lg border text-sm font-medium transition',
                         shintai === v ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
@@ -727,6 +802,29 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                         : studentId ? '身体検査の記録がありません' : ''}
                   </span>
                 </div>
+                {shintai && <p className="note-text mt-1">{SHINTAI_OPTIONS.find(o => o[0] === shintai)?.[2]}</p>}
+                {shintai === 'omit' && (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-amber-800">身体検査に合格した試験</span>
+                      <span className="note-text">試験申請者名簿の「身体検査の合格」欄に記入</span>
+                    </div>
+                    <div className="grid grid-cols-[9rem_1fr_7rem] gap-2">
+                      <div>
+                        <label className="field-label">試験開始日</label>
+                        <DateTextInput value={shintaiPass.date} onChange={v => setShintaiPass(p => ({ ...p, date: v }))} placeholder="2026/10/18" />
+                      </div>
+                      <div>
+                        <label className="field-label">試験地</label>
+                        <input type="text" value={shintaiPass.location} onChange={e => setShintaiPass(p => ({ ...p, location: e.target.value }))} className="field-input" placeholder="滋賀県大津市" />
+                      </div>
+                      <div>
+                        <label className="field-label">受験番号</label>
+                        <input type="text" value={shintaiPass.number} onChange={e => setShintaiPass(p => ({ ...p, number: e.target.value }))} className="field-input" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               {!examQualType ? (
                 <p className="note-text">資格種別を選ぶと、登録済みの試験日程から選択できます</p>
@@ -785,6 +883,25 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                     試験ID：<span className="font-mono">{matchedExamSession.exam_id}</span>
                     <span className="ml-2">{matchedExamSession.exam_type}</span>
                   </div>
+                </div>
+              )}
+              {/* 同時申請（1枚の申請書で2つの試験を申請） */}
+              {jointCandidates.length > 0 && (
+                <div>
+                  <label className="field-label">同時申請</label>
+                  <select
+                    value={jointId ?? ''}
+                    onChange={e => setJointId(e.target.value ? Number(e.target.value) : null)}
+                    className="field-select"
+                  >
+                    <option value="">しない（この試験だけで申請）</option>
+                    {jointCandidates.map(x => (
+                      <option key={x.id} value={x.id}>同時申請する：{jointLabel(x)}</option>
+                    ))}
+                  </select>
+                  <p className="note-text mt-1">
+                    1枚の申請書で申請する場合に選びます。試験日が早い方を①、後の方を②（同時申請）に印字します。別々に申し込む場合は「しない」のまま
+                  </p>
                 </div>
               )}
             </Section>
@@ -1056,11 +1173,11 @@ export default function EnrollmentFormModal({ studentId, enrollment, onClose, on
     setSaving(true)
     try {
       const body = buildInput(studentId)
-      if (isCreating) {
-        await enrollmentsApi.create(body)
-      } else {
-        await enrollmentsApi.update(enrollment.id, body)
-      }
+      const saved = isCreating
+        ? await enrollmentsApi.create(body)
+        : await enrollmentsApi.update(enrollment.id, body)
+      // 同時申請の相手側のリンクも合わせる
+      await syncJointLinks(saved)
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存に失敗しました')
