@@ -172,11 +172,11 @@
     "label": "⑤_小文字",
     "page": 1,
     "type": "chars",
-    "x": 79.89,
+    "x": 79.87,
     "y": 598.08,
     "charWidth": 22.6,
     "maxChars": 22,
-    "fontSize": 15,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {

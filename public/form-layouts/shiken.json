@@ -359,11 +359,11 @@
     "label": "④_濁点",
     "page": 1,
     "type": "chars",
-    "x": 95.11,
+    "x": 91.61,
     "y": 574.08,
-    "charWidth": 22.02,
+    "charWidth": 20.91,
     "maxChars": 22,
-    "fontSize": 15,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {

@@ -135,11 +135,11 @@
     "label": "④_小文字",
     "page": 1,
     "type": "chars",
-    "x": 84.8,
+    "x": 79.4,
     "y": 565.76,
-    "charWidth": 22.27,
+    "charWidth": 22.64,
     "maxChars": 22,
-    "fontSize": 15,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {

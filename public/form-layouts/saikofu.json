@@ -162,11 +162,11 @@
     "label": "④_小文字",
     "page": 1,
     "type": "chars",
-    "x": 90.08,
-    "y": 564.32,
+    "x": 78.75,
+    "y": 563.0,
     "charWidth": 22.48,
     "maxChars": 22,
-    "fontSize": 15,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
