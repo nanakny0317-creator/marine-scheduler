@@ -8,6 +8,8 @@
  *   → CSS print では bottom: Ypt / left: Xpt が 1:1 で対応する
  */
 
+import { settingsApi } from './api'
+
 export type FieldType = 'chars' | 'text' | 'mark'
 
 export interface FieldDef {
@@ -28,7 +30,16 @@ export interface FieldDef {
   markChar?: string
   /** 文字マスの基準点。'center' = x,y が1枠目の中心（枠方式）。未指定は旧形式（x=左端, y=文字の下端） */
   anchor?: 'center'
+  /** 文字欄（text）の横幅の倍率（例 0.7 = 70%の幅の縦長の字）。旧アプリの住所欄に合わせる用 */
+  scaleX?: number
 }
+
+// ── 全体の位置補正（プリンターの癖） ────────────────────────────────
+// 書式の位置データとは別に、印刷全体を mm 単位で動かす。プラスは右・下。
+export interface PrintOffset { xMm: number; yMm: number }
+export const PRINT_OFFSET_KEY = 'ocr_print_offset'
+export const NO_OFFSET: PrintOffset = { xMm: 0, yMm: 0 }
+const MM = 72 / 25.4
 
 /** 旧形式の文字マスを枠方式（1枠目の中心）に変換する。印字結果は変わらない */
 export function toCenterAnchor<T extends FieldDef>(f: T): T {
@@ -45,8 +56,29 @@ export function toCenterAnchor<T extends FieldDef>(f: T): T {
 export type FormData = Record<string, string>
 
 // ── フォント ──────────────────────────────────────────────────────
-// システムフォールバック順: Windows / Mac / Linux
-const FONT_STACK = "'MS Gothic','ＭＳ ゴシック','Hiragino Kaku Gothic Pro','Noto Sans CJK JP',monospace"
+// 数字・英字・カタカナ（大文字・゛゜・ー）は OCR-HK（旧うーみーくんと同じOCR用フォント。public/fonts/ocr-hk.ttf を同梱）。
+// OCR-HK に無い文字（漢字・× など）は、文字ごとに自動でゴシック体になる。
+// 小さいカナ・濁音は formFieldMap 側で「大文字＋小文字区分の×」「清音＋゛」に分けてあるので、すべて OCR-HK で出る。
+export const OCR_FONT_FAMILY = 'OCRHK'
+export const FONT_STACK = `'${OCR_FONT_FAMILY}','MS Gothic','ＭＳ ゴシック','Hiragino Kaku Gothic Pro','Noto Sans CJK JP',monospace`
+const OCR_FONT_URL = '/fonts/ocr-hk.ttf'
+
+// 印刷用HTMLは data URL で開くので、フォントは base64 で埋め込む（読み込みは1回だけ）
+let ocrFontDataUrl: Promise<string> | null = null
+function loadOcrFont(): Promise<string> {
+  if (!ocrFontDataUrl) {
+    ocrFontDataUrl = fetch(OCR_FONT_URL)
+      .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.arrayBuffer() })
+      .then(buf => {
+        let bin = ''
+        const bytes = new Uint8Array(buf)
+        for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+        return `data:font/ttf;base64,${btoa(bin)}`
+      })
+      .catch(e => { ocrFontDataUrl = null; throw new Error(`OCR用フォント（${OCR_FONT_URL}）を読み込めませんでした: ${e instanceof Error ? e.message : e}`) })
+  }
+  return ocrFontDataUrl
+}
 
 function esc(s: string): string {
   return s
@@ -83,8 +115,11 @@ function fieldToHtml(field: FieldDef, data: FormData): string {
   if (!value) return ''
 
   if (field.type === 'text') {
-    const maxW = field.width ? `max-width:${px(field.width)}pt;` : ''
-    return `<span style="position:absolute;left:${px(field.x)}pt;bottom:${py(field.y)}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;white-space:nowrap;overflow:hidden;${maxW}">${esc(value)}</span>`
+    const sxr = field.scaleX && field.scaleX > 0 && field.scaleX !== 1 ? field.scaleX : 1
+    // 横に縮めるときは、縮めた後の幅が欄の幅に収まるよう、縮める前の幅で切る
+    const maxW = field.width ? `max-width:${(Number(px(field.width)) / sxr).toFixed(2)}pt;` : ''
+    const squeeze = sxr !== 1 ? `transform:scaleX(${sxr});transform-origin:left bottom;` : ''
+    return `<span style="position:absolute;left:${px(field.x)}pt;bottom:${py(field.y)}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;white-space:nowrap;overflow:hidden;${maxW}${squeeze}">${esc(value)}</span>`
   }
 
   // chars: 1 文字ずつ、各枠の中心に配置（縦も中央）
@@ -102,10 +137,11 @@ function fieldToHtml(field: FieldDef, data: FormData): string {
 // OCR 用紙に文字だけを印字するので、背景画像は出さない（画像は位置調整用）
 function buildPageHtml(fields: FieldDef[], data: FormData): string {
   const fieldHtml = fields.map(f => fieldToHtml(f, data)).join('\n')
+  // 全体の位置補正は、中身をまとめて動かす（.form-shift の left/top）
   return `
-<div class="form-page">
+<div class="form-page"><div class="form-shift">
 ${fieldHtml}
-</div>`
+</div></div>`
 }
 
 // ── メイン: フォーム印刷 ────────────────────────────────────────
@@ -132,8 +168,10 @@ function jobPagesHtml({ fields, data, pageCount }: FormPrintJob): string {
  * @param jobs      1人分ずつの { 位置データ, フォームデータ, ページ数 }
  * @param formTitle PDF のタイトル
  */
-export async function printForms(jobs: FormPrintJob[], formTitle: string): Promise<void> {
+export async function printForms(jobs: FormPrintJob[], formTitle: string, offset?: PrintOffset): Promise<void> {
   const pagesHtml = jobs.map(jobPagesHtml).join('\n')
+  const fontUrl = await loadOcrFont()
+  const off = offset ?? await loadPrintOffset()
 
   const html = `<!DOCTYPE html>
 <html lang="ja">
@@ -141,6 +179,7 @@ export async function printForms(jobs: FormPrintJob[], formTitle: string): Promi
 <meta charset="UTF-8">
 <title>${esc(formTitle)}</title>
 <style>
+@font-face { font-family: '${OCR_FONT_FAMILY}'; src: url(${fontUrl}) format('truetype'); font-display: block; }
 @page { size: A4 portrait; margin: 0; }
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; }
@@ -152,6 +191,7 @@ body { margin: 0; padding: 0; }
   page-break-after: always;
 }
 .form-page:last-child { page-break-after: auto; }
+.form-shift { position: absolute; left: ${(off.xMm * MM).toFixed(2)}pt; top: ${(off.yMm * MM).toFixed(2)}pt; width: 210mm; height: 297mm; }
 </style>
 </head>
 <body>
@@ -170,6 +210,14 @@ ${pagesHtml}
     win.onload = () => win.print()
   }
 }
+
+/** 保存してある全体の位置補正（未設定なら 0） */
+export async function loadPrintOffset(): Promise<PrintOffset> {
+  const v = await settingsApi.get<Partial<PrintOffset>>(PRINT_OFFSET_KEY, NO_OFFSET)
+  const n = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0)
+  return { xMm: n(v.xMm), yMm: n(v.yMm) }
+}
+export const savePrintOffset = (o: PrintOffset) => settingsApi.set(PRINT_OFFSET_KEY, o)
 
 /** 1人分の申請書を印刷する */
 export function printForm(fields: FieldDef[], data: FormData, pageCount: number, formTitle: string): Promise<void> {

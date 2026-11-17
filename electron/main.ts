@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import path from 'path'
 import { writeFileSync } from 'fs'
+import { setPrintScalingNone } from './pdfPrintScaling'
 import { initDb, closeDb } from './db/index'
 import { registerStudentHandlers } from './handlers/studentHandlers'
 import { registerEnrollmentHandlers } from './handlers/enrollmentHandlers'
@@ -84,6 +85,8 @@ ipcMain.handle('print:html', async (_event, html: string) => {
   // data URL で直接ロード（一時HTMLファイル不要）
   const base64Html = Buffer.from(html, 'utf-8').toString('base64')
   await renderWin.loadURL(`data:text/html;charset=utf-8;base64,${base64Html}`)
+  // 埋め込みフォント（OCR-HK）の読み込みを待ってからPDFにする（待たないとゴシック体で出ることがある）
+  await renderWin.webContents.executeJavaScript('document.fonts.ready.then(() => true)').catch(() => {})
 
   const pdfBuffer = await renderWin.webContents.printToPDF({
     pageSize: 'A4',
@@ -94,7 +97,8 @@ ipcMain.handle('print:html', async (_event, html: string) => {
   renderWin.close()
 
   // DBと同じディレクトリに固定名で上書き保存（tempフォルダ不使用）
-  const pdfPath = writePdf(pdfBuffer)
+  // 印刷時に「用紙に合わせて縮小」されないよう、PDFに「実際のサイズで印刷」の指定を付ける
+  const pdfPath = writePdf(setPrintScalingNone(Buffer.from(pdfBuffer)))
 
   await shell.openPath(pdfPath)
 })

@@ -123,11 +123,14 @@ function examClassOf(qual: string): { c1: boolean; c2: boolean; kokawa: boolean;
 }
 
 // ── 試験日パース ─────────────────────────────────────────────────
-function parseExamDate(d: string | null): { year: string; month: string; day: string } {
-  if (!d) return { year: '', month: '', day: '' }
+function parseExamDate(d: string | null): { year: string; month: string; day: string; eraYear: string } {
+  const empty = { year: '', month: '', day: '', eraYear: '' }
+  if (!d) return empty
   const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (!m) return { year: '', month: '', day: '' }
-  return { year: m[1], month: m[2], day: m[3] }
+  if (!m) return empty
+  // 試験日はこれから（令和）なので、令和の年
+  const y = Number(m[1])
+  return { year: m[1], month: m[2], day: m[3], eraYear: y >= 2019 ? String(y - 2018) : '' }
 }
 
 // ── 更新講習：講習実施日（和暦・申請書は年2桁） ───────────────────────
@@ -310,7 +313,8 @@ export function buildFormData(
 
     // ── 試験情報 ──
     exam_date:          examSession?.exam_date      ?? (extra.exam_date as string) ?? '',
-    exam_date_year:     exDate.year,
+    // 試験申請書の試験開始日は令和の年2桁（旧うーみーくんと同じ。例：2026年 → 08）
+    exam_date_year:     exDate.eraYear ? exDate.eraYear.padStart(2, '0') : '',
     exam_date_month:    exDate.month,
     exam_date_day:      exDate.day,
     exam_location:      examSession?.exam_location  ?? (extra.exam_location as string) ?? enrollment.venue ?? '',
@@ -390,7 +394,7 @@ export function buildFormData(
     exam2_class_kokawa:  X(pex.kokawa),
     exam2_class_jakunen: X(pex.jakunen),
     exam2_class_tokushu: X(pex.tokushu),
-    exam2_year:          exam2Date.year,
+    exam2_year:          exam2Date.eraYear ? exam2Date.eraYear.padStart(2, '0') : '',   // 令和の年2桁
     exam2_month:         exam2Date.month,
     exam2_day:           exam2Date.day,
     exam2_location:      exam2.location,

@@ -1,9 +1,11 @@
 /**
  * OCRフォーム 印字位置キャリブレーションツール
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { toCenterAnchor } from '../lib/formPrint'
+import { toCenterAnchor, FONT_STACK, printForms } from '../lib/formPrint'
+import { sampleDataForPage, sampleValueFor } from '../lib/formSample'
+import PrintOffsetControl from '../components/PrintOffsetControl'
 
 // ── PDF仕様定数 ──────────────────────────────────────────────
 const PDF_W = 592.56
@@ -33,6 +35,8 @@ interface FieldDef {
   markChar?: string   // 印字する文字（デフォルト: ×）
   // 文字マス：'center' = x,y が1枠目の中心（枠方式）。旧形式は読み込み時に変換する
   anchor?: 'center'
+  // 文字欄の横幅の倍率（住所欄など。画面では編集しないが、保存時に残す）
+  scaleX?: number
 }
 
 interface ClickPoint { x: number; y: number }
@@ -224,6 +228,7 @@ export default function FormCalibrationPage() {
   const [copied,       setCopied]      = useState(false)
   const [previewText,  setPreviewText] = useState('アイウエオカキクケコ')
   const [showPreview,  setShowPreview] = useState(true)
+  const [sampleOn,     setSampleOn]    = useState(false)   // 見本の文字を画像に重ねる
   const [dragging,     setDragging]    = useState<'A' | 'B' | null>(null)
 
   // フォーム状態
@@ -338,7 +343,8 @@ export default function FormCalibrationPage() {
 
     setFields(prev => {
       const next = editId
-        ? prev.map(f => f.id === editId ? { id: editId, ...fieldData } : f)
+        // 画面に入力欄のない設定（文字の横幅 scaleX）は、編集しても元の値を残す
+        ? prev.map(f => f.id === editId ? { ...(f.scaleX ? { scaleX: f.scaleX } : {}), id: editId, ...fieldData } : f)
         : [...prev, { id: uid(), ...fieldData }]
       saveFields(next)
       return next
@@ -481,6 +487,22 @@ export default function FormCalibrationPage() {
   }, [])
 
   const pageFields  = fields.filter(f => f.page === page)
+
+  // ── 見本の文字（印刷と同じフォント・大きさ・位置で、画像に重ねる／印刷する） ──
+  const sampleData = useMemo(() => sampleDataForPage(page), [page])
+  const printSample = async () => {
+    // 欄ごとに見本の文字を決めて、そのまま印刷（同じ key の欄が複数あっても欄ごとに埋める）
+    const data: Record<string, string> = {}
+    const jobFields = pageFields.map(f => {
+      data[f.id] = sampleValueFor(f, sampleData)
+      return { ...toCenterAnchor(f), key: f.id, page: 1, dataKey: undefined, matchValue: undefined }
+    })
+    try {
+      await printForms([{ fields: jobFields, data, pageCount: 1 }], `印字位置の見本（ページ${page}）`)
+    } catch (e) {
+      alert(`見本を印刷できませんでした。\n${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
   // 欄番号タブ（①→⑳、その他は最後）
   const groupCounts = new Map<string, number>()
   for (const f of pageFields) {
@@ -505,6 +527,17 @@ export default function FormCalibrationPage() {
       <div className="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-4 shrink-0">
         <button onClick={() => navigate('/')} className="text-gray-400 hover:text-gray-600 text-sm">← 戻る</button>
         <h1 className="font-bold text-gray-700">印字位置キャリブレーション</h1>
+        <button type="button" onClick={() => setSampleOn(v => !v)}
+          title="架空の人のデータで、印刷したときの文字（フォント・大きさ・位置）を画像に重ねて表示します"
+          className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${sampleOn ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-blue-600 border-blue-300 hover:bg-blue-50'}`}>
+          🔤 見本の文字{sampleOn ? ' ON' : ''}
+        </button>
+        <button type="button" onClick={printSample} disabled={pageFields.length === 0}
+          title="このページの見本を印刷します。OCR用紙に印刷するか、白紙に印刷して用紙と重ねて透かすと、ずれが分かります（全体の位置補正も反映）"
+          className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-white text-blue-600 border-blue-300 hover:bg-blue-50 disabled:opacity-40">
+          🖨 見本を印刷
+        </button>
+        <PrintOffsetControl />
         <div className="flex gap-1 ml-4">
           {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map(p => (
             <button
@@ -550,6 +583,39 @@ export default function FormCalibrationPage() {
             )}
 
 
+            {/* 見本の文字（印刷と同じ組み方：文字マスは枠の中心、文字欄は左下、横幅の倍率も反映） */}
+            {sampleOn && imgSize.w > 0 && (
+              <div className="absolute inset-0 pointer-events-none z-[5]">
+                {pageFields.map(raw => {
+                  const f = toCenterAnchor(raw)
+                  const s = imgSize.w / PDF_W, t = imgSize.h / PDF_H
+                  const value = sampleValueFor(f, sampleData)
+                  const fsPx = f.fontSize * t
+                  const common = { fontFamily: FONT_STACK, fontSize: fsPx, color: '#1d4ed8' } as const
+                  if (f.type === 'chars') {
+                    const cw = f.charWidth ?? f.fontSize * 1.2
+                    const start = f.startChar ?? 0
+                    return Array.from(value).slice(start, start + (f.maxChars ?? 20)).map((ch, i) => (
+                      <span key={`${f.id}-${i}`} className="absolute text-center"
+                        style={{ ...common, left: (f.x + i * cw - cw / 2) * s, top: (PDF_H - f.y - f.fontSize / 2) * t,
+                          width: cw * s, height: fsPx, lineHeight: `${fsPx}px` }}>
+                        {ch}
+                      </span>
+                    ))
+                  }
+                  const sxr = f.scaleX && f.scaleX > 0 ? f.scaleX : 1
+                  return (
+                    <span key={f.id} className="absolute whitespace-nowrap overflow-hidden"
+                      style={{ ...common, left: f.x * s, top: (PDF_H - f.y) * t - fsPx, lineHeight: 1,
+                        maxWidth: f.width ? (f.width * s) / sxr : undefined,
+                        transform: sxr !== 1 ? `scaleX(${sxr})` : undefined, transformOrigin: 'left bottom' }}>
+                      {value}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+
             {/* 保存済みフィールドのマーカー */}
             {imgRef.current && pageFields.map(f => {
               const rect = imgRef.current!.getBoundingClientRect()
@@ -572,7 +638,7 @@ export default function FormCalibrationPage() {
                   } ${selected ? 'ring-2 ring-lavender-500 opacity-100' : 'opacity-70'}`} />
                   <div className={`absolute left-2.5 -top-0.5 text-[10px] font-bold text-white rounded px-1 whitespace-nowrap ${
                     selected ? 'bg-lavender-500' : 'bg-black/50 hover:bg-lavender-500/90'
-                  }`}>
+                  } ${sampleOn && !selected ? 'hidden' : ''}`}>
                     {f.label}
                   </div>
                 </div>
@@ -608,7 +674,7 @@ export default function FormCalibrationPage() {
                               }`}
                               style={{ left: cx - boxW / 2, top: dispY - boxH / 2, width: boxW, height: boxH }}
                             >
-                              <span className="text-red-500 font-bold leading-none" style={{ fontSize: fontPx, opacity: 0.85 }}>
+                              <span className="text-red-500 font-bold leading-none" style={{ fontSize: fontPx, opacity: 0.85, fontFamily: FONT_STACK }}>
                                 {chars[i] ?? ''}
                               </span>
                             </div>
@@ -637,6 +703,7 @@ export default function FormCalibrationPage() {
                         left: dispX,
                         top: dispY - fontPx * 1.1,
                         fontSize: fontPx,
+                        fontFamily: FONT_STACK,
                         maxWidth: (fWidth * sx),
                         opacity: 0.85,
                       }}

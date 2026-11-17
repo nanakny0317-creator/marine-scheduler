@@ -1,14 +1,14 @@
 [
   {
     "id": "cvt0085",
-    "key": "exam_location",
+    "key": "exam_qual_type",
     "label": "受験試験名称",
     "page": 1,
     "type": "text",
-    "x": 37.33,
-    "y": 772.34,
+    "x": 73.36,
+    "y": 768.36,
     "width": 85.86,
-    "fontSize": 7
+    "fontSize": 14.6
   },
   {
     "id": "cvt0092",
@@ -16,11 +16,11 @@
     "label": "出力日",
     "page": 1,
     "type": "chars",
-    "x": 548.48,
-    "y": 766.54,
-    "charWidth": 5.97,
-    "maxChars": 3,
-    "fontSize": 7,
+    "x": 545.36,
+    "y": 772.25,
+    "charWidth": 9.06,
+    "maxChars": 2,
+    "fontSize": 9.8,
     "anchor": "center"
   },
   {
@@ -29,11 +29,11 @@
     "label": "出力年",
     "page": 1,
     "type": "chars",
-    "x": 499.59,
-    "y": 765.8,
-    "charWidth": 6.72,
-    "maxChars": 3,
-    "fontSize": 7,
+    "x": 497.95,
+    "y": 771.53,
+    "charWidth": 9.06,
+    "maxChars": 2,
+    "fontSize": 9.8,
     "anchor": "center"
   },
   {
@@ -42,11 +42,11 @@
     "label": "出力月",
     "page": 1,
     "type": "chars",
-    "x": 523.85,
-    "y": 765.8,
-    "charWidth": 5.97,
-    "maxChars": 3,
-    "fontSize": 7,
+    "x": 520.81,
+    "y": 771.53,
+    "charWidth": 9.06,
+    "maxChars": 2,
+    "fontSize": 9.8,
     "anchor": "center"
   },
   {
@@ -55,11 +55,11 @@
     "label": "①_2級若年",
     "page": 1,
     "type": "chars",
-    "x": 149.71,
-    "y": 736.3,
+    "x": 148.26,
+    "y": 738.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -68,11 +68,11 @@
     "label": "①_特殊",
     "page": 1,
     "type": "chars",
-    "x": 177.63,
-    "y": 736.3,
+    "x": 175.85,
+    "y": 738.72,
     "charWidth": 12.47,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.2,
     "anchor": "center"
   },
   {
@@ -81,11 +81,11 @@
     "label": "①_1級",
     "page": 1,
     "type": "chars",
-    "x": 66.27,
-    "y": 736.05,
+    "x": 64.77,
+    "y": 738.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -94,11 +94,11 @@
     "label": "①_湖川",
     "page": 1,
     "type": "chars",
-    "x": 121.78,
-    "y": 736.05,
+    "x": 120.43,
+    "y": 738.72,
     "charWidth": 12.47,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.2,
     "anchor": "center"
   },
   {
@@ -107,11 +107,11 @@
     "label": "①_2級",
     "page": 1,
     "type": "chars",
-    "x": 92.88,
-    "y": 735.79,
+    "x": 91.4,
+    "y": 738.48,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -120,11 +120,11 @@
     "label": "①_試験開始日年",
     "page": 1,
     "type": "chars",
-    "x": 226.08,
-    "y": 724.33,
-    "charWidth": 6.72,
-    "maxChars": 4,
-    "fontSize": 7,
+    "x": 229.43,
+    "y": 730.28,
+    "charWidth": 13.86,
+    "maxChars": 2,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -133,11 +133,11 @@
     "label": "①_試験開始日月",
     "page": 1,
     "type": "chars",
-    "x": 265.82,
-    "y": 724.33,
-    "charWidth": 6.53,
-    "maxChars": 4,
-    "fontSize": 7,
+    "x": 268.56,
+    "y": 730.37,
+    "charWidth": 13.86,
+    "maxChars": 2,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -146,11 +146,11 @@
     "label": "①_試験開始日日",
     "page": 1,
     "type": "chars",
-    "x": 305.73,
-    "y": 724.33,
-    "charWidth": 6.72,
-    "maxChars": 4,
-    "fontSize": 7,
+    "x": 308.62,
+    "y": 730.28,
+    "charWidth": 13.86,
+    "maxChars": 2,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -159,10 +159,10 @@
     "label": "①_試験地",
     "page": 1,
     "type": "text",
-    "x": 342.19,
-    "y": 720.83,
+    "x": 362.73,
+    "y": 721.53,
     "width": 124.44,
-    "fontSize": 7
+    "fontSize": 14.0
   },
   {
     "id": "cvt0093",
@@ -181,11 +181,11 @@
     "label": "②_湖川",
     "page": 1,
     "type": "chars",
-    "x": 121.88,
-    "y": 676.06,
+    "x": 120.43,
+    "y": 678.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -194,11 +194,11 @@
     "label": "②_2級若年",
     "page": 1,
     "type": "chars",
-    "x": 149.71,
-    "y": 676.06,
+    "x": 148.26,
+    "y": 678.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -207,11 +207,11 @@
     "label": "②_特殊",
     "page": 1,
     "type": "chars",
-    "x": 177.75,
-    "y": 676.06,
+    "x": 175.85,
+    "y": 678.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -220,11 +220,11 @@
     "label": "②_1級",
     "page": 1,
     "type": "chars",
-    "x": 66.41,
-    "y": 675.83,
+    "x": 64.77,
+    "y": 678.72,
     "charWidth": 11.99,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 10.8,
     "anchor": "center"
   },
   {
@@ -233,11 +233,11 @@
     "label": "②_2級",
     "page": 1,
     "type": "chars",
-    "x": 92.88,
-    "y": 675.6,
+    "x": 91.4,
+    "y": 678.24,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -246,11 +246,11 @@
     "label": "②_試験開始日年",
     "page": 1,
     "type": "chars",
-    "x": 226.08,
+    "x": 229.43,
     "y": 661.05,
-    "charWidth": 6.72,
-    "maxChars": 4,
-    "fontSize": 7,
+    "charWidth": 13.86,
+    "maxChars": 2,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -259,11 +259,11 @@
     "label": "②_試験開始日月",
     "page": 1,
     "type": "chars",
-    "x": 265.82,
+    "x": 268.56,
     "y": 661.05,
-    "charWidth": 6.53,
-    "maxChars": 4,
-    "fontSize": 7,
+    "charWidth": 13.86,
+    "maxChars": 2,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -272,11 +272,11 @@
     "label": "②_試験開始日日",
     "page": 1,
     "type": "chars",
-    "x": 305.73,
+    "x": 308.62,
     "y": 661.05,
-    "charWidth": 6.72,
-    "maxChars": 4,
-    "fontSize": 7,
+    "charWidth": 13.86,
+    "maxChars": 2,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -285,10 +285,10 @@
     "label": "②_試験地",
     "page": 1,
     "type": "text",
-    "x": 342.19,
+    "x": 362.73,
     "y": 657.55,
     "width": 124.44,
-    "fontSize": 7
+    "fontSize": 14.0
   },
   {
     "id": "cvt0100",
@@ -307,11 +307,11 @@
     "label": "③_証明書有",
     "page": 1,
     "type": "chars",
-    "x": 215.27,
-    "y": 605.09,
+    "x": 213.51,
+    "y": 607.2,
     "charWidth": 12.47,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.2,
     "anchor": "center"
   },
   {
@@ -320,11 +320,11 @@
     "label": "③_学科試験",
     "page": 1,
     "type": "chars",
-    "x": 318.7,
-    "y": 605.09,
+    "x": 316.91,
+    "y": 607.2,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -333,11 +333,11 @@
     "label": "③_実技試験",
     "page": 1,
     "type": "chars",
-    "x": 489,
-    "y": 605.06,
+    "x": 487.0,
+    "y": 607.2,
     "charWidth": 12.47,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.2,
     "anchor": "center"
   },
   {
@@ -346,11 +346,11 @@
     "label": "③_証明書無",
     "page": 1,
     "type": "chars",
-    "x": 125.98,
-    "y": 604.84,
+    "x": 124.51,
+    "y": 607.2,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 11.0,
     "anchor": "center"
   },
   {
@@ -359,11 +359,11 @@
     "label": "④_濁点",
     "page": 1,
     "type": "chars",
-    "x": 97.45,
-    "y": 571.25,
-    "charWidth": 21.81,
+    "x": 95.11,
+    "y": 574.08,
+    "charWidth": 22.02,
     "maxChars": 22,
-    "fontSize": 7,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -372,11 +372,11 @@
     "label": "④_氏名カナ",
     "page": 1,
     "type": "chars",
-    "x": 94.2,
-    "y": 542.95,
-    "charWidth": 21.08,
+    "x": 91.59,
+    "y": 548.16,
+    "charWidth": 20.93,
     "maxChars": 22,
-    "fontSize": 7,
+    "fontSize": 13.1,
     "anchor": "center"
   },
   {
@@ -385,10 +385,10 @@
     "label": "④_氏名漢字",
     "page": 1,
     "type": "text",
-    "x": 114.73,
-    "y": 471.91,
+    "x": 121.74,
+    "y": 473.76,
     "width": 278.47,
-    "fontSize": 7
+    "fontSize": 14.0
   },
   {
     "id": "cvt0084",
@@ -396,10 +396,11 @@
     "label": "④_住所",
     "page": 1,
     "type": "text",
-    "x": 270.01,
-    "y": 448.91,
+    "x": 279.42,
+    "y": 443.56,
     "width": 312.08,
-    "fontSize": 7
+    "fontSize": 10.0,
+    "scaleX": 0.7
   },
   {
     "id": "cvt0008",
@@ -407,11 +408,11 @@
     "label": "④_郵便番号上",
     "page": 1,
     "type": "chars",
-    "x": 136.75,
-    "y": 445.8,
-    "charWidth": 17.01,
+    "x": 134.11,
+    "y": 450.96,
+    "charWidth": 16.79,
     "maxChars": 3,
-    "fontSize": 7,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -420,11 +421,11 @@
     "label": "④_郵便番号下",
     "page": 1,
     "type": "chars",
-    "x": 201,
-    "y": 445.8,
-    "charWidth": 17.01,
+    "x": 198.38,
+    "y": 450.96,
+    "charWidth": 16.77,
     "maxChars": 4,
-    "fontSize": 7,
+    "fontSize": 15.0,
     "anchor": "center",
     "startChar": 3
   },
@@ -434,10 +435,10 @@
     "label": "④_電話番号",
     "page": 1,
     "type": "text",
-    "x": 421.82,
-    "y": 434.93,
+    "x": 453.58,
+    "y": 432.67,
     "width": 156.04,
-    "fontSize": 7
+    "fontSize": 9.0
   },
   {
     "id": "cvt0024",
@@ -445,11 +446,11 @@
     "label": "⑤_群馬",
     "page": 1,
     "type": "chars",
-    "x": 111.7,
-    "y": 410.8,
+    "x": 109.88,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -458,11 +459,11 @@
     "label": "⑤_新潟",
     "page": 1,
     "type": "chars",
-    "x": 134,
-    "y": 410.8,
+    "x": 132.43,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -471,11 +472,11 @@
     "label": "⑤_富山",
     "page": 1,
     "type": "chars",
-    "x": 156.77,
-    "y": 410.8,
+    "x": 154.98,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -484,11 +485,11 @@
     "label": "⑤_石川",
     "page": 1,
     "type": "chars",
-    "x": 179.16,
-    "y": 410.8,
+    "x": 177.29,
+    "y": 411.36,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -497,11 +498,11 @@
     "label": "⑤_滋賀",
     "page": 1,
     "type": "chars",
-    "x": 201.6,
-    "y": 410.8,
+    "x": 199.6,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -510,11 +511,11 @@
     "label": "⑤_京都",
     "page": 1,
     "type": "chars",
-    "x": 224.38,
-    "y": 410.8,
+    "x": 222.39,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -523,11 +524,11 @@
     "label": "⑤_兵庫",
     "page": 1,
     "type": "chars",
-    "x": 246.67,
-    "y": 410.8,
+    "x": 244.7,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -536,11 +537,11 @@
     "label": "⑤_鳥取",
     "page": 1,
     "type": "chars",
-    "x": 269.19,
-    "y": 410.8,
+    "x": 267.25,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -549,11 +550,11 @@
     "label": "⑤_島根",
     "page": 1,
     "type": "chars",
-    "x": 291.73,
-    "y": 410.8,
+    "x": 290.04,
+    "y": 411.36,
     "charWidth": 9.11,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.2,
     "anchor": "center"
   },
   {
@@ -562,11 +563,11 @@
     "label": "⑤_山口",
     "page": 1,
     "type": "chars",
-    "x": 314.25,
-    "y": 410.8,
+    "x": 312.59,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -575,11 +576,11 @@
     "label": "⑤_北海道",
     "page": 1,
     "type": "chars",
-    "x": 66.52,
-    "y": 410.77,
+    "x": 64.77,
+    "y": 411.36,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -588,11 +589,11 @@
     "label": "⑤_青森",
     "page": 1,
     "type": "chars",
-    "x": 89.17,
-    "y": 410.77,
+    "x": 87.08,
+    "y": 411.36,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -601,11 +602,11 @@
     "label": "⑤_岡山",
     "page": 1,
     "type": "chars",
-    "x": 246.67,
-    "y": 367.86,
+    "x": 244.7,
+    "y": 368.64,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -614,11 +615,11 @@
     "label": "⑤_広島",
     "page": 1,
     "type": "chars",
-    "x": 268.97,
-    "y": 367.86,
+    "x": 267.25,
+    "y": 368.64,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -627,11 +628,11 @@
     "label": "⑤_秋田",
     "page": 1,
     "type": "chars",
-    "x": 66.27,
-    "y": 367.63,
+    "x": 64.53,
+    "y": 368.64,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -640,11 +641,11 @@
     "label": "⑤_山形",
     "page": 1,
     "type": "chars",
-    "x": 88.81,
-    "y": 367.63,
+    "x": 86.84,
+    "y": 368.64,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -653,11 +654,11 @@
     "label": "⑤_栃木",
     "page": 1,
     "type": "chars",
-    "x": 111.45,
-    "y": 367.63,
+    "x": 109.4,
+    "y": 368.64,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -666,11 +667,11 @@
     "label": "⑤_茨城",
     "page": 1,
     "type": "chars",
-    "x": 133.74,
-    "y": 367.6,
+    "x": 131.95,
+    "y": 368.64,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -679,11 +680,11 @@
     "label": "⑤_長野",
     "page": 1,
     "type": "chars",
-    "x": 156.39,
-    "y": 367.6,
+    "x": 154.5,
+    "y": 368.64,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -692,11 +693,11 @@
     "label": "⑤_福井",
     "page": 1,
     "type": "chars",
-    "x": 179.06,
-    "y": 367.6,
+    "x": 177.05,
+    "y": 368.64,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -705,11 +706,11 @@
     "label": "⑤_奈良",
     "page": 1,
     "type": "chars",
-    "x": 201.35,
-    "y": 367.6,
+    "x": 199.6,
+    "y": 368.64,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -718,11 +719,11 @@
     "label": "⑤_大坂",
     "page": 1,
     "type": "chars",
-    "x": 224,
-    "y": 367.6,
+    "x": 222.15,
+    "y": 368.64,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -731,11 +732,11 @@
     "label": "⑤_福岡",
     "page": 1,
     "type": "chars",
-    "x": 291.61,
-    "y": 367.6,
+    "x": 289.56,
+    "y": 368.64,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -744,11 +745,11 @@
     "label": "⑤_佐賀",
     "page": 1,
     "type": "chars",
-    "x": 314.25,
-    "y": 367.6,
+    "x": 312.35,
+    "y": 368.64,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -757,11 +758,11 @@
     "label": "⑤_愛媛",
     "page": 1,
     "type": "chars",
-    "x": 246.67,
-    "y": 325.17,
+    "x": 244.7,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -770,11 +771,11 @@
     "label": "⑤_宮城",
     "page": 1,
     "type": "chars",
-    "x": 89.17,
-    "y": 325.14,
+    "x": 87.32,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -783,11 +784,11 @@
     "label": "⑤_埼玉",
     "page": 1,
     "type": "chars",
-    "x": 111.7,
-    "y": 325.14,
+    "x": 109.88,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -796,11 +797,11 @@
     "label": "⑤_東京",
     "page": 1,
     "type": "chars",
-    "x": 134,
-    "y": 325.14,
+    "x": 132.43,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -809,11 +810,11 @@
     "label": "⑤_静岡",
     "page": 1,
     "type": "chars",
-    "x": 156.77,
-    "y": 325.14,
+    "x": 154.98,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -822,11 +823,11 @@
     "label": "⑤_山梨",
     "page": 1,
     "type": "chars",
-    "x": 179.16,
-    "y": 325.14,
+    "x": 177.29,
+    "y": 325.92,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -835,11 +836,11 @@
     "label": "⑤_和歌山",
     "page": 1,
     "type": "chars",
-    "x": 201.6,
-    "y": 325.14,
+    "x": 200.08,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -848,11 +849,11 @@
     "label": "⑤_香川",
     "page": 1,
     "type": "chars",
-    "x": 224.38,
-    "y": 325.14,
+    "x": 222.39,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -861,11 +862,11 @@
     "label": "⑤_大分",
     "page": 1,
     "type": "chars",
-    "x": 269.19,
-    "y": 325.14,
+    "x": 267.25,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -874,11 +875,11 @@
     "label": "⑤_熊本",
     "page": 1,
     "type": "chars",
-    "x": 291.84,
-    "y": 325.14,
+    "x": 290.04,
+    "y": 325.92,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -887,11 +888,11 @@
     "label": "⑤_長崎",
     "page": 1,
     "type": "chars",
-    "x": 314.25,
-    "y": 325.14,
+    "x": 312.83,
+    "y": 325.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -900,11 +901,11 @@
     "label": "⑤_岩手",
     "page": 1,
     "type": "chars",
-    "x": 66.52,
-    "y": 324.92,
+    "x": 64.77,
+    "y": 325.92,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -913,11 +914,11 @@
     "label": "⑤_福島",
     "page": 1,
     "type": "chars",
-    "x": 89.42,
-    "y": 282.48,
+    "x": 87.32,
+    "y": 282.72,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -926,11 +927,11 @@
     "label": "⑤_千葉",
     "page": 1,
     "type": "chars",
-    "x": 111.7,
-    "y": 282.48,
+    "x": 109.88,
+    "y": 282.72,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -939,11 +940,11 @@
     "label": "⑤_岐阜",
     "page": 1,
     "type": "chars",
-    "x": 179.28,
-    "y": 282.48,
+    "x": 177.53,
+    "y": 282.72,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -952,11 +953,11 @@
     "label": "⑤_三重",
     "page": 1,
     "type": "chars",
-    "x": 201.96,
-    "y": 282.48,
+    "x": 200.08,
+    "y": 282.72,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -965,11 +966,11 @@
     "label": "⑤_徳島",
     "page": 1,
     "type": "chars",
-    "x": 224.48,
-    "y": 282.48,
+    "x": 222.63,
+    "y": 282.72,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -978,11 +979,11 @@
     "label": "⑤_鹿児島",
     "page": 1,
     "type": "chars",
-    "x": 291.97,
-    "y": 282.48,
+    "x": 290.04,
+    "y": 282.72,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -991,11 +992,11 @@
     "label": "⑤_沖縄",
     "page": 1,
     "type": "chars",
-    "x": 314.5,
-    "y": 282.48,
+    "x": 312.83,
+    "y": 282.72,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1004,11 +1005,11 @@
     "label": "⑤_神奈川",
     "page": 1,
     "type": "chars",
-    "x": 134.36,
-    "y": 282.46,
+    "x": 132.43,
+    "y": 282.72,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -1017,11 +1018,11 @@
     "label": "⑤_愛知",
     "page": 1,
     "type": "chars",
-    "x": 156.87,
-    "y": 282.46,
+    "x": 154.98,
+    "y": 282.72,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -1030,11 +1031,11 @@
     "label": "⑤_高知",
     "page": 1,
     "type": "chars",
-    "x": 246.89,
-    "y": 282.46,
+    "x": 244.7,
+    "y": 282.72,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1043,11 +1044,11 @@
     "label": "⑤_宮崎",
     "page": 1,
     "type": "chars",
-    "x": 269.67,
-    "y": 282.46,
+    "x": 267.73,
+    "y": 282.72,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1056,11 +1057,11 @@
     "label": "⑧_女",
     "page": 1,
     "type": "chars",
-    "x": 404.86,
-    "y": 216.99,
+    "x": 402.8,
+    "y": 217.92,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1069,11 +1070,11 @@
     "label": "⑨_朝鮮",
     "page": 1,
     "type": "chars",
-    "x": 483.36,
-    "y": 216.99,
+    "x": 481.25,
+    "y": 217.68,
     "charWidth": 9.82,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.8,
     "anchor": "center"
   },
   {
@@ -1082,11 +1083,11 @@
     "label": "⑦_西暦",
     "page": 1,
     "type": "chars",
-    "x": 137.72,
-    "y": 216.74,
-    "charWidth": 17.01,
+    "x": 132.43,
+    "y": 217.44,
+    "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -1095,11 +1096,11 @@
     "label": "⑦_平成",
     "page": 1,
     "type": "chars",
-    "x": 60.99,
-    "y": 216.51,
+    "x": 59.02,
+    "y": 217.44,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -1108,11 +1109,11 @@
     "label": "⑦_昭和",
     "page": 1,
     "type": "chars",
-    "x": 77.78,
-    "y": 216.51,
+    "x": 76.05,
+    "y": 217.44,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -1121,11 +1122,11 @@
     "label": "⑦_大正",
     "page": 1,
     "type": "chars",
-    "x": 94.8,
-    "y": 216.51,
+    "x": 92.84,
+    "y": 217.44,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   },
   {
@@ -1134,11 +1135,11 @@
     "label": "⑨_韓国",
     "page": 1,
     "type": "chars",
-    "x": 466.49,
-    "y": 216.51,
+    "x": 464.45,
+    "y": 216.96,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1147,11 +1148,11 @@
     "label": "⑨_米国",
     "page": 1,
     "type": "chars",
-    "x": 500.04,
-    "y": 216.51,
+    "x": 498.28,
+    "y": 216.96,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1160,11 +1161,11 @@
     "label": "⑦_明治",
     "page": 1,
     "type": "chars",
-    "x": 111.7,
-    "y": 216.48,
+    "x": 109.88,
+    "y": 217.44,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1173,11 +1174,11 @@
     "label": "⑧_男",
     "page": 1,
     "type": "chars",
-    "x": 376.81,
-    "y": 216.48,
+    "x": 374.73,
+    "y": 217.44,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1186,11 +1187,11 @@
     "label": "⑦_出生年",
     "page": 1,
     "type": "chars",
-    "x": 183.01,
-    "y": 208.09,
-    "charWidth": 17.04,
+    "x": 180.17,
+    "y": 213.12,
+    "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 7,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -1199,11 +1200,11 @@
     "label": "⑦_出生月",
     "page": 1,
     "type": "chars",
-    "x": 233.71,
-    "y": 208.09,
-    "charWidth": 16.79,
+    "x": 230.55,
+    "y": 213.12,
+    "charWidth": 17.03,
     "maxChars": 2,
-    "fontSize": 7,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -1212,11 +1213,11 @@
     "label": "⑦_出生日",
     "page": 1,
     "type": "chars",
-    "x": 284.31,
-    "y": 208.09,
-    "charWidth": 16.79,
+    "x": 281.41,
+    "y": 213.12,
+    "charWidth": 17.03,
     "maxChars": 2,
-    "fontSize": 7,
+    "fontSize": 15.0,
     "anchor": "center"
   },
   {
@@ -1225,11 +1226,11 @@
     "label": "⑪_航海",
     "page": 1,
     "type": "chars",
-    "x": 489,
-    "y": 160.12,
+    "x": 487.0,
+    "y": 160.32,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1238,11 +1239,11 @@
     "label": "⑪_機関",
     "page": 1,
     "type": "chars",
-    "x": 533.83,
-    "y": 159.9,
+    "x": 531.62,
+    "y": 160.32,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1251,11 +1252,11 @@
     "label": "⑩_免許証番号",
     "page": 1,
     "type": "chars",
-    "x": 73.35,
-    "y": 151.98,
-    "charWidth": 22.04,
+    "x": 67.0,
+    "y": 156.72,
+    "charWidth": 23.43,
     "maxChars": 13,
-    "fontSize": 7,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -1264,11 +1265,11 @@
     "label": "⑩_氏名",
     "page": 1,
     "type": "chars",
-    "x": 117.22,
-    "y": 105.92,
+    "x": 115.15,
+    "y": 106.56,
     "charWidth": 9.59,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.6,
     "anchor": "center"
   },
   {
@@ -1277,11 +1278,11 @@
     "label": "⑩_本籍・国籍",
     "page": 1,
     "type": "chars",
-    "x": 168.16,
-    "y": 105.92,
+    "x": 166.01,
+    "y": 106.56,
     "charWidth": 9.34,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 8.4,
     "anchor": "center"
   }
 ]

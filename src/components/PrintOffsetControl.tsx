@@ -1,0 +1,62 @@
+/**
+ * OCR申請書の「全体の位置補正」（プリンターの癖）
+ *
+ * 書式の位置データとは別に、印刷全体を mm 単位で動かす。プラスは右・下、マイナスは左・上。
+ * 目安：2026-11-17 の試し刷り（旧アプリの印刷と重ねて透かした）では、新アプリが全体に
+ * 約3.1mm下・約0.7mm左にずれていた → 上へ3.1mm（-3.1）・右へ0.7mm（+0.7）。
+ */
+import { useEffect, useState } from 'react'
+import { loadPrintOffset, savePrintOffset, type PrintOffset } from '../lib/formPrint'
+
+const SUGGESTED: PrintOffset = { xMm: 0.7, yMm: -3.1 }
+
+export default function PrintOffsetControl() {
+  const [saved, setSaved] = useState<PrintOffset | null>(null)
+  const [x, setX] = useState('0')
+  const [y, setY] = useState('0')
+  const [msg, setMsg] = useState('')
+
+  useEffect(() => {
+    loadPrintOffset().then(o => { setSaved(o); setX(String(o.xMm)); setY(String(o.yMm)) })
+  }, [])
+
+  const num = (s: string) => { const v = Number(s); return Number.isFinite(v) ? Math.round(v * 10) / 10 : NaN }
+  const dirty = saved != null && (num(x) !== saved.xMm || num(y) !== saved.yMm)
+
+  const save = async () => {
+    const o = { xMm: num(x), yMm: num(y) }
+    if (Number.isNaN(o.xMm) || Number.isNaN(o.yMm)) { setMsg('数字を入れてください'); return }
+    if (Math.abs(o.xMm) > 15 || Math.abs(o.yMm) > 15) { setMsg('15mm 以内にしてください'); return }
+    await savePrintOffset(o)
+    setSaved(o); setMsg('保存しました')
+    setTimeout(() => setMsg(''), 2000)
+  }
+
+  const field = (label: string, hint: string, v: string, set: (s: string) => void) => (
+    <label className="flex items-center gap-1 text-xs text-gray-600" title={hint}>
+      {label}
+      <input type="number" step="0.1" value={v} onChange={e => set(e.target.value)}
+        className="w-16 px-1.5 py-0.5 border border-gray-300 rounded text-right font-mono text-xs" />
+      mm
+    </label>
+  )
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-1 rounded-lg border border-amber-200 bg-amber-50"
+      title="すべての申請書の印刷を、まとめて動かします（プリンターごとの癖を直す用）。書式の位置は変わりません。">
+      <span className="text-xs font-bold text-amber-700">🖨 全体の位置補正</span>
+      {field('横', 'プラスで右へ、マイナスで左へ', x, setX)}
+      {field('縦', 'プラスで下へ、マイナスで上へ', y, setY)}
+      <button type="button" onClick={() => { setX(String(SUGGESTED.xMm)); setY(String(SUGGESTED.yMm)) }}
+        className="text-[11px] text-amber-700 underline hover:text-amber-900"
+        title="旧アプリの印刷と重ねて測った値（右へ0.7mm・上へ3.1mm）">
+        目安を入れる
+      </button>
+      <button type="button" onClick={save} disabled={!dirty}
+        className="px-2 py-0.5 rounded bg-amber-500 text-white text-xs font-semibold disabled:opacity-40">
+        保存
+      </button>
+      {msg && <span className="text-[11px] text-amber-700">{msg}</span>}
+    </div>
+  )
+}

@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* OCR申請書の印字用フォント（印字位置設定のプレビューで使う。印刷時は formPrint.ts で埋め込む） */
+@font-face {
+  font-family: 'OCRHK';
+  src: url('/fonts/ocr-hk.ttf') format('truetype');
+  font-display: swap;
+}
+
 @layer base {
   * {
     box-sizing: border-box;

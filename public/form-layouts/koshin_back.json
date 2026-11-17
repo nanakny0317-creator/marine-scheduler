@@ -9,7 +9,7 @@
     "y": 602.31,
     "charWidth": 22.77,
     "maxChars": 22,
-    "fontSize": 7,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -22,7 +22,7 @@
     "y": 579.51,
     "charWidth": 22.52,
     "maxChars": 22,
-    "fontSize": 7,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -35,7 +35,7 @@
     "y": 513.93,
     "charWidth": 39.56,
     "maxChars": 12,
-    "fontSize": 7,
+    "fontSize": 19.8,
     "anchor": "center"
   },
   {
@@ -48,7 +48,7 @@
     "y": 382.52,
     "charWidth": 36.71,
     "maxChars": 3,
-    "fontSize": 7,
+    "fontSize": 18.4,
     "anchor": "center"
   },
   {
@@ -61,7 +61,7 @@
     "y": 274.2,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 9.7,
     "anchor": "center"
   },
   {
@@ -74,7 +74,7 @@
     "y": 273.98,
     "charWidth": 10.78,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 9.7,
     "anchor": "center"
   },
   {
@@ -87,7 +87,7 @@
     "y": 273.95,
     "charWidth": 10.55,
     "maxChars": 1,
-    "fontSize": 7,
+    "fontSize": 9.5,
     "anchor": "center"
   },
   {
@@ -100,7 +100,7 @@
     "y": 265.78,
     "charWidth": 17.27,
     "maxChars": 3,
-    "fontSize": 7,
+    "fontSize": 13.8,
     "anchor": "center"
   }
 ]
