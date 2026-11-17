@@ -7,6 +7,7 @@ import type { Enrollment, ExamSession, PendingReviewWithStudents, Student } from
 import { enrollmentsApi, examSessionsApi, pendingReviewsApi } from '../lib/api'
 import { daysBetween, resultDateOf, todayIsoLocal } from '../lib/examResult'
 import { rosterEntriesFor } from '../lib/rosterPrint'
+import { needsResultCheck } from '../lib/examResultEntry'
 import { exemptSubjectOf, missingPrevExam } from '../lib/prevExam'
 import EnrollmentFormModal from '../components/students/EnrollmentFormModal'
 import DevPanel from '../components/DevPanel'
@@ -73,9 +74,12 @@ interface BtnProps {
   primary?: boolean
   onClick?: () => void
   disabled?: boolean
+  /** 右上の赤い通知バッジ（0 なら出さない） */
+  badge?: number
+  badgeTitle?: string
 }
 
-function HomeButton({ icon, title, desc, color, primary = false, onClick, disabled }: BtnProps) {
+function HomeButton({ icon, title, desc, color, primary = false, onClick, disabled, badge, badgeTitle }: BtnProps) {
   const c = COLOR_STYLES[color]
   return (
     <button
@@ -95,6 +99,12 @@ function HomeButton({ icon, title, desc, color, primary = false, onClick, disabl
       {disabled && (
         <span className="absolute top-2.5 right-3 text-[11px] bg-gray-100 text-gray-400 rounded-full px-2 py-0.5 font-medium">
           準備中
+        </span>
+      )}
+      {!!badge && badge > 0 && (
+        <span title={badgeTitle}
+          className="absolute -top-2.5 -right-2.5 min-w-[1.75rem] h-7 px-1.5 rounded-full bg-red-500 text-white text-sm font-bold leading-7 text-center shadow-md ring-2 ring-white">
+          {badge}
         </span>
       )}
     </button>
@@ -127,11 +137,14 @@ export default function HomePage() {
   }
 
   // 合格発表の確認：発表日を過ぎて未確認の試験、と1週間以内に発表がある試験（受験者がいるものだけ）
+  const [unconfirmedCount, setUnconfirmedCount] = useState(0)
   const [resultWatch, setResultWatch] = useState<{ session: ExamSession; count: number; resultDate: string; days: number }[]>([])
   const loadResultWatch = async () => {
     try {
       const [sessions, applicants] = await Promise.all([examSessionsApi.list(), enrollmentsApi.listAll('new')])
       const today = todayIsoLocal()
+      // 合否の確定が残っている試験の数（試験申請ボタンのバッジ。合格確認タブと同じ数え方）
+      setUnconfirmedCount(sessions.filter(s => needsResultCheck(s, rosterEntriesFor(s, applicants).length, today)).length)
       setResultWatch(sessions
         .filter(s => !s.result_checked)
         .map(s => {
@@ -141,11 +154,6 @@ export default function HomePage() {
         .filter(x => x.count > 0 && x.days <= 7)
         .sort((a, b) => a.resultDate.localeCompare(b.resultDate)))
     } catch { /* ignore */ }
-  }
-  const markResultChecked = async (s: ExamSession) => {
-    const { id: _id, created_at: _c, updated_at: _u, ...input } = s
-    await examSessionsApi.update(s.id, { ...input, result_checked: true })
-    loadResultWatch()
   }
 
   useEffect(() => { loadPending(); loadPrevMissing(); loadResultWatch() }, [])
@@ -183,7 +191,9 @@ export default function HomePage() {
           desc={"試験前の受験者\n申請書・名簿の印刷"}
           color="mint"
           primary
-          onClick={() => navigate('/exam-applications')}
+          badge={unconfirmedCount}
+          badgeTitle={`合否の確定が残っている試験が ${unconfirmedCount} 件あります`}
+          onClick={() => navigate(unconfirmedCount > 0 ? '/exam-applications?tab=waiting' : '/exam-applications')}
         />
         <HomeButton
           icon="🎓"
@@ -199,7 +209,7 @@ export default function HomePage() {
           desc={"講習日ごとの\n受講者・申請書"}
           color="peach"
           primary
-          onClick={() => navigate('/students')}
+          onClick={() => navigate('/renewal-applications')}
         />
       </div>
 
@@ -229,7 +239,7 @@ export default function HomePage() {
         <HomeButton
           icon="📅"
           title="講習スケジュール"
-          desc={"講習日・会場ごとの\n申込状況を確認"}
+          desc={"試験コースの\n講習日ごとに確認"}
           color="sky"
           onClick={() => navigate('/students')}
         />
@@ -359,7 +369,7 @@ export default function HomePage() {
               <span className="text-base">📣</span>
               <span className="font-bold text-sm text-blue-700">合格発表の確認</span>
               <span className="ml-1 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">{resultWatch.filter(x => x.days <= 0).length}</span>
-              <span className="ml-auto note-text">発表日を過ぎたら結果を確認して「確認済み」にしてください</span>
+              <span className="ml-auto note-text">発表日を過ぎたら 試験申請 → 合格確認 で合否を入れて確定してください</span>
             </div>
             {resultWatch.map(({ session: s, count, resultDate, days }) => (
               <div key={s.id} className={`px-5 py-2.5 flex items-center gap-3 border-b border-blue-50 last:border-0 ${days <= 0 ? '' : 'opacity-70'}`}>
@@ -370,7 +380,7 @@ export default function HomePage() {
                 <span className="text-sm font-semibold text-gray-800">{s.qualification_type}</span>
                 <span className="text-xs text-gray-500 truncate">試験 {s.exam_date.slice(5).replace('-', '/')}　{s.exam_location}　{count}名</span>
                 {days <= 0 && (
-                  <button type="button" onClick={() => markResultChecked(s)} className="ml-auto btn-secondary btn-sm shrink-0">確認済みにする</button>
+                  <button type="button" onClick={() => navigate('/exam-applications?tab=waiting')} className="ml-auto btn-secondary btn-sm shrink-0">合否を入力 →</button>
                 )}
               </div>
             ))}

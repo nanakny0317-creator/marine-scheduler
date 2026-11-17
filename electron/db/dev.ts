@@ -301,6 +301,65 @@ export function devSeedTestData(): DevCounts {
       domicile: '京都府', note: '若年（17歳）・湖川' })
     insertEnrollment({ student_id: s7, menu: '2級小型船舶操縦士', course_date: daysFromToday(40), venue: classroom(2), extra: newExamExtra({ session: exKosen, classroom: classroom(2), courseDates: [daysFromToday(40)], shintai: 'need' }) })
 
+    // ═════ 合格確認（試験は済んだ・合否はこれから）═════
+    // 試験日程の発表日・確定を決める（insertExamSession は基本ルールの発表日のまま）
+    const setResult = (id: number, resultDate: string, checked: boolean) =>
+      run(`UPDATE exam_sessions SET result_date = ?, result_checked = ? WHERE id = ?`, [resultDate, checked ? 1 : 0, id])
+    // 合否を入れた試験記録
+    const insertResult = (studentId: number, enrollmentId: number, ses: ExamSessionRow, num: string,
+      gakka: string | null, jitsugi: string | null, resultDate: string) =>
+      run(
+        `INSERT INTO exam_records (student_id, enrollment_id, qualification_type,
+           gakka_session_id, gakka_exam_number, gakka_result, gakka_result_date,
+           jitsugi_session_id, jitsugi_exam_number, jitsugi_result, jitsugi_result_date, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [studentId, enrollmentId, ses.qualification_type,
+         gakka === '免' ? null : ses.id, gakka === '免' ? null : num, gakka, gakka ? resultDate : null,
+         jitsugi === '免' ? null : ses.id, jitsugi === '免' ? null : num, jitsugi, jitsugi ? resultDate : null, TEST_NOTE])
+
+    // A. 発表日を過ぎた・まだ誰も合否を入れていない（3名、うち1名は学科免除）
+    const exWaitA = insertExamSession({ exam_date: daysFromToday(-6), exam_location: '大阪府大阪市', qualification_type: '二級', exam_id: `${year}-T-801`, gakka_venue: '大阪南港ATC', jitsugi_venue: '大阪南港ATC' })
+    setResult(exWaitA.id, daysFromToday(-1), false)
+    const wa = [
+      insertStudent({ last_name: '待井', first_name: '一真', last_kana: 'マチイ', first_kana: 'カズマ', birth_date: '1991-02-02', gender: 'male',
+        postal_code: '5300001', prefecture: '大阪府', city: '大阪市北区', address1: '梅田2-2-2', mobile: '090-0000-7101', domicile: '大阪府', note: '合格確認A：発表日を過ぎて合否未入力' }),
+      insertStudent({ last_name: '発田', first_name: '真央', last_kana: 'ハッタ', first_kana: 'マオ', birth_date: '1999-05-05', gender: 'female',
+        postal_code: '5420076', prefecture: '大阪府', city: '大阪市中央区', address1: '難波1-1', mobile: '090-0000-7102', domicile: '大阪府', note: '合格確認A：発表日を過ぎて合否未入力' }),
+      insertStudent({ last_name: '表野', first_name: '大地', last_kana: 'ヒョウノ', first_kana: 'ダイチ', birth_date: '1987-08-08', gender: 'male',
+        postal_code: '5900001', prefecture: '大阪府', city: '堺市堺区', address1: '市之町西1-1', mobile: '090-0000-7103', domicile: '大阪府', note: '合格確認A：学科免除（実技のみ）・合否未入力' }),
+    ]
+    wa.forEach((sid, i) => insertEnrollment({ student_id: sid, menu: '2級小型船舶操縦士', course_date: daysFromToday(-20 + i), venue: classroom(0),
+      extra: newExamExtra({ session: exWaitA, classroom: classroom(0), courseDates: [daysFromToday(-20 + i)], shintai: 'need', gakka: i !== 2 }) }))
+
+    // B. 試験は済んだが発表はまだ（2名。うち1名は途中まで入力済み）
+    const exWaitB = insertExamSession({ exam_date: daysFromToday(-2), exam_location: '兵庫県西宮市', qualification_type: '一級', exam_id: `${year}-T-802`, gakka_venue: '西宮市民会館', jitsugi_venue: '新西宮ヨットハーバー' })
+    setResult(exWaitB.id, daysFromToday(3), false)
+    const wb1 = insertStudent({ last_name: '前田', first_name: '発子', last_kana: 'マエダ', first_kana: 'ハツコ', birth_date: '1993-03-13', gender: 'female',
+      postal_code: '6620000', prefecture: '兵庫県', city: '西宮市', address1: '甲子園町1-1', mobile: '090-0000-7201', domicile: '兵庫県', note: '合格確認B：発表前' })
+    const wb2 = insertStudent({ last_name: '途中', first_name: '入', last_kana: 'トチュウ', first_kana: 'イル', birth_date: '1984-04-14', gender: 'male',
+      postal_code: '6620000', prefecture: '兵庫県', city: '西宮市', address1: '甲子園町2-2', mobile: '090-0000-7202', domicile: '兵庫県', note: '合格確認B：学科だけ合否入力済み（実技は未入力）' })
+    insertEnrollment({ student_id: wb1, menu: '1級小型船舶操縦士', course_date: daysFromToday(-10), venue: classroom(2), extra: newExamExtra({ session: exWaitB, classroom: classroom(2), courseDates: [daysFromToday(-10)], shintai: 'need' }) })
+    const wb2e = insertEnrollment({ student_id: wb2, menu: '1級小型船舶操縦士', course_date: daysFromToday(-9), venue: classroom(2), extra: newExamExtra({ session: exWaitB, classroom: classroom(2), courseDates: [daysFromToday(-9)], shintai: 'need' }) })
+    insertResult(wb2, wb2e, exWaitB, '0302', '合', null, daysFromToday(3))
+
+    // C. 合否確定済み（合格2名・不合格1名）→ 免許申請の画面に合格者2名が出る
+    const exDone = insertExamSession({ exam_date: daysFromToday(-14), exam_location: '滋賀県大津市（浜大津）', qualification_type: '二級', exam_id: `${year}-T-803`, gakka_venue: '浜大津公民館', jitsugi_venue: '大津港' })
+    const doneRd = daysFromToday(-10)
+    setResult(exDone.id, doneRd, true)
+    const dn: [string, string, string, string, string | null, string | null][] = [
+      ['合田', '勝', 'ゴウダ', 'マサル', '合', '合'],
+      ['免除', '恵', 'メンジョ', 'メグミ', '免', '合'],
+      ['落合', '惜', 'オチアイ', 'オシム', '合', '否'],
+    ]
+    dn.forEach(([ln, fn, lk, fk, g, j], i) => {
+      const sid = insertStudent({ last_name: ln, first_name: fn, last_kana: lk, first_kana: fk, birth_date: `198${i}-0${i + 1}-1${i}`, gender: i === 1 ? 'female' : 'male',
+        postal_code: '520-0047', prefecture: '滋賀県', city: '大津市', address1: `浜大津${i + 1}-1`, mobile: `090-0000-730${i + 1}`, domicile: '滋賀県',
+        note: `合否確定済み：${g === '免' ? '学科免除・' : ''}${j === '否' ? '実技不合格（免許申請に出ない）' : '合格（免許申請に出る）'}` })
+      const eid = insertEnrollment({ student_id: sid, menu: '2級小型船舶操縦士', course_date: daysFromToday(-25 + i), venue: classroom(1),
+        extra: newExamExtra({ session: exDone, classroom: classroom(1), courseDates: [daysFromToday(-25 + i)], shintai: 'need', gakka: g !== '免' }) })
+      insertResult(sid, eid, exDone, `050${i + 1}`, g, j, doneRd)
+    })
+
     // ═════ 入力チェック（バリデーション）確認用 ═════
     insertStudent({ last_name: '桁足', first_name: '一郎', last_kana: 'ケタタリ', first_kana: 'イチロウ', birth_date: '1980-05-05', gender: 'male',
       prefecture: '大阪府', city: '大阪市西区', address1: '新町1-1', mobile: '090-0000-8001',

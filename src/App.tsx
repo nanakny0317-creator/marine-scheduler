@@ -12,6 +12,7 @@ import FormCalibrationPage from './pages/FormCalibrationPage'
 import FeesPage from './pages/FeesPage'
 import ExamApplicationsPage from './pages/ExamApplicationsPage'
 import LicenseApplicationsPage from './pages/LicenseApplicationsPage'
+import RenewalApplicationsPage from './pages/RenewalApplicationsPage'
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
       {/* 試験申請の作業画面 */}
       <Route path="/exam-applications" element={<ExamApplicationsPage />} />
       <Route path="/license-applications" element={<LicenseApplicationsPage />} />
+      <Route path="/renewal-applications" element={<RenewalApplicationsPage />} />
 
       {/* 受験料・登録免許税（サイドバーなし） */}
       <Route path="/fees" element={<FeesPage />} />
@@ -47,7 +49,7 @@ export default function App() {
       {/* 会員管理（スケジュール画面とは別レイアウト） */}
       <Route path="/members" element={<MembersPage />} />
 
-      {/* スケジュール確認（サイドバーあり） */}
+      {/* 講習スケジュールの確認（試験コースの講習日だけ・サイドバーあり） */}
       <Route element={<Layout />}>
         <Route path="/students" element={<StudentsPage />} />
       </Route>

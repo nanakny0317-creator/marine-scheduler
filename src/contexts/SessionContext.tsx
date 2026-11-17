@@ -67,7 +67,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const data = await enrollmentsApi.listAll()
+    // 講習スケジュールは試験コースの講習日の確認用（更新・失効は専用の画面で扱う）
+    const data = await enrollmentsApi.listAll('new')
     setAllItems(data)
     setLoading(false)
   }, [])

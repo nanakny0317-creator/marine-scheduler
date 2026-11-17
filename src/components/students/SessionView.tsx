@@ -12,7 +12,7 @@ import CalendarModal from './CalendarModal'
 import ApplicationDateModal from './ApplicationDateModal'
 import { getApplicationDate, formatApplicationDate } from '../../lib/applicationDate'
 import { jointIdOf } from '../../lib/jointApplication'
-import { useSession, TABS } from '../../contexts/SessionContext'
+import { useSession } from '../../contexts/SessionContext'
 import type { SessionItem } from '../../contexts/SessionContext'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -36,7 +36,7 @@ function getAppType(enrollment: Enrollment): string {
 
 export default function SessionView() {
   // activeTab はコンテキスト管理（サイドバーのフィルタと共有）
-  const { allItems, sessions, selectedSession, loading, reload, activeTab, setActiveTab } = useSession()
+  const { allItems, sessions, selectedSession, loading, reload } = useSession()
 
   const [showCsvImport, setShowCsvImport] = useState(false)
   const [detailItem, setDetailItem] = useState<{ student: Student; enrollment: Enrollment } | null>(null)
@@ -94,22 +94,10 @@ export default function SessionView() {
   return (
     <div className="flex flex-col h-full gap-3">
 
-      {/* タブ + ツールボタン */}
+      {/* 見出し + ツールボタン（試験コースの講習日だけ。更新・失効は専用の画面） */}
       <div className="flex items-center gap-4 shrink-0">
-        <div className="flex gap-1 border-b border-lavender-100 flex-1">
-          {TABS.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={`px-4 py-2 text-sm rounded-t-lg border-b-2 transition ${
-                activeTab === key
-                  ? 'border-lavender-400 text-lavender-600 font-semibold bg-lavender-50'
-                  : 'border-transparent text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex-1 border-b border-lavender-100 pb-2">
+          <span className="text-sm font-semibold text-lavender-600">📅 講習スケジュール（試験コース）</span>
         </div>
         {/* カレンダービュー */}
         <button

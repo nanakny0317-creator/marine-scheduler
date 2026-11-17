@@ -5,11 +5,13 @@
  * 右：選んだ試験の受験者と、その試験の書類（申請日・申請書・名簿・委任状・ラベル）
  */
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import type { Enrollment, ExamSession, Student } from '../types'
-import { enrollmentsApi, examSessionsApi } from '../lib/api'
+import type { Enrollment, ExamRecord, ExamSession, Student } from '../types'
+import { enrollmentsApi, examRecordsApi, examSessionsApi } from '../lib/api'
+import { needsResultCheck } from '../lib/examResultEntry'
+import ResultEntryPanel from '../components/exams/ResultEntryPanel'
 import { resultDateOf, todayIsoLocal, daysBetween } from '../lib/examResult'
 import { buildRosterHtml, rosterEntriesFor, type RosterEntry } from '../lib/rosterPrint'
 import { loadFees, loadOrgName } from '../lib/examFees'
@@ -23,7 +25,7 @@ import ScheduleItemDetailModal from '../components/students/ScheduleItemDetailMo
 type Filter = 'upcoming' | 'waiting' | 'past' | 'all'
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'upcoming', label: 'これから' },
-  { key: 'waiting',  label: '発表待ち' },
+  { key: 'waiting',  label: '合格確認' },
   { key: 'past',     label: '過去' },
   { key: 'all',      label: 'すべて' },
 ]
@@ -59,8 +61,15 @@ export default function ExamApplicationsPage() {
   const navigate = useNavigate()
   const [sessions, setSessions] = useState<ExamSession[]>([])
   const [applicants, setApplicants] = useState<RosterEntry[]>([])
+  const [records, setRecords] = useState<ExamRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<Filter>('upcoming')
+  // ?tab=waiting で合格確認タブから開く（免許申請の画面からの案内）
+  const [params] = useSearchParams()
+  const initialFilter: Filter = params.get('tab') === 'waiting' ? 'waiting' : 'upcoming'
+  const [filter, setFilterRaw] = useState<Filter>(initialFilter)
+  // 右側の表示：書類の準備 or 合否の入力（合格確認タブでは合否から）
+  const [mode, setMode] = useState<'docs' | 'results'>(initialFilter === 'waiting' ? 'results' : 'docs')
+  const setFilter = (f: Filter) => { setFilterRaw(f); setMode(f === 'waiting' ? 'results' : 'docs') }
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [checked, setChecked] = useState<Set<number>>(new Set())
@@ -70,8 +79,8 @@ export default function ExamApplicationsPage() {
 
   const load = async () => {
     try {
-      const [s, a] = await Promise.all([examSessionsApi.list(), enrollmentsApi.listAll('new')])
-      setSessions(s); setApplicants(a)
+      const [s, a, r] = await Promise.all([examSessionsApi.list(), enrollmentsApi.listAll('new'), examRecordsApi.listAll()])
+      setSessions(s); setApplicants(a); setRecords(r)
     } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
@@ -101,7 +110,7 @@ export default function ExamApplicationsPage() {
     const byFilter = sessions.filter(s => {
       if (q) return true   // 検索中は過去も含めて全部から探す
       if (filter === 'upcoming') return s.exam_date >= today
-      if (filter === 'waiting')  return s.exam_date < today && !s.result_checked && (bySession.get(s.id)?.length ?? 0) > 0
+      if (filter === 'waiting')  return needsResultCheck(s, bySession.get(s.id)?.length ?? 0, today)
       if (filter === 'past')     return s.exam_date < today
       return true
     }).filter(sessionHit)
@@ -143,11 +152,9 @@ export default function ExamApplicationsPage() {
     const [fees, org] = await Promise.all([loadFees(), loadOrgName()])
     await window.api.print.html(buildRosterHtml(selected, blank ? [] : entries, fees, org))
   })
-  const toggleResultChecked = async (s: ExamSession) => {
-    const { id: _id, created_at: _c, updated_at: _u, ...input } = s
-    await examSessionsApi.update(s.id, { ...input, result_checked: !s.result_checked })
-    load()
-  }
+
+  // 合否の確定が残っている試験の数（合格確認タブの通知）
+  const waitingCount = sessions.filter(s => needsResultCheck(s, bySession.get(s.id)?.length ?? 0, today)).length
 
   const sessionBadge = (s: ExamSession) => {
     const list = bySession.get(s.id) ?? []
@@ -181,8 +188,14 @@ export default function ExamApplicationsPage() {
             <div className="flex gap-1">
               {FILTERS.map(f => (
                 <button key={f.key} type="button" onClick={() => setFilter(f.key)} disabled={!!q}
-                  className={`flex-1 py-1 rounded-lg text-xs font-semibold border transition disabled:opacity-40 ${filter === f.key ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'}`}>
+                  className={`relative flex-1 py-1 rounded-lg text-xs font-semibold border transition disabled:opacity-40 ${filter === f.key ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'}`}>
                   {f.label}
+                  {f.key === 'waiting' && waitingCount > 0 && (
+                    <span title={`合否の確定が残っている試験が ${waitingCount} 件あります`}
+                      className="absolute -top-2 -right-1.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-[1.1rem] shadow">
+                      {waitingCount}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -246,16 +259,33 @@ export default function ExamApplicationsPage() {
                     <span className="text-sm text-gray-700">{selected.exam_location}</span>
                     <span className="text-xs text-gray-500">試験ID <span className="font-mono">{selected.exam_id}</span></span>
                     <span className="text-xs text-gray-500">合格発表 {resultDateOf(selected) ? fmt(resultDateOf(selected)) : '—'}{selected.result_date ? '＊' : ''}</span>
-                    <button type="button" onClick={() => toggleResultChecked(selected)}
-                      className={`btn-sm ${selected.result_checked ? 'btn-secondary text-mint-600' : 'btn-secondary'}`}>
-                      {selected.result_checked ? '✓ 発表確認済み' : '発表を確認済みにする'}
-                    </button>
+                    {selected.result_checked && <span className="text-xs font-semibold text-mint-600">✓ 合否確定済み</span>}
+                    {/* 書類 ⇔ 合否 の切り替え */}
+                    <div className="ml-auto flex rounded-lg border border-lavender-200 overflow-hidden text-xs font-semibold">
+                      {([['docs', '📄 書類'], ['results', '🎯 合否']] as const).map(([k, l]) => (
+                        <button key={k} type="button" onClick={() => setMode(k)}
+                          className={`px-3 py-1 transition ${mode === k ? 'bg-lavender-400 text-white' : 'bg-white text-gray-500 hover:bg-lavender-50'}`}>
+                          {l}
+                        </button>
+                      ))}
+                    </div>
                   </>
                 ) : (
                   <span className="text-sm font-semibold text-orange-600">試験日程が未登録の申込（試験日程を登録するか、申込の試験日・試験地を直してください）</span>
                 )}
               </div>
 
+              {selected && mode === 'results' ? (
+                <ResultEntryPanel
+                  session={selected}
+                  entries={entries}
+                  records={records}
+                  onRecordsChange={setRecords}
+                  onSessionChange={s => setSessions(ss => ss.map(x => x.id === s.id ? s : x))}
+                  onOpenDetail={x => setDetail({ student: x.student, enrollment: x.enrollment })}
+                  highlight={nameHit}
+                />
+              ) : (<>
               {/* 受験者 */}
               <div className="flex-1 overflow-y-auto">
                 {entries.length === 0 ? (
@@ -325,6 +355,7 @@ export default function ExamApplicationsPage() {
                   ))}
                 </div>
               </div>
+              </>)}
             </>
           )}
         </main>

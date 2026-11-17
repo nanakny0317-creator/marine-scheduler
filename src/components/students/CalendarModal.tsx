@@ -6,8 +6,7 @@ import {
 } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Enrollment, Student } from '../../types'
-import type { SessionItem, Tab } from '../../contexts/SessionContext'
-import { TABS } from '../../contexts/SessionContext'
+import type { SessionItem } from '../../contexts/SessionContext'
 import ScheduleItemDetailModal from './ScheduleItemDetailModal'
 
 // ── 型 ──────────────────────────────────────────────────────
@@ -88,15 +87,11 @@ interface Props {
 
 export default function CalendarModal({ allItems, onClose, onUpdated }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [calTab, setCalTab]             = useState<Tab>('all')
   const [selectedDay, setSelectedDay]   = useState<string | null>(null)
   const [detailItem, setDetailItem]     = useState<{ student: Student; enrollment: Enrollment } | null>(null)
 
-  // タブフィルタ
-  const filteredItems = useMemo(() => {
-    if (calTab === 'all') return allItems
-    return allItems.filter(({ enrollment }) => getAppType(enrollment) === calTab)
-  }, [allItems, calTab])
+  // 講習スケジュールは試験コースだけを渡してくるので、そのまま使う
+  const filteredItems = allItems
 
   // 日付 → CalendarEvent[] のマップ（セッションごとに会場・講習内容を個別展開）
   const eventsByDate = useMemo(() => {
@@ -161,21 +156,6 @@ export default function CalendarModal({ allItems, onClose, onUpdated }: Props) {
               </span>
               <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="btn-secondary btn-sm px-2.5">›</button>
               <button onClick={() => setCurrentMonth(new Date())} className="btn-secondary btn-sm text-xs">今月</button>
-            </div>
-            <div className="flex gap-1">
-              {TABS.map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setCalTab(key)}
-                  className={`px-3 py-1 text-xs rounded-full border transition ${
-                    calTab === key
-                      ? 'bg-lavender-400 text-white border-lavender-400'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
             </div>
             <p className="text-xs text-gray-400 ml-auto hidden sm:block">日付をクリックで詳細表示</p>
           </div>
