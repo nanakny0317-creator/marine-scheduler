@@ -16,9 +16,9 @@
     "label": "出力日",
     "page": 1,
     "type": "chars",
-    "x": 545.36,
+    "x": 545.3,
     "y": 772.25,
-    "charWidth": 9.06,
+    "charWidth": 8.0,
     "maxChars": 2,
     "fontSize": 9.8,
     "anchor": "center"
@@ -29,9 +29,9 @@
     "label": "出力年",
     "page": 1,
     "type": "chars",
-    "x": 497.95,
+    "x": 491.47,
     "y": 771.53,
-    "charWidth": 9.06,
+    "charWidth": 8.0,
     "maxChars": 2,
     "fontSize": 9.8,
     "anchor": "center"
@@ -42,9 +42,9 @@
     "label": "出力月",
     "page": 1,
     "type": "chars",
-    "x": 520.81,
+    "x": 518.77,
     "y": 771.53,
-    "charWidth": 9.06,
+    "charWidth": 8.0,
     "maxChars": 2,
     "fontSize": 9.8,
     "anchor": "center"
@@ -171,9 +171,9 @@
     "page": 1,
     "type": "text",
     "x": 471.59,
-    "y": 720.83,
+    "y": 721.53,
     "width": 70.94,
-    "fontSize": 7
+    "fontSize": 14.0
   },
   {
     "id": "cvt0075",
@@ -247,7 +247,7 @@
     "page": 1,
     "type": "chars",
     "x": 229.43,
-    "y": 661.05,
+    "y": 667.0,
     "charWidth": 13.86,
     "maxChars": 2,
     "fontSize": 15.0,
@@ -260,7 +260,7 @@
     "page": 1,
     "type": "chars",
     "x": 268.56,
-    "y": 661.05,
+    "y": 667.09,
     "charWidth": 13.86,
     "maxChars": 2,
     "fontSize": 15.0,
@@ -273,7 +273,7 @@
     "page": 1,
     "type": "chars",
     "x": 308.62,
-    "y": 661.05,
+    "y": 667.0,
     "charWidth": 13.86,
     "maxChars": 2,
     "fontSize": 15.0,
@@ -286,7 +286,7 @@
     "page": 1,
     "type": "text",
     "x": 362.73,
-    "y": 657.55,
+    "y": 658.25,
     "width": 124.44,
     "fontSize": 14.0
   },
@@ -297,9 +297,9 @@
     "page": 1,
     "type": "text",
     "x": 471.59,
-    "y": 657.55,
+    "y": 658.25,
     "width": 70.94,
-    "fontSize": 7
+    "fontSize": 14.0
   },
   {
     "id": "cvt0081",

@@ -148,6 +148,15 @@ function saveFields(fields: FieldDef[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(fields))
 }
 
+// 書式ファイルを読み込んだ時点の写し（画面で編集したかどうかの判定用）
+const SNAPSHOT_KEY = 'formCalibration_loadedSnapshot'
+function saveSnapshot(fields: FieldDef[]) {
+  try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(fields)) } catch { /* ignore */ }
+}
+function loadSnapshot(): string | null {
+  try { return localStorage.getItem(SNAPSHOT_KEY) } catch { return null }
+}
+
 // 書式レイアウトJSONの page は「その書式内のページ（1=表面）」。
 // キャリブレーション画面の画像ページ（pdf-pages/page-N.png）とは別なので、読み込み時に対応付ける。
 const FORM_IMAGE_PAGE: Record<string, number> = {
@@ -488,6 +497,48 @@ export default function FormCalibrationPage() {
 
   const pageFields  = fields.filter(f => f.page === page)
 
+  // ── 書式ファイルの読み込み ──
+  // 画面は書式の「写し」を localStorage に持つ。読み込んだ時点の写しも覚えておき、
+  // 画面で編集していなければ、書式ファイルが新しくなったとき自動で読み込み直す。
+  const fetchForm = async (file: string): Promise<FieldDef[]> => {
+    const raw = await (await fetch(`/form-layouts/${file}.json`, { cache: 'no-store' })).json() as FieldDef[]
+    // 表面（page 1）をこの書式の画像ページに割り当てる
+    const imgPage = FORM_IMAGE_PAGE[file]
+    return raw.map(toCenterAnchor).map(f => (f.page === 1 ? { ...f, page: imgPage } : f))
+  }
+  const applyForm = async (file: string): Promise<FieldDef[]> => {
+    const data = await fetchForm(file)
+    setFields(data)
+    saveFields(data)
+    saveSnapshot(data)
+    setLoadedForm(file)
+    saveLoadedForm(file)
+    setPage(FORM_IMAGE_PAGE[file])
+    setFormStale(false)
+    return data
+  }
+  const [formStale, setFormStale] = useState(false)       // 書式ファイルの方が新しい（画面の写しに編集あり）
+  const [formNotice, setFormNotice] = useState('')
+  useEffect(() => {
+    if (!loadedForm) return
+    let cancelled = false
+    fetchForm(loadedForm).then(data => {
+      if (cancelled) return
+      const fromFile = JSON.stringify(data)
+      const current = JSON.stringify(loadFields())
+      if (fromFile === current) { saveSnapshot(data); return }      // 同じ
+      if (loadSnapshot() === current) {                              // 画面で編集していない → 新しい方に
+        setFields(data); saveFields(data); saveSnapshot(data)
+        setFormNotice('書式ファイルが新しくなっていたので、読み込み直しました')
+        setTimeout(() => setFormNotice(''), 4000)
+      } else {
+        setFormStale(true)                                           // 編集あり、または分からない
+      }
+    }).catch(() => { /* 読めなければ何もしない */ })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedForm])
+
   // ── 見本の文字（印刷と同じフォント・大きさ・位置で、画像に重ねる／印刷する） ──
   const sampleData = useMemo(() => sampleDataForPage(page), [page])
   const printSample = async () => {
@@ -557,6 +608,27 @@ export default function FormCalibrationPage() {
           定義済: {fields.length} フィールド（ページ{page}: {pageFields.length} 件）
         </span>
       </div>
+
+      {/* 書式ファイルの方が新しいとき */}
+      {formStale && loadedForm && (
+        <div className="px-5 py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-3 text-sm shrink-0">
+          <span className="text-amber-800">
+            ⚠ 書式ファイルの方が新しくなっています（文字の大きさ・位置の調整など）。画面の表示は前に読み込んだときのままです。
+          </span>
+          <button type="button"
+            onClick={async () => {
+              if (!window.confirm('書式ファイルを読み込み直しますか？\nこの画面で直して、まだ書き出していない変更は消えます。')) return
+              try { await applyForm(loadedForm) } catch { alert('読み込みに失敗しました') }
+            }}
+            className="px-3 py-1 rounded bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600">
+            読み込み直す
+          </button>
+          <button type="button" onClick={() => setFormStale(false)} className="text-xs text-amber-700 underline">このまま</button>
+        </div>
+      )}
+      {formNotice && (
+        <div className="px-5 py-1.5 bg-mint-50 border-b border-mint-200 text-xs text-mint-700 shrink-0">✓ {formNotice}</div>
+      )}
 
       {/* ── メイン ── */}
       <div className="flex flex-1 overflow-hidden">
@@ -1057,17 +1129,8 @@ export default function FormCalibrationPage() {
                   key={file}
                   onClick={async () => {
                     try {
-                      const res  = await fetch(`/form-layouts/${file}.json`)
-                      const raw  = await res.json() as FieldDef[]
-                      // 表面（page 1）をこの書式の画像ページに割り当てる
-                      const imgPage = FORM_IMAGE_PAGE[file]
-                      const data = raw.map(toCenterAnchor).map(f => (f.page === 1 ? { ...f, page: imgPage } : f))
-                      setFields(data)
-                      saveFields(data)
-                      setLoadedForm(file)
-                      saveLoadedForm(file)
-                      setPage(imgPage)
-                      alert(`${label}：${data.length} 件読み込みました（ページ${imgPage}）`)
+                      const data = await applyForm(file)
+                      alert(`${label}：${data.length} 件読み込みました（ページ${FORM_IMAGE_PAGE[file]}）`)
                     } catch {
                       alert('読み込みに失敗しました')
                     }
