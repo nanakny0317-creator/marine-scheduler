@@ -7,6 +7,7 @@
 import type { Enrollment, Student } from '../types'
 import { enrollmentsApi, venuesApi } from './api'
 import { buildFormData } from './formFieldMap'
+import { loadBirthDateStyle } from './birthDateStyle'
 import { printForms, type FieldDef, type FormPrintJob } from './formPrint'
 import { findJointPartner, orderJoint } from './jointApplication'
 
@@ -25,6 +26,7 @@ export interface PrintTarget { student: Student; enrollment: Enrollment }
 /** 申請書を印刷する。印刷した枚数を返す */
 export async function printApplicationForms(targets: PrintTarget[], title?: string): Promise<number> {
   const venues = await venuesApi.list(false).catch(() => [])
+  const birthStyle = await loadBirthDateStyle()
   const layouts = new Map<string, FieldDef[]>()
   const loadLayout = async (url: string) => {
     if (!layouts.has(url)) layouts.set(url, await (await fetch(url)).json() as FieldDef[])
@@ -49,7 +51,7 @@ export async function printApplicationForms(targets: PrintTarget[], title?: stri
       }
     }
     done.add(enrollment.id)
-    jobs.push({ fields: await loadLayout(def.layout), data: buildFormData(student, first, null, venues, second), pageCount: def.pageCount })
+    jobs.push({ fields: await loadLayout(def.layout), data: buildFormData(student, first, null, venues, second, birthStyle), pageCount: def.pageCount })
   }
 
   if (jobs.length === 0) return 0

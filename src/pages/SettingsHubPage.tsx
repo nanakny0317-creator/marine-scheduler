@@ -1,4 +1,9 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  DEFAULT_BIRTH_DATE_STYLE, loadBirthDateStyle, saveBirthDateStyle,
+  type BirthDateMode, type BirthDateStyle,
+} from '../lib/birthDateStyle'
 
 interface Item {
   icon: string
@@ -24,6 +29,51 @@ const GROUPS: { label: string; items: Item[] }[] = [
     ],
   },
 ]
+
+const MODE_OPTIONS: { value: BirthDateMode; label: string }[] = [
+  { value: 'wareki',  label: '和暦（元号の枠に×・年は元号の年）' },
+  { value: 'seireki', label: '西暦（1900／2000の枠に×・年は西暦の下2桁）' },
+]
+
+/** 申請書の生年月日を和暦・西暦のどちらで書くか */
+function BirthDateStyleSetting() {
+  const [style, setStyle] = useState<BirthDateStyle>(DEFAULT_BIRTH_DATE_STYLE)
+  const [saved, setSaved] = useState(false)
+  useEffect(() => { loadBirthDateStyle().then(setStyle) }, [])
+
+  const change = async (k: keyof BirthDateStyle, v: BirthDateMode) => {
+    const next = { ...style, [k]: v }
+    setStyle(next)
+    await saveBirthDateStyle(next)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1500)
+  }
+
+  const row = (k: keyof BirthDateStyle, label: string) => (
+    <label className="flex items-center gap-3 text-sm">
+      <span className="w-20 text-gray-600">{label}</span>
+      <select
+        value={style[k]}
+        onChange={e => change(k, e.target.value as BirthDateMode)}
+        className="flex-1 border border-lavender-200 rounded-lg px-3 py-1.5 bg-white"
+      >
+        {MODE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </label>
+  )
+
+  return (
+    <div className="bg-white rounded-2xl border border-lavender-100 shadow-sm px-5 py-4 space-y-3">
+      <div className="flex items-center">
+        <span className="text-sm font-bold text-gray-700 flex-1">生年月日の書き方</span>
+        {saved && <span className="text-xs text-mint-600">保存しました</span>}
+      </div>
+      {row('japanese', '日本国籍')}
+      {row('foreign', '外国籍')}
+      <p className="text-xs text-gray-400">国籍が空欄の人は日本国籍として扱います</p>
+    </div>
+  )
+}
 
 export default function SettingsHubPage() {
   const navigate = useNavigate()
@@ -60,6 +110,11 @@ export default function SettingsHubPage() {
             </div>
           </section>
         ))}
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-lavender-600">申請書の印字</h2>
+          <BirthDateStyleSetting />
+        </section>
       </div>
     </div>
   )

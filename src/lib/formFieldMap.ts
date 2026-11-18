@@ -6,6 +6,7 @@
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
 import { PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode } from '../data/masterData'
+import { birthDateModeFor, type BirthDateStyle } from './birthDateStyle'
 
 export type FormData = Record<string, string>
 
@@ -166,6 +167,7 @@ function getExtra(enrollment: Enrollment): Record<string, unknown> {
  * @param examSession 試験日程（任意）
  * @param venues      会場マスター（任意。更新講習の講習実施都道府県コードに使う）
  * @param joint       同時申請で後に受験する試験の申込（任意。試験申請書の②欄に印字）
+ * @param birthStyle  生年月日を和暦・西暦のどちらで書くか（任意。既定は日本国籍＝和暦、外国籍＝西暦）
  */
 export function buildFormData(
   student: Student,
@@ -173,6 +175,7 @@ export function buildFormData(
   examSession?: ExamSession | null,
   venues: Venue[] = [],
   joint: Enrollment | null = null,
+  birthStyle?: BirthDateStyle,
 ): FormData {
   const extra  = getExtra(enrollment)
   const jx     = joint ? getExtra(joint) : null
@@ -206,6 +209,7 @@ export function buildFormData(
   const licenseDigits = (student.license_number ?? '').normalize('NFKC').replace(/[^0-9A-Za-z]/g, '')
   const domicile = student.domicile || (extra.domicile as string) || ''
   const nationality = student.nationality || (extra.nationality as string) || ''
+  const seireki = birthDateModeFor(nationality, birthStyle) === 'seireki'
   const natCode = nationality && !['日本', '韓国', '朝鮮', '米国'].includes(nationality)
     ? String(nationalityCode(nationality) ?? '') : ''
   const domicileIdx = PREFECTURES.findIndex(p => domicile && (domicile === p || prefStem(domicile) === prefStem(p)))
@@ -364,17 +368,20 @@ export function buildFormData(
     nationality_code:  natCode,                   // 韓国・朝鮮・米国以外の国籍のコード番号
     license_digits:    licenseDigits,
     phone_any:         student.phone || student.mobile || '',
-    birth_era_year2:   bd.eraYear ? bd.eraYear.padStart(2, '0') : '',
+    // 年の欄：和暦なら元号の年、西暦なら西暦の下2桁
+    birth_era_year2:   seireki ? bd.year.slice(2) : bd.eraYear ? bd.eraYear.padStart(2, '0') : '',
     birth_year_1:      bd.year.slice(0, 1),       // 西暦の千の位
     birth_year_2:      bd.year.slice(1, 2),       // 西暦の百の位
     birth_year_last2:  bd.year.slice(2),          // 西暦の下2桁
 
     // ── チェック欄（×） ──
-    // 生年月日の元号
-    birth_era_heisei: X(bd.era === '平成'),
-    birth_era_showa:  X(bd.era === '昭和'),
-    birth_era_taisho: X(bd.era === '大正'),
-    birth_era_meiji:  X(bd.era === '明治'),
+    // 生年月日の元号（和暦のとき）／西暦の1900・2000（西暦のとき）
+    birth_era_heisei: X(!seireki && bd.era === '平成'),
+    birth_era_showa:  X(!seireki && bd.era === '昭和'),
+    birth_era_taisho: X(!seireki && bd.era === '大正'),
+    birth_era_meiji:  X(!seireki && bd.era === '明治'),
+    birth_century_1900: X(seireki && bd.year.startsWith('19')),
+    birth_century_2000: X(seireki && bd.year.startsWith('20')),
     // 国籍
     nat_kankoku: X(nationality === '韓国'),
     nat_chosen:  X(nationality === '朝鮮'),

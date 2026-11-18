@@ -57,6 +57,8 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
   { value: 'practical_exam',          label: '実技試験',                 values: ['受験'] },
   { value: 'prev_exam_qual_type',     label: '過去合格試験：資格',       values: ['一級', '二級', '湖川', '二級若年', '特殊'] },
   { value: 'birth_era',               label: '生年月日（元号/世紀）',    values: ['明治', '大正', '昭和', '平成', '令和', '1900', '2000'] },
+  { value: 'birth_century_1900',      label: '生年月日：西暦1900（×）' },
+  { value: 'birth_century_2000',      label: '生年月日：西暦2000（×）' },
   { value: 'gender',                  label: '性別',                     values: ['male', 'female'] },
   { value: 'nationality',             label: '国籍',                     values: ['韓国', '朝鮮', '米国'] },
   { value: 'license_name_changed',    label: '現有免許：氏名変更あり',   values: ['true'] },
