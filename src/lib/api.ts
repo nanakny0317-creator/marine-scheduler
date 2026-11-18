@@ -221,3 +221,16 @@ export async function fetchAddressByZip(
   }
   return null
 }
+
+/** 申請書の書式ファイル（印字位置）。name は 'shiken' など拡張子なしの名前 */
+export const formLayoutsApi = {
+  read: async <T = unknown>(name: string): Promise<T> => {
+    const raw = window.api?.formLayouts
+      ? await window.api.formLayouts.read(name)
+      : await (await fetch(`/form-layouts/${name}.json`, { cache: 'no-store' })).text()
+    if (raw == null) throw new Error(`書式ファイルが見つかりません: ${name}`)
+    return JSON.parse(raw) as T
+  },
+  save: (name: string, fields: unknown): Promise<{ backup: string | null }> =>
+    window.api.formLayouts.save(name, JSON.stringify(fields)),
+}

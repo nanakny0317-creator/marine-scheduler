@@ -5,7 +5,7 @@
  * - 試験の同時申請は、試験日が早い方を①、後の方を②にして1枚にする（2人分としては数えない）
  */
 import type { Enrollment, Student } from '../types'
-import { enrollmentsApi, venuesApi } from './api'
+import { enrollmentsApi, formLayoutsApi, venuesApi } from './api'
 import { buildFormData } from './formFieldMap'
 import { loadBirthDateStyle } from './birthDateStyle'
 import { printForms, type FieldDef, type FormPrintJob } from './formPrint'
@@ -28,8 +28,10 @@ export async function printApplicationForms(targets: PrintTarget[], title?: stri
   const venues = await venuesApi.list(false).catch(() => [])
   const birthStyle = await loadBirthDateStyle()
   const layouts = new Map<string, FieldDef[]>()
+  // 書式は印字位置設定で保存したものがあればそちら（'/form-layouts/shiken.json' → 'shiken'）
   const loadLayout = async (url: string) => {
-    if (!layouts.has(url)) layouts.set(url, await (await fetch(url)).json() as FieldDef[])
+    const name = url.replace(/^.*\//, '').replace(/\.json$/, '')
+    if (!layouts.has(url)) layouts.set(url, await formLayoutsApi.read<FieldDef[]>(name))
     return layouts.get(url)!
   }
   const siblingsCache = new Map<number, Enrollment[]>()

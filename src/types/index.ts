@@ -365,6 +365,12 @@ export interface ElectronAPI {
     get: (key: string) => Promise<string | null>
     set: (key: string, value: string) => Promise<boolean>
   }
+  formLayouts: {
+    /** 今使われている書式の中身（JSON文字列）。無ければ null */
+    read: (name: string) => Promise<string | null>
+    /** 書式を保存する（前の書式は控えに残す） */
+    save: (name: string, json: string) => Promise<{ backup: string | null }>
+  }
   print: {
     html: (html: string) => Promise<void>
   }

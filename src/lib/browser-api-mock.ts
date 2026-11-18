@@ -271,6 +271,14 @@ export const browserApiMock: ElectronAPI = {
     },
   },
 
+  formLayouts: {
+    read: async (name: string) => {
+      const r = await fetch(`/form-layouts/${name}.json`, { cache: 'no-store' })
+      return r.ok ? r.text() : null
+    },
+    save: () => Promise.reject(new Error('ブラウザ表示では書式ファイルに保存できません')),
+  },
+
   settings: {
     get: (key: string) => Promise.resolve(settings.get(key) ?? null),
     set: (key: string, value: string) => { settings.set(key, value); return Promise.resolve(true) },

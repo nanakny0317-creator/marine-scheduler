@@ -72,6 +72,10 @@ const api = {
     get: (key: string) => ipcRenderer.invoke('settings:get', key),
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
   },
+  formLayouts: {
+    read: (name: string) => ipcRenderer.invoke('formLayouts:read', name),
+    save: (name: string, json: string) => ipcRenderer.invoke('formLayouts:save', name, json),
+  },
   print: {
     html: (html: string) => ipcRenderer.invoke('print:html', html),
   },

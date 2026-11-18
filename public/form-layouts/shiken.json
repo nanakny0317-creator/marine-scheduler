@@ -18,7 +18,7 @@
     "type": "chars",
     "x": 545.3,
     "y": 772.25,
-    "charWidth": 8.0,
+    "charWidth": 8,
     "maxChars": 2,
     "fontSize": 9.8,
     "anchor": "center"
@@ -31,7 +31,7 @@
     "type": "chars",
     "x": 491.47,
     "y": 771.53,
-    "charWidth": 8.0,
+    "charWidth": 8,
     "maxChars": 2,
     "fontSize": 9.8,
     "anchor": "center"
@@ -44,7 +44,7 @@
     "type": "chars",
     "x": 518.77,
     "y": 771.53,
-    "charWidth": 8.0,
+    "charWidth": 8,
     "maxChars": 2,
     "fontSize": 9.8,
     "anchor": "center"
@@ -59,7 +59,7 @@
     "y": 738.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -85,7 +85,7 @@
     "y": 738.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -111,7 +111,7 @@
     "y": 738.48,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -124,7 +124,7 @@
     "y": 730.28,
     "charWidth": 13.86,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -137,7 +137,7 @@
     "y": 730.37,
     "charWidth": 13.86,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -150,7 +150,7 @@
     "y": 730.28,
     "charWidth": 13.86,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -159,10 +159,10 @@
     "label": "①_試験地",
     "page": 1,
     "type": "text",
-    "x": 350.0,
+    "x": 350,
     "y": 721.53,
-    "width": 122.0,
-    "fontSize": 14.0
+    "width": 122,
+    "fontSize": 14
   },
   {
     "id": "cvt0093",
@@ -173,7 +173,7 @@
     "x": 471.59,
     "y": 721.53,
     "width": 70.94,
-    "fontSize": 14.0
+    "fontSize": 14
   },
   {
     "id": "cvt0075",
@@ -185,7 +185,7 @@
     "y": 678.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -198,7 +198,7 @@
     "y": 678.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -211,7 +211,7 @@
     "y": 678.72,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -237,7 +237,7 @@
     "y": 678.24,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -247,10 +247,10 @@
     "page": 1,
     "type": "chars",
     "x": 229.43,
-    "y": 667.0,
+    "y": 667,
     "charWidth": 13.86,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -263,7 +263,7 @@
     "y": 667.09,
     "charWidth": 13.86,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -273,10 +273,10 @@
     "page": 1,
     "type": "chars",
     "x": 308.62,
-    "y": 667.0,
+    "y": 667,
     "charWidth": 13.86,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -285,10 +285,10 @@
     "label": "②_試験地",
     "page": 1,
     "type": "text",
-    "x": 350.0,
+    "x": 350,
     "y": 658.25,
-    "width": 122.0,
-    "fontSize": 14.0
+    "width": 122,
+    "fontSize": 14
   },
   {
     "id": "cvt0100",
@@ -299,7 +299,7 @@
     "x": 471.59,
     "y": 658.25,
     "width": 70.94,
-    "fontSize": 14.0
+    "fontSize": 14
   },
   {
     "id": "cvt0081",
@@ -324,7 +324,7 @@
     "y": 607.2,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -333,7 +333,7 @@
     "label": "③_実技試験",
     "page": 1,
     "type": "chars",
-    "x": 487.0,
+    "x": 487,
     "y": 607.2,
     "charWidth": 12.47,
     "maxChars": 1,
@@ -350,7 +350,7 @@
     "y": 607.2,
     "charWidth": 12.22,
     "maxChars": 1,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -363,7 +363,7 @@
     "y": 574.08,
     "charWidth": 20.91,
     "maxChars": 22,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -388,7 +388,7 @@
     "x": 121.74,
     "y": 473.76,
     "width": 278.47,
-    "fontSize": 14.0
+    "fontSize": 14
   },
   {
     "id": "cvt0084",
@@ -399,7 +399,7 @@
     "x": 279.42,
     "y": 449.56,
     "width": 312.08,
-    "fontSize": 10.0,
+    "fontSize": 10,
     "scaleX": 0.7
   },
   {
@@ -412,7 +412,7 @@
     "y": 450.96,
     "charWidth": 16.79,
     "maxChars": 3,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -425,7 +425,7 @@
     "y": 450.96,
     "charWidth": 16.77,
     "maxChars": 4,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center",
     "startChar": 3
   },
@@ -438,7 +438,7 @@
     "x": 453.58,
     "y": 437.67,
     "width": 156.04,
-    "fontSize": 9.0
+    "fontSize": 9
   },
   {
     "id": "cvt0024",
@@ -1204,7 +1204,7 @@
     "y": 213.12,
     "charWidth": 16.79,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -1217,7 +1217,7 @@
     "y": 213.12,
     "charWidth": 17.03,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -1230,7 +1230,7 @@
     "y": 213.12,
     "charWidth": 17.03,
     "maxChars": 2,
-    "fontSize": 15.0,
+    "fontSize": 15,
     "anchor": "center"
   },
   {
@@ -1239,7 +1239,7 @@
     "label": "⑪_航海",
     "page": 1,
     "type": "chars",
-    "x": 487.0,
+    "x": 487,
     "y": 160.32,
     "charWidth": 9.59,
     "maxChars": 1,
@@ -1278,7 +1278,7 @@
     "label": "⑩_免許証番号(5-9桁)",
     "page": 1,
     "type": "chars",
-    "x": 164.0,
+    "x": 164,
     "y": 156.72,
     "charWidth": 22.62,
     "maxChars": 5,

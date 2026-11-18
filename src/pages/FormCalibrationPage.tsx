@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { toCenterAnchor, FONT_STACK, printForms } from '../lib/formPrint'
 import { sampleDataForPage, sampleValueFor } from '../lib/formSample'
 import PrintOffsetControl from '../components/PrintOffsetControl'
+import { formLayoutsApi } from '../lib/api'
 
 // ── PDF仕様定数 ──────────────────────────────────────────────
 const PDF_W = 592.56
@@ -163,6 +164,9 @@ function loadSnapshot(): string | null {
 // キャリブレーション画面の画像ページ（pdf-pages/page-N.png）とは別なので、読み込み時に対応付ける。
 const FORM_IMAGE_PAGE: Record<string, number> = {
   shiken: 1, menkyo: 2, koshin: 3, saikofu: 4, teisei: 5,
+}
+const FORM_LABELS: Record<string, string> = {
+  shiken: '試験申請書', menkyo: '免許申請書', koshin: '更新申請書', saikofu: '失効再交付申請書', teisei: '訂正申請書',
 }
 const LOADED_FORM_KEY = 'formCalibration_loadedForm'
 
@@ -379,6 +383,31 @@ export default function FormCalibrationPage() {
     return JSON.stringify(grouped, null, 2)
   }
 
+  // 書式ファイルに保存（本番の印刷に使われる）。前の書式は控えに残る
+  const [savingForm, setSavingForm] = useState(false)
+  const saveToForm = async () => {
+    if (!loadedForm) return
+    const imgPage = FORM_IMAGE_PAGE[loadedForm]
+    const name = FORM_LABELS[loadedForm] ?? loadedForm
+    const out = fields.filter(f => f.page === imgPage).map(f => ({ ...f, page: 1 }))
+    if (out.length === 0) { alert('保存する欄がありません'); return }
+    if (!window.confirm(`${name}の書式ファイルに保存しますか？
+次の印刷からこの位置で印字されます（前の書式は控えに残ります）。`)) return
+    setSavingForm(true)
+    try {
+      await formLayoutsApi.save(loadedForm, out)
+      saveSnapshot(fields)
+      setFormStale(false)
+      setFormNotice(`${name}の書式ファイルに保存しました（次の印刷から反映）`)
+      setTimeout(() => setFormNotice(''), 5000)
+    } catch (e) {
+      alert(`保存できませんでした。
+${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setSavingForm(false)
+    }
+  }
+
   const handleCopy = () => {
     navigator.clipboard.writeText(exportJson()).then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 2000)
@@ -503,7 +532,7 @@ export default function FormCalibrationPage() {
   // 画面は書式の「写し」を localStorage に持つ。読み込んだ時点の写しも覚えておき、
   // 画面で編集していなければ、書式ファイルが新しくなったとき自動で読み込み直す。
   const fetchForm = async (file: string): Promise<FieldDef[]> => {
-    const raw = await (await fetch(`/form-layouts/${file}.json`, { cache: 'no-store' })).json() as FieldDef[]
+    const raw = await formLayoutsApi.read<FieldDef[]>(file)
     // 表面（page 1）をこの書式の画像ページに割り当てる
     const imgPage = FORM_IMAGE_PAGE[file]
     return raw.map(toCenterAnchor).map(f => (f.page === 1 ? { ...f, page: imgPage } : f))
@@ -1143,6 +1172,16 @@ export default function FormCalibrationPage() {
                 </button>
               ))}
             </div>
+            {loadedForm && (
+              <button
+                type="button"
+                onClick={saveToForm}
+                disabled={savingForm}
+                className="w-full py-2 text-xs bg-lavender-500 text-white rounded font-semibold hover:bg-lavender-600 disabled:opacity-50"
+              >
+                {savingForm ? '保存中…' : `${FORM_LABELS[loadedForm] ?? loadedForm}の書式ファイルに保存（印刷に反映）`}
+              </button>
+            )}
           </div>
 
           {/* JSON エクスポート／インポート */}
