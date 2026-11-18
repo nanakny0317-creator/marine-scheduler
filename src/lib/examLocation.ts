@@ -11,3 +11,12 @@ export function normalizeExamLocation(v: string | null | undefined): string {
     .replace(/[)）]/g, '）')
     .replace(/[\s　]+/g, '')
 }
+
+/**
+ * 申請書（OCR）に印字する試験地：「（浜大津）」のような括弧つきは長くて欄に入らないので都道府県名を省く
+ *   「滋賀県大津市（浜大津）」→「大津市（浜大津）」　括弧の無いものはそのまま
+ */
+export function examLocationForForm(v: string | null | undefined): string {
+  const s = normalizeExamLocation(v)
+  return s.includes('（') ? s.replace(/^.{2,3}?[都道府県]/, '') : s
+}

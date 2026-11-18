@@ -97,6 +97,19 @@ const SY = A4_H / CAL_H
 const px = (x: number) => (x * SX).toFixed(2)
 const py = (y: number) => (y * SY).toFixed(2)
 
+/** 文字列の幅の目安（全角＝1文字分、半角＝半分） */
+function textWidthPt(v: string, fs: number): number {
+  let w = 0
+  for (const ch of v) w += /[ -~｡-ﾟ]/.test(ch) ? fs * 0.5 : fs
+  return w
+}
+/** 欄の幅に入らないときの横の縮め率（入るなら 1） */
+function autoSqueeze(v: string, fs: number, width?: number): number {
+  if (!width) return 1
+  const w = textWidthPt(v, fs)
+  return w > width ? Math.max(0.5, width / w) : 1
+}
+
 // ── フィールドを HTML スパンに変換 ──────────────────────────────
 function fieldToHtml(field: FieldDef, data: FormData): string {
   const value = data[field.key] ?? ''
@@ -115,7 +128,8 @@ function fieldToHtml(field: FieldDef, data: FormData): string {
   if (!value) return ''
 
   if (field.type === 'text') {
-    const sxr = field.scaleX && field.scaleX > 0 && field.scaleX !== 1 ? field.scaleX : 1
+    // 横の縮め：指定があればそれ、無ければ欄の幅に入らないときだけ自動で縮める
+    const sxr = field.scaleX && field.scaleX > 0 && field.scaleX !== 1 ? field.scaleX : autoSqueeze(value, fs, field.width)
     // 横に縮めるときは、縮めた後の幅が欄の幅に収まるよう、縮める前の幅で切る
     const maxW = field.width ? `max-width:${(Number(px(field.width)) / sxr).toFixed(2)}pt;` : ''
     const squeeze = sxr !== 1 ? `transform:scaleX(${sxr});transform-origin:left bottom;` : ''

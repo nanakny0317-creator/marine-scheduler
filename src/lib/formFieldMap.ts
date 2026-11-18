@@ -6,6 +6,7 @@
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
 import { PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode } from '../data/masterData'
+import { examLocationForForm } from './examLocation'
 import { birthDateModeFor, type BirthDateStyle } from './birthDateStyle'
 
 export type FormData = Record<string, string>
@@ -321,7 +322,7 @@ export function buildFormData(
     exam_date_year:     exDate.eraYear ? exDate.eraYear.padStart(2, '0') : '',
     exam_date_month:    exDate.month,
     exam_date_day:      exDate.day,
-    exam_location:      examSession?.exam_location  ?? (extra.exam_location as string) ?? enrollment.venue ?? '',
+    exam_location:      examLocationForForm(examSession?.exam_location  ?? (extra.exam_location as string) ?? enrollment.venue ?? ''),
     exam_id:            examSession?.exam_id        ?? (extra.exam_id as string)       ?? '',
     exam_qual_type:     examSession?.qualification_type ?? (extra.exam_qual_type as string) ?? '',
     // 受験する試験（未設定の古い申込は両方受験）
@@ -404,7 +405,7 @@ export function buildFormData(
     exam2_year:          exam2Date.eraYear ? exam2Date.eraYear.padStart(2, '0') : '',   // 令和の年2桁
     exam2_month:         exam2Date.month,
     exam2_day:           exam2Date.day,
-    exam2_location:      exam2.location,
+    exam2_location:      examLocationForForm(exam2.location),
     exam2_number:        exam2.number,
     // 受験内容（試験申請書③）：同時申請はどちらかで受けるものに×
     shintai_none:  X(extra.shintai === 'need' || jx?.shintai === 'need'),
