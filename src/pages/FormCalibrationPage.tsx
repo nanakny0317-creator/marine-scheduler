@@ -593,7 +593,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
       return { ...toCenterAnchor(f), key: f.id, page: 1, dataKey: undefined, matchValue: undefined }
     })
     try {
-      await printForms([{ fields: jobFields, data, pageCount: 1 }], `印字位置の見本（ページ${page}）`)
+      await printForms([{ fields: jobFields, data, pageCount: 1 }], `印字位置の見本（${PAGE_FORM[page] ? FORM_LABELS[PAGE_FORM[page]] : `ページ${page}`}）`)
     } catch (e) {
       alert(`見本を印刷できませんでした。\n${e instanceof Error ? e.message : String(e)}`)
     }
@@ -634,7 +634,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
         <button type="button" onClick={printSample} disabled={pageFields.length === 0}
           title="このページの見本を印刷します。OCR用紙に印刷するか、白紙に印刷して用紙と重ねて透かすと、ずれが分かります（全体の位置補正も反映）"
           className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-white text-blue-600 border-blue-300 hover:bg-blue-50 disabled:opacity-40">
-          🖨 見本を印刷
+          🖨 見本を印刷{PAGE_FORM[page] ? `（${FORM_LABELS[PAGE_FORM[page]]}）` : ''}
         </button>
         <PrintOffsetControl />
         <div className="flex gap-1 ml-4">
