@@ -598,6 +598,10 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
       alert(`見本を印刷できませんでした。\n${e instanceof Error ? e.message : String(e)}`)
     }
   }
+  // 見本ON で欄を編集中は、赤いプレビューに見本の文字を出して、青い見本と二重にならないようにする
+  const editPreviewOn = showPreview && !!ptA && imgSize.w > 0
+  const editField = editId ? pageFields.find(f => f.id === editId) : undefined
+  const editSampleText = sampleOn && editField ? sampleValueFor(editField, sampleData) : null
   // 欄番号タブ（①→⑳、その他は最後）
   const groupCounts = new Map<string, number>()
   for (const f of pageFields) {
@@ -703,7 +707,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
             {/* 見本の文字（印刷と同じ組み方：文字マスは枠の中心、文字欄は左下、横幅の倍率も反映） */}
             {sampleOn && imgSize.w > 0 && (
               <div className="absolute inset-0 pointer-events-none z-[5]">
-                {pageFields.map(raw => {
+                {pageFields.filter(raw => !(editPreviewOn && raw.id === editId)).map(raw => {
                   const f = toCenterAnchor(raw)
                   const s = imgSize.w / PDF_W, t = imgSize.h / PDF_H
                   const value = sampleValueFor(f, sampleData)
@@ -777,7 +781,9 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                     const pitchPx = n > 1 && ptB ? ((ptB.x - ptA.x) / (n - 1)) * sx : cwPx
                     const boxW = Math.max(Math.abs(pitchPx), fontPx)
                     const boxH = fontPx * 1.4
-                    const chars = Array.from(previewText)
+                    const chars = editSampleText !== null
+                      ? Array.from(editSampleText).slice(editField?.startChar ?? 0)
+                      : Array.from(previewText)
                     return (
                       <>
                         {Array.from({ length: n }, (_, i) => {
@@ -825,7 +831,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                         opacity: 0.85,
                       }}
                     >
-                      {previewText}
+                      {editSampleText ?? previewText}
                     </div>
                   )}
                   {fType === 'mark' && (
@@ -840,7 +846,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                         opacity: 0.85,
                       }}
                     >
-                      {previewText}
+                      {editSampleText ?? previewText}
                     </div>
                   )}
                 </div>
