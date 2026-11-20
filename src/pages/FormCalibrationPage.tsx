@@ -165,6 +165,9 @@ function loadSnapshot(): string | null {
 const FORM_IMAGE_PAGE: Record<string, number> = {
   shiken: 1, menkyo: 2, koshin: 3, saikofu: 4, teisei: 5,
 }
+/** 画像ページ → 書式ファイル */
+const PAGE_FORM: Record<number, string> = Object.fromEntries(
+  Object.entries(FORM_IMAGE_PAGE).map(([file, p]) => [p, file]))
 const FORM_LABELS: Record<string, string> = {
   shiken: '試験申請書', menkyo: '免許申請書', koshin: '更新申請書', saikofu: '失効再交付申請書', teisei: '訂正申請書',
 }
@@ -548,6 +551,16 @@ ${e instanceof Error ? e.message : String(e)}`)
     setFormStale(false)
     return data
   }
+  // ページ番号を押したら、そのページの書式を読み込む（画像だけ変わって欄が0件になるのを防ぐ）
+  const switchPage = async (p: number) => {
+    const file = PAGE_FORM[p]
+    if (!file || file === loadedForm) { setPage(p); return }
+    const edited = loadedForm && loadSnapshot() !== JSON.stringify(fields)
+    if (edited && !window.confirm(
+      `${FORM_LABELS[loadedForm!]}に、書式ファイルに保存していない変更があります。
+${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り替えますか？`)) return
+    try { await applyForm(file) } catch { alert('読み込みに失敗しました') }
+  }
   const [formStale, setFormStale] = useState(false)       // 書式ファイルの方が新しい（画面の写しに編集あり）
   const [formNotice, setFormNotice] = useState('')
   useEffect(() => {
@@ -624,7 +637,8 @@ ${e instanceof Error ? e.message : String(e)}`)
           {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map(p => (
             <button
               key={p}
-              onClick={() => setPage(p)}
+              onClick={() => switchPage(p)}
+              title={PAGE_FORM[p] ? FORM_LABELS[PAGE_FORM[p]] : undefined}
               className={`w-8 h-8 rounded text-sm font-semibold transition ${
                 page === p
                   ? 'bg-lavender-400 text-white'
