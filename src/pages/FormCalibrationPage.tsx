@@ -643,18 +643,18 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
               key={p}
               onClick={() => switchPage(p)}
               title={PAGE_FORM[p] ? FORM_LABELS[PAGE_FORM[p]] : undefined}
-              className={`w-8 h-8 rounded text-sm font-semibold transition ${
+              className={`px-2.5 h-8 rounded text-sm font-semibold transition whitespace-nowrap ${
                 page === p
                   ? 'bg-lavender-400 text-white'
                   : 'bg-gray-100 text-gray-500 hover:bg-lavender-100'
               }`}
             >
-              {p}
+              {PAGE_FORM[p] ? FORM_LABELS[PAGE_FORM[p]].replace(/申請書$/, '') : p}
             </button>
           ))}
         </div>
         <span className="ml-auto text-xs text-gray-400">
-          定義済: {fields.length} フィールド（ページ{page}: {pageFields.length} 件）
+          定義済: {fields.length} フィールド（{PAGE_FORM[page] ? FORM_LABELS[PAGE_FORM[page]] : `ページ${page}`}: {pageFields.length} 件）
         </span>
       </div>
 
@@ -1116,7 +1116,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
           <div className="flex-1 overflow-y-auto">
             <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
               <p className="text-xs font-semibold text-gray-500">
-                定義済みフィールド（ページ{page}）
+                定義済みフィールド（{PAGE_FORM[page] ? FORM_LABELS[PAGE_FORM[page]] : `ページ${page}`}）
               </p>
               <span className="text-xs text-gray-400">
                 {listFields.length !== pageFields.length && `${listFields.length} / `}{pageFields.length} 件
@@ -1181,7 +1181,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                   onClick={async () => {
                     try {
                       const data = await applyForm(file)
-                      alert(`${label}：${data.length} 件読み込みました（ページ${FORM_IMAGE_PAGE[file]}）`)
+                      alert(`${label}：${data.length} 件読み込みました`)
                     } catch {
                       alert('読み込みに失敗しました')
                     }
