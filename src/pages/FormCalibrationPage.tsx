@@ -451,13 +451,13 @@ ${e instanceof Error ? e.message : String(e)}`)
     setPtA(null); setPtB(null); setClickSeq(0)
   }, [page, fType])
 
-  // 矢印キーで位置を微調整（A・B を一緒に移動）。0.5pt、Shift で 5pt
+  // 矢印キーで位置を微調整（A・B を一緒に移動）。0.5mm、Shift で 1mm
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!ptA) return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      const step = e.shiftKey ? 5 : 0.5
+      const step = (e.shiftKey ? 1 : 0.5) * 72 / 25.4   // mm → pt
       let dx = 0, dy = 0
       switch (e.key) {
         case 'ArrowLeft':  dx = -step; break
@@ -906,7 +906,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
               <PtBadge label="A" pt={ptA} />
               <PtBadge label="B" pt={ptB} />
               {ptA && (
-                <span className="text-[11px] text-gray-400">矢印キーで移動（Shift で大きく）</span>
+                <span className="text-[11px] text-gray-400">矢印キーで0.5mm（Shift で1mm）移動</span>
               )}
             </div>
             {charWidthCalc && (
