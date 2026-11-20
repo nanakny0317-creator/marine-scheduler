@@ -176,7 +176,7 @@
     "y": 598.08,
     "charWidth": 22.6,
     "maxChars": 22,
-    "fontSize": 11.0,
+    "fontSize": 11,
     "anchor": "center"
   },
   {
@@ -232,19 +232,6 @@
     "anchor": "center"
   },
   {
-    "id": "cvt0033",
-    "key": "phone",
-    "label": "⑥_電話番号",
-    "page": 1,
-    "type": "chars",
-    "x": 373.88,
-    "y": 464.64,
-    "charWidth": 16.93,
-    "maxChars": 5,
-    "fontSize": 13.4,
-    "anchor": "center"
-  },
-  {
     "id": "cvt0032",
     "key": "phone",
     "label": "⑥_電話番号",
@@ -253,7 +240,7 @@
     "x": 289.21,
     "y": 464.64,
     "charWidth": 16.94,
-    "maxChars": 11,
+    "maxChars": 16,
     "fontSize": 13.2,
     "anchor": "center"
   },

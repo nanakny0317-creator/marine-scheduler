@@ -478,6 +478,25 @@ ${e instanceof Error ? e.message : String(e)}`)
     return () => window.removeEventListener('keydown', onKey)
   }, [ptA])
 
+  // 既にある欄を動かしたら（矢印キー・ドラッグ・クリック）、「更新」を押さなくても欄の位置にすぐ反映する
+  useEffect(() => {
+    if (!editId || !ptA) return
+    setFields(prev => {
+      const f = prev.find(x => x.id === editId)
+      if (!f) return prev
+      const n = f.maxChars ?? 1
+      const cw = f.type === 'chars' && ptB && n > 1
+        ? parseFloat((Math.abs(ptB.x - ptA.x) / (n - 1)).toFixed(3))
+        : f.charWidth
+      if (f.x === ptA.x && f.y === ptA.y && Math.abs((cw ?? 0) - (f.charWidth ?? 0)) < 0.01) return prev
+      const next = prev.map(x => x.id === editId
+        ? { ...x, x: ptA.x, y: ptA.y, ...(cw !== undefined ? { charWidth: cw } : {}) }
+        : x)
+      saveFields(next)
+      return next
+    })
+  }, [ptA, ptB, editId])
+
   // 種別切り替え時にデフォルトプレビューテキストを更新
   useEffect(() => {
     setPreviewText(DEFAULT_PREVIEW[fType])
