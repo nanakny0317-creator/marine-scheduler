@@ -11,6 +11,7 @@ import { formLayoutsApi } from '../lib/api'
 // ── PDF仕様定数 ──────────────────────────────────────────────
 const PDF_W = 592.56
 const PDF_H = 842.4
+const MM_PT = 72 / 25.4   // 1mm = 2.835pt
 const TOTAL_PAGES = 5
 
 // ── 型定義 ─────────────────────────────────────────────────
@@ -235,6 +236,8 @@ export default function FormCalibrationPage() {
   const [groupTab, setGroupTab] = useState<string>('all')   // 一覧の欄番号タブ
   const [listQuery, setListQuery] = useState('')            // 一覧の絞り込み
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
+  // 全体の位置補正（mm）。画像（実物の用紙のスキャン）をその分だけ逆に動かして表示し、画面＝印刷にする
+  const [printOff, setPrintOff] = useState({ xMm: 0, yMm: 0 })
   const [fields,  setFields]  = useState<FieldDef[]>(loadFields)
   // 書式レイアウトから読み込んだ場合、その書式名（書き出し時に page を書式内ページへ戻すため）
   const [loadedForm, setLoadedForm] = useState<string | null>(loadLoadedForm)
@@ -655,7 +658,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
           className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-white text-blue-600 border-blue-300 hover:bg-blue-50 disabled:opacity-40">
           🖨 見本を印刷{PAGE_FORM[page] ? `（${FORM_LABELS[PAGE_FORM[page]]}）` : ''}
         </button>
-        <PrintOffsetControl />
+        <PrintOffsetControl onChange={setPrintOff} />
         <div className="flex gap-1 ml-4">
           {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map(p => (
             <button
@@ -709,6 +712,9 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
               src={`/pdf-pages/page-${page}.png`}
               alt={`Page ${page}`}
               className={`block max-w-[700px] w-full select-none ${dragging ? 'cursor-grabbing' : 'cursor-crosshair'}`}
+              // 印刷では欄が補正の分だけ右・下に出る → 画像を左・上へ同じだけずらし、欄と用紙の重なりを印刷と同じに見せる
+              style={imgSize.w > 0 ? { objectPosition:
+                `${(-printOff.xMm * MM_PT * imgSize.w / PDF_W).toFixed(2)}px ${(-printOff.yMm * MM_PT * imgSize.h / PDF_H).toFixed(2)}px` } : undefined}
               onClick={handleImgClick}
               onMouseMove={handleImgMove}
               onMouseLeave={() => setHover(null)}

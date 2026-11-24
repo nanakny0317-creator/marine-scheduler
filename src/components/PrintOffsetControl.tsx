@@ -10,14 +10,16 @@ import { loadPrintOffset, savePrintOffset, type PrintOffset } from '../lib/formP
 
 const SUGGESTED: PrintOffset = { xMm: 0.7, yMm: -3.1 }
 
-export default function PrintOffsetControl() {
+/** onChange：読み込み時と保存時に、保存済みの補正を知らせる（位置調整画面の表示を印刷に合わせる用） */
+export default function PrintOffsetControl({ onChange }: { onChange?: (o: PrintOffset) => void } = {}) {
   const [saved, setSaved] = useState<PrintOffset | null>(null)
   const [x, setX] = useState('0')
   const [y, setY] = useState('0')
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
-    loadPrintOffset().then(o => { setSaved(o); setX(String(o.xMm)); setY(String(o.yMm)) })
+    loadPrintOffset().then(o => { setSaved(o); setX(String(o.xMm)); setY(String(o.yMm)); onChange?.(o) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const num = (s: string) => { const v = Number(s); return Number.isFinite(v) ? Math.round(v * 10) / 10 : NaN }
@@ -28,7 +30,7 @@ export default function PrintOffsetControl() {
     if (Number.isNaN(o.xMm) || Number.isNaN(o.yMm)) { setMsg('数字を入れてください'); return }
     if (Math.abs(o.xMm) > 15 || Math.abs(o.yMm) > 15) { setMsg('15mm 以内にしてください'); return }
     await savePrintOffset(o)
-    setSaved(o); setMsg('保存しました')
+    setSaved(o); onChange?.(o); setMsg('保存しました')
     setTimeout(() => setMsg(''), 2000)
   }
 
