@@ -8,7 +8,6 @@
  *   → CSS print では bottom: Ypt / left: Xpt が 1:1 で対応する
  */
 
-import { settingsApi } from './api'
 
 export type FieldType = 'chars' | 'text' | 'mark'
 
@@ -36,9 +35,11 @@ export interface FieldDef {
 
 // ── 全体の位置補正（プリンターの癖） ────────────────────────────────
 // 書式の位置データとは別に、印刷全体を mm 単位で動かす。プラスは右・下。
+// プリンターごとに違うので、パソコンごとに保存する（共有のデータベースには入れない）。
 export interface PrintOffset { xMm: number; yMm: number }
-export const PRINT_OFFSET_KEY = 'ocr_print_offset'
-export const NO_OFFSET: PrintOffset = { xMm: 0, yMm: 0 }
+/** 基本設定：まだ保存していないパソコンはこれを使う。
+ *  2026-11-24 に親機（手差し・本番のOCR用紙）で合わせた値＝右へ0.7mm・上へ0.9mm */
+export const DEFAULT_PRINT_OFFSET: PrintOffset = { xMm: 0.7, yMm: -0.9 }
 const MM = 72 / 25.4
 
 /** 旧形式の文字マスを枠方式（1枠目の中心）に変換する。印字結果は変わらない */
@@ -225,13 +226,18 @@ ${pagesHtml}
   }
 }
 
-/** 保存してある全体の位置補正（未設定なら 0） */
+/** このパソコンの全体の位置補正（保存していなければ基本設定） */
 export async function loadPrintOffset(): Promise<PrintOffset> {
-  const v = await settingsApi.get<Partial<PrintOffset>>(PRINT_OFFSET_KEY, NO_OFFSET)
-  const n = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0)
-  return { xMm: n(v.xMm), yMm: n(v.yMm) }
+  let v: Partial<PrintOffset> = DEFAULT_PRINT_OFFSET
+  try {
+    const raw = await window.api.printOffset.get()
+    if (raw) v = JSON.parse(raw) as Partial<PrintOffset>
+  } catch { /* 読めなければ基本設定 */ }
+  const n = (x: unknown, d: number) => (typeof x === 'number' && Number.isFinite(x) ? x : d)
+  return { xMm: n(v.xMm, DEFAULT_PRINT_OFFSET.xMm), yMm: n(v.yMm, DEFAULT_PRINT_OFFSET.yMm) }
 }
-export const savePrintOffset = (o: PrintOffset) => settingsApi.set(PRINT_OFFSET_KEY, o)
+/** このパソコンだけに保存する */
+export const savePrintOffset = (o: PrintOffset) => window.api.printOffset.set(JSON.stringify(o))
 
 /** 1人分の申請書を印刷する */
 export function printForm(fields: FieldDef[], data: FormData, pageCount: number, formTitle: string): Promise<void> {

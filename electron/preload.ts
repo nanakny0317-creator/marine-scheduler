@@ -76,6 +76,10 @@ const api = {
     read: (name: string) => ipcRenderer.invoke('formLayouts:read', name),
     save: (name: string, json: string) => ipcRenderer.invoke('formLayouts:save', name, json),
   },
+  printOffset: {
+    get: () => ipcRenderer.invoke('printOffset:get'),
+    set: (json: string) => ipcRenderer.invoke('printOffset:set', json),
+  },
   print: {
     html: (html: string) => ipcRenderer.invoke('print:html', html),
   },

@@ -25,6 +25,7 @@ let physicalExams: PhysicalExam[] = []
 let renewalSessions: RenewalSession[] = []
 let classrooms: Classroom[] = []
 const settings = new Map<string, string>()
+let printOffsetJson: string | null = null
 let examRecords: ExamRecord[] = []
 let pendingReviews: PendingReviewWithStudents[] = []
 let nextId = 1
@@ -277,6 +278,11 @@ export const browserApiMock: ElectronAPI = {
       return r.ok ? r.text() : null
     },
     save: () => Promise.reject(new Error('ブラウザ表示では書式ファイルに保存できません')),
+  },
+
+  printOffset: {
+    get: () => Promise.resolve(printOffsetJson),
+    set: (json: string) => { printOffsetJson = json; return Promise.resolve(true) },
   },
 
   settings: {

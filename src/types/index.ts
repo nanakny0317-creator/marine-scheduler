@@ -371,6 +371,11 @@ export interface ElectronAPI {
     /** 書式を保存する（前の書式は控えに残す） */
     save: (name: string, json: string) => Promise<{ backup: string | null }>
   }
+  /** 全体の位置補正（このパソコンだけに保存。JSON文字列、未保存なら null） */
+  printOffset: {
+    get: () => Promise<string | null>
+    set: (json: string) => Promise<boolean>
+  }
   print: {
     html: (html: string) => Promise<void>
   }
