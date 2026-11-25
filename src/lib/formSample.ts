@@ -9,7 +9,7 @@ import { buildFormData, type FormData } from './formFieldMap'
 import type { FieldDef } from './formPrint'
 
 /** 印字位置設定の画像ページ → 申込の種類（1=試験 2=免許 3=更新 4=失効再交付 5=訂正） */
-const PAGE_APP_TYPE: Record<number, string> = { 1: 'new', 2: 'new', 3: 'renewal', 4: 'lapsed', 5: 'renewal' }
+const PAGE_APP_TYPE: Record<number, string> = { 1: 'new', 2: 'new', 3: 'renewal', 4: 'lapsed', 5: 'correction' }
 
 const now = new Date().toISOString()
 const SAMPLE_STUDENT: Student = {
@@ -45,7 +45,21 @@ function sampleEnrollment(appType: string): Enrollment {
 /** 画像ページの見本データ */
 export function sampleDataForPage(page: number): FormData {
   const appType = PAGE_APP_TYPE[page] ?? 'new'
-  try { return buildFormData(SAMPLE_STUDENT, sampleEnrollment(appType)) } catch { return {} }
+  // 試験申請書は②（同時申請）も本番と同じ形で見られるよう、相手の申込を付ける
+  const joint = page === 1 ? sampleJointEnrollment() : null
+  try { return buildFormData(SAMPLE_STUDENT, sampleEnrollment(appType), null, [], joint) } catch { return {} }
+}
+
+/** 同時申請の相手（後に受験する試験） */
+function sampleJointEnrollment(): Enrollment {
+  const extra = {
+    application_type: 'new', exam_date: '2026-12-20', exam_location: '大阪府大阪市', exam_qual_type: '特殊',
+    exam_gakka: true, exam_jitsugi: true, shintai: 'have',
+  }
+  return {
+    id: -2, student_id: 0, menu: '', course_date: null, venue: '大阪府大阪市',
+    status: 'pending', extra_json: JSON.stringify(extra), note: null, created_at: now, updated_at: now,
+  }
 }
 
 const FILL_DIGITS = '1234567890'
