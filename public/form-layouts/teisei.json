@@ -299,58 +299,6 @@
     "anchor": "center"
   },
   {
-    "id": "cvt0004",
-    "key": "昭和",
-    "label": "⑥_昭和",
-    "page": 1,
-    "type": "chars",
-    "x": 68.56,
-    "y": 228.94,
-    "charWidth": 10.55,
-    "maxChars": 1,
-    "fontSize": 9.5,
-    "anchor": "center"
-  },
-  {
-    "id": "cvt0003",
-    "key": "平成",
-    "label": "⑥_平成",
-    "page": 1,
-    "type": "chars",
-    "x": 51.78,
-    "y": 228.7,
-    "charWidth": 10.81,
-    "maxChars": 1,
-    "fontSize": 9.7,
-    "anchor": "center"
-  },
-  {
-    "id": "cvt0005",
-    "key": "大正",
-    "label": "⑥_大正",
-    "page": 1,
-    "type": "chars",
-    "x": 85.58,
-    "y": 228.7,
-    "charWidth": 10.81,
-    "maxChars": 1,
-    "fontSize": 9.7,
-    "anchor": "center"
-  },
-  {
-    "id": "cvt0006",
-    "key": "明治",
-    "label": "⑥_明治",
-    "page": 1,
-    "type": "chars",
-    "x": 102.6,
-    "y": 228.7,
-    "charWidth": 10.81,
-    "maxChars": 1,
-    "fontSize": 9.7,
-    "anchor": "center"
-  },
-  {
     "id": "cvt0011",
     "key": "男",
     "label": "⑦_男",
@@ -378,8 +326,8 @@
   },
   {
     "id": "cvt0007",
-    "key": "西暦",
-    "label": "⑥_西暦",
+    "key": "birth_year_1",
+    "label": "⑥_西暦（千の位）",
     "page": 1,
     "type": "chars",
     "x": 128.0,
@@ -390,9 +338,22 @@
     "anchor": "center"
   },
   {
+    "id": "cvt0007b",
+    "key": "birth_year_2",
+    "label": "⑥_西暦（百の位・枠なし）",
+    "page": 1,
+    "type": "chars",
+    "x": 144.3,
+    "y": 224.86,
+    "charWidth": 13.94,
+    "maxChars": 1,
+    "fontSize": 12.5,
+    "anchor": "center"
+  },
+  {
     "id": "cvt0008",
-    "key": "生年月日年",
-    "label": "⑥_出生年",
+    "key": "birth_year_last2",
+    "label": "⑥_出生年（西暦の下2桁）",
     "page": 1,
     "type": "chars",
     "x": 160.6,
@@ -404,7 +365,7 @@
   },
   {
     "id": "cvt0009",
-    "key": "生年月日月",
+    "key": "birth_month",
     "label": "⑥_出生月",
     "page": 1,
     "type": "chars",
@@ -417,7 +378,7 @@
   },
   {
     "id": "cvt0010",
-    "key": "生年月日日",
+    "key": "birth_day",
     "label": "⑥_出生日",
     "page": 1,
     "type": "chars",
