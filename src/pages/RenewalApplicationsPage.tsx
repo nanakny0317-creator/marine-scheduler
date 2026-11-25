@@ -63,6 +63,8 @@ function issuesOf(x: Entry): string[] {
   if (!x.student.license_number) out.push('免許番号')
   if (!x.student.license_expiry) out.push('有効期限')
   if (ex.license_return !== 'yes' && ex.license_return !== 'no') out.push('免許証返納')
+  if (ex.correction !== 'yes' && ex.correction !== 'no') out.push('訂正の有無')
+  else if (ex.correction === 'yes' && !(Array.isArray(ex.correction_items) && ex.correction_items.length)) out.push('訂正の項目')
   return out
 }
 

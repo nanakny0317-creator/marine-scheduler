@@ -52,18 +52,18 @@ function createWindow() {
 }
 
 // 出力先ディレクトリ（DBと同じ場所に合わせる）
-function getOutputPath(n = 0) {
+function getOutputPath(n = 0, base = 'receipt') {
   const dir = isDev ? process.cwd() : app.getPath('userData')
-  return path.join(dir, n === 0 ? 'receipt.pdf' : `receipt-${n}.pdf`)
+  return path.join(dir, n === 0 ? `${base}.pdf` : `${base}-${n}.pdf`)
 }
 
 /**
  * PDFを書き出す。前に印刷したPDFがビューアで開いたまま（ロック中）なら、
  * receipt-1.pdf, receipt-2.pdf … と別の名前で保存する。
  */
-function writePdf(buf: Buffer): string {
+function writePdf(buf: Buffer, base = 'receipt'): string {
   for (let n = 0; n < 20; n++) {
-    const p = getOutputPath(n)
+    const p = getOutputPath(n, base)
     try {
       writeFileSync(p, buf)
       return p
@@ -76,7 +76,9 @@ function writePdf(buf: Buffer): string {
 }
 
 // ── 印刷ハンドラー（HTML → PDF → システムPDFビューアで開く）──
-ipcMain.handle('print:html', async (_event, html: string) => {
+ipcMain.handle('print:html', async (_event, html: string, baseName?: unknown) => {
+  // 保存するPDFの名前（英数字だけ。既定は receipt）
+  const base = typeof baseName === 'string' && /^[a-z0-9-]{1,40}$/i.test(baseName) ? baseName : 'receipt'
   const renderWin = new BrowserWindow({
     show: false,
     width: 680,
@@ -100,7 +102,7 @@ ipcMain.handle('print:html', async (_event, html: string) => {
 
   // DBと同じディレクトリに固定名で上書き保存（tempフォルダ不使用）
   // 印刷時に「用紙に合わせて縮小」されないよう、PDFに「実際のサイズで印刷」の指定を付ける
-  const pdfPath = writePdf(setPrintScalingNone(Buffer.from(pdfBuffer)))
+  const pdfPath = writePdf(setPrintScalingNone(Buffer.from(pdfBuffer)), base)
 
   await shell.openPath(pdfPath)
 })

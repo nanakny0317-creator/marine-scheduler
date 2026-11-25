@@ -6,4 +6,5 @@ release/
 *.db-journal
 .env
 receipt-*.pdf
+backside-memo*.pdf
 form-layout-backups/

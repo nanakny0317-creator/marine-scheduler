@@ -197,7 +197,7 @@
   },
   {
     "id": "cvt0039",
-    "key": "氏名変更",
+    "key": "change_name",
     "label": "④_氏名変更",
     "page": 1,
     "type": "chars",
@@ -346,7 +346,7 @@
   },
   {
     "id": "cvt0038",
-    "key": "住所変更",
+    "key": "change_address",
     "label": "⑤_住所変更",
     "page": 1,
     "type": "chars",
@@ -463,7 +463,7 @@
   },
   {
     "id": "cvt0040",
-    "key": "本籍変更",
+    "key": "change_domicile",
     "label": "⑧本籍変更",
     "page": 1,
     "type": "chars",
@@ -554,7 +554,7 @@
   },
   {
     "id": "cvt0041",
-    "key": "国籍変更",
+    "key": "change_nationality",
     "label": "⑨_国籍変更",
     "page": 1,
     "type": "chars",

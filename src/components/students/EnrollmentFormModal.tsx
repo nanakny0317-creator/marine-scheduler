@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { CORRECTION_ITEMS, readCorrectionItems, type CorrectionItem } from '../../lib/correctionItems'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { ApplicationType, Classroom, Enrollment, EnrollmentInput, ExamRecord, ExamSession, PhysicalExam, RenewalSession } from '../../types'
@@ -94,6 +95,8 @@ interface ExtraResult {
   shintai: Shintai
   shintaiPass: ShintaiPass  // 身体検査を省略するとき：合格した試験
   licenseReturn: '' | 'yes' | 'no'   // 免許証返納 有／無（更新・失効）
+  correction: '' | 'yes' | 'no'      // 訂正（登録事項の訂正申請）有／無（更新・失効）
+  correctionItems: CorrectionItem[]  // 訂正ありのとき、変更のある項目（申請書の「変更」欄に×）
   courseOrg: number                  // 講習機関コード（更新・失効）
   bureau: string                     // 提出先 "本局-支局"（更新・失効）
 }
@@ -146,7 +149,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       courseLocation: '', courseTime: '',
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
       examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
-      licenseReturn: '', courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: '', correction: '', correctionItems: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -196,7 +199,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       prevExam:      readPrevExam(extra.prev_exam),
       shintai:       extra.shintai === 'need' || extra.shintai === 'have' || extra.shintai === 'omit' ? extra.shintai : '',
       shintaiPass:   readShintaiPass(extra.shintai_pass),
-      licenseReturn: '', courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: '', correction: '', correctionItems: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -213,6 +216,8 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     examDate: '', examLocation: '', examStartTime: '', examQualType: '',
     examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
     licenseReturn: extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : '',
+    correction: extra.correction === 'yes' || extra.correction === 'no' ? extra.correction : '',
+    correctionItems: readCorrectionItems(extra.correction_items),
     courseOrg: typeof extra.course_org_code === 'number' ? extra.course_org_code : DEFAULT_COURSE_ORG,
     bureau: typeof extra.bureau_code === 'string' && typeof extra.branch_code === 'string'
       ? bureauKey(extra.bureau_code, extra.branch_code) : DEFAULT_BUREAU_KEY,
@@ -254,6 +259,8 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   const [courseLocation,    setCourseLocation]    = useState('')
   const [courseTime,        setCourseTime]        = useState('')
   const [licenseReturn,     setLicenseReturn]     = useState<'' | 'yes' | 'no'>('')
+  const [correction,        setCorrection]        = useState<'' | 'yes' | 'no'>('')
+  const [correctionItems,   setCorrectionItems]   = useState<CorrectionItem[]>([])
   const [courseOrg,         setCourseOrg]         = useState<number>(DEFAULT_COURSE_ORG)
   const [bureau,            setBureau]            = useState<string>(DEFAULT_BUREAU_KEY)
 
@@ -425,6 +432,8 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
     setShintai(ex.shintai)
     setShintaiPass(ex.shintaiPass)
     setLicenseReturn(ex.licenseReturn)
+    setCorrection(ex.correction)
+    setCorrectionItems(ex.correctionItems)
     setCourseOrg(ex.courseOrg)
     setBureau(ex.bureau)
     setMenu(enrollment?.menu ?? '')
@@ -546,6 +555,8 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       }
       delete extra.course_dates_renewal
       delete extra.license_return
+      delete extra.correction
+      delete extra.correction_items
       delete extra.course_org_code
       delete extra.bureau_code
       delete extra.branch_code
@@ -555,6 +566,9 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       if (courseLocation.trim()) extra.course_location = courseLocation.trim(); else delete extra.course_location
       if (courseTime.trim())     extra.course_time     = courseTime.trim();     else delete extra.course_time
       if (licenseReturn) extra.license_return = licenseReturn; else delete extra.license_return
+      if (correction)    extra.correction     = correction;    else delete extra.correction
+      if (correction === 'yes' && correctionItems.length) extra.correction_items = CORRECTION_ITEMS.map(i => i.value).filter(v => correctionItems.includes(v))
+      else delete extra.correction_items
       extra.course_org_code = courseOrg
       const [bc, brc] = bureau.split('-')
       extra.bureau_code = bc
@@ -960,6 +974,47 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                 ))}
                 {!licenseReturn && <span className="note-text">未選択</span>}
               </div>
+            </div>
+            <div>
+              <label className="field-label">訂正（登録事項）</label>
+              <div className="flex items-center gap-2">
+                {([['yes', '有'], ['no', '無']] as const).map(([v, label]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setCorrection(correction === v ? '' : v)}
+                    className={[
+                      'px-5 py-1.5 rounded-lg border text-sm font-medium transition',
+                      correction === v ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                    ].join(' ')}
+                  >
+                    {label}
+                  </button>
+                ))}
+                {!correction && <span className="note-text">未選択</span>}
+              </div>
+              {correction === 'yes' && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="note-text">変更のある項目：</span>
+                  {CORRECTION_ITEMS.map(({ value, label }) => {
+                    const on = correctionItems.includes(value)
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setCorrectionItems(on ? correctionItems.filter(v => v !== value) : [...correctionItems, value])}
+                        className={[
+                          'px-3 py-1 rounded-lg border text-sm font-medium transition',
+                          on ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                        ].join(' ')}
+                      >
+                        {on ? '☑' : '☐'} {label}
+                      </button>
+                    )
+                  })}
+                  {correctionItems.length === 0 && <span className="note-text text-orange-500">項目を選んでください</span>}
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

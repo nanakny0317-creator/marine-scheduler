@@ -377,7 +377,8 @@ export interface ElectronAPI {
     set: (json: string) => Promise<boolean>
   }
   print: {
-    html: (html: string) => Promise<void>
+    /** baseName を渡すと、その名前のPDFに保存（既定は receipt）。続けて別のPDFを開くときに上書きしないため */
+    html: (html: string, baseName?: string) => Promise<void>
   }
   dev: {
     counts: () => Promise<DevCounts>

@@ -5,6 +5,7 @@
  * フォームのキーは public/form-layouts/*.json の "key" フィールドと対応している。
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
+import { readCorrectionItems } from './correctionItems'
 import { PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode } from '../data/masterData'
 import { examLocationForForm } from './examLocation'
 import { birthDateModeFor, type BirthDateStyle } from './birthDateStyle'
@@ -240,6 +241,8 @@ export function buildFormData(
     : typeof jx?.application_date === 'string' ? jx.application_date : null
   const appDate = parseBirthDate(appDateIso)
   const licReturn   = extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : ''
+  // 訂正（同時申請）：変更のある項目。訂正なしなら何も印字しない
+  const changes = extra.correction === 'yes' ? readCorrectionItems(extra.correction_items) : []
 
   return {
     // ── 氏名 ──
@@ -351,6 +354,11 @@ export function buildFormData(
     license_return:        licReturn,
     license_return_yes:    licReturn === 'yes' ? '×' : '',
     license_return_no:     licReturn === 'no'  ? '×' : '',
+    // 「変更」欄（更新・失効再交付申請書の氏名・住所・本籍・国籍の下）
+    change_name:           changes.includes('name')        ? '×' : '',
+    change_address:        changes.includes('address')     ? '×' : '',
+    change_domicile:       changes.includes('domicile')    ? '×' : '',
+    change_nationality:    changes.includes('nationality') ? '×' : '',
     // 講習要件（⑪ 一号乗船履歴／二号特別／三号講習）：更新講習の受講者は三号
     training_req_1:        '',
     training_req_2:        '',

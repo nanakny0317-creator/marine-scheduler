@@ -33,6 +33,7 @@ function sampleEnrollment(appType: string): Enrollment {
       }
     : {
         application_type: appType, course_location: '大阪府大阪市', course_time: '13:30', license_return: 'yes',
+        correction: 'yes', correction_items: ['name', 'address', 'domicile', 'nationality'],
         course_org_code: 1, bureau_code: '06', branch_code: '00', application_date: '2026-11-19',
       }
   return {

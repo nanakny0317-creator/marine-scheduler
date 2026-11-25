@@ -81,7 +81,7 @@ const api = {
     set: (json: string) => ipcRenderer.invoke('printOffset:set', json),
   },
   print: {
-    html: (html: string) => ipcRenderer.invoke('print:html', html),
+    html: (html: string, baseName?: string) => ipcRenderer.invoke('print:html', html, baseName),
   },
   dev: {
     counts: () => ipcRenderer.invoke('dev:counts'),
