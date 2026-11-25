@@ -11,6 +11,7 @@ import PrevExamMissingBadge from '../components/students/PrevExamMissingBadge'
 import { PASS_VALID_YEARS, expiryAfterYears, fmtYmd, validityStatus } from '../lib/validity'
 import EnrollmentFormModal from '../components/students/EnrollmentFormModal'
 import ExamRecordFormModal from '../components/students/ExamRecordFormModal'
+import CorrectionPrintModal from '../components/students/CorrectionPrintModal'
 
 function formatDate(d: string | null) {
   if (!d) return '—'
@@ -145,6 +146,7 @@ export default function MembersPage() {
   const [examRecordModal, setExamRecordModal] = useState<{ record: ExamRecord | null } | null>(null)
 
   const [dirty, setDirty] = useState(false)
+  const [showCorrection, setShowCorrection] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
   const [enrollmentModal, setEnrollmentModal] = useState<{
     enrollment: Enrollment | null
@@ -283,6 +285,14 @@ export default function MembersPage() {
               {savedFlash && (
                 <span className="ml-auto text-sm font-medium text-mint-500">✓ 保存しました</span>
               )}
+              <button
+                type="button"
+                onClick={() => setShowCorrection(true)}
+                className={`btn-secondary btn-sm ${savedFlash ? '' : 'ml-auto'}`}
+                title="訂正だけの人の訂正申請書（運輸局に出す）を印刷します"
+              >
+                📝 訂正申請書
+              </button>
             </div>
             <div className="max-w-6xl mx-auto px-6">
                 {/* タブバー */}
@@ -544,6 +554,10 @@ export default function MembersPage() {
             loadEnrollments(selected.id)
           }}
         />
+      )}
+
+      {showCorrection && selected && (
+        <CorrectionPrintModal student={selected} dirty={dirty} onClose={() => setShowCorrection(false)} />
       )}
 
       {examRecordModal && selected && (

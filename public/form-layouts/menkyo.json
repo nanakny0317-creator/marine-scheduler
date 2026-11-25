@@ -753,7 +753,7 @@
   },
   {
     "id": "cvt0069",
-    "key": "Text",
+    "key": "license_return_yes",
     "label": "⑮免許証返納有",
     "page": 1,
     "type": "chars",
@@ -766,7 +766,7 @@
   },
   {
     "id": "cvt0070",
-    "key": "Text",
+    "key": "license_return_no",
     "label": "⑮免許証返納無",
     "page": 1,
     "type": "chars",

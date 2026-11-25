@@ -149,7 +149,8 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       courseLocation: '', courseTime: '',
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
       examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
-      licenseReturn: '', correction: '', correctionItems: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      // 免許証返納：免許証を持っていれば有（紛失などで手元にないときだけ無）。新しい申込は有から
+      licenseReturn: 'yes', correction: '', correctionItems: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 

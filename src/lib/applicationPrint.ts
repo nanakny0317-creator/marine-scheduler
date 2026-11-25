@@ -10,12 +10,14 @@ import { buildFormData } from './formFieldMap'
 import { loadBirthDateStyle } from './birthDateStyle'
 import { printForms, type FieldDef, type FormPrintJob } from './formPrint'
 import { findJointPartner, orderJoint } from './jointApplication'
-import { readCorrectionItems, type CorrectionItem } from './correctionItems'
+import { readCorrectionItems, readTeiseiItems, type CorrectionItem, type TeiseiItem } from './correctionItems'
 
 export const PRINT_FORM_MAP: Record<string, { layout: string; title: string; pageCount: number }> = {
   new:     { layout: '/form-layouts/shiken.json',  title: '試験申請書',       pageCount: 1 },
   renewal: { layout: '/form-layouts/koshin.json',  title: '更新申請書',       pageCount: 1 },
   lapsed:  { layout: '/form-layouts/saikofu.json', title: '失効再交付申請書', pageCount: 1 },
+  // 訂正だけの人（申込は作らず、個人情報ページから印刷）
+  correction: { layout: '/form-layouts/teisei.json', title: '訂正申請書', pageCount: 1 },
 }
 
 export function appTypeOf(e: Enrollment): string {
@@ -81,6 +83,14 @@ const BACK_SIDE_ITEMS: { item: CorrectionItem; label: string }[] = [
   { item: 'nationality', label: '裏面：変更前の国籍' },
 ]
 
+/** 訂正申請書（訂正だけの人）で確認すること。その他は内容がさまざまなので出さない */
+const TEISEI_MEMO_ITEMS: { item: TeiseiItem; label: string }[] = [
+  { item: 'name',     label: '裏面：変更前の氏名（カナ・漢字）' },
+  { item: 'birth',    label: '裏面：変更前の生年月日' },
+  { item: 'domicile', label: '裏面：変更前の本籍・国籍' },
+  { item: 'address',  label: '住所変更：住民票があるか確認' },
+]
+
 interface MemoTarget { student: Student; enrollment: Enrollment; items: string[] }
 
 /** 更新・失効で訂正あり（変更の項目がある）の人 */
@@ -88,9 +98,15 @@ export function backSideMemoTargets(targets: PrintTarget[]): MemoTarget[] {
   const out: MemoTarget[] = []
   for (const { student, enrollment } of targets) {
     const t = appTypeOf(enrollment)
-    if (t !== 'renewal' && t !== 'lapsed') continue
     let ex: Record<string, unknown> = {}
     try { ex = JSON.parse(enrollment.extra_json) as Record<string, unknown> } catch { /* 空 */ }
+    if (t === 'correction') {
+      const tItems = readTeiseiItems(ex.teisei_items)
+      const items = TEISEI_MEMO_ITEMS.filter(b => tItems.includes(b.item)).map(b => b.label)
+      if (items.length) out.push({ student, enrollment, items })
+      continue
+    }
+    if (t !== 'renewal' && t !== 'lapsed') continue
     if (ex.correction !== 'yes') continue
     const changes = readCorrectionItems(ex.correction_items)
     const items = BACK_SIDE_ITEMS.filter(b => changes.includes(b.item)).map(b => b.label)

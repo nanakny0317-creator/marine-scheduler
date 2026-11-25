@@ -17,3 +17,19 @@ export function readCorrectionItems(v: unknown): CorrectionItem[] {
   if (!Array.isArray(v)) return []
   return CORRECTION_ITEMS.map(i => i.value).filter(x => v.includes(x))
 }
+
+/** 訂正申請書（訂正だけの人）①訂正項目 */
+export type TeiseiItem = 'name' | 'birth' | 'domicile' | 'address' | 'other'
+
+export const TEISEI_ITEMS: { value: TeiseiItem; label: string }[] = [
+  { value: 'name',     label: '氏名' },
+  { value: 'birth',    label: '生年月日' },
+  { value: 'domicile', label: '本籍・国籍' },
+  { value: 'address',  label: '住所' },
+  { value: 'other',    label: 'その他' },
+]
+
+export function readTeiseiItems(v: unknown): TeiseiItem[] {
+  if (!Array.isArray(v)) return []
+  return TEISEI_ITEMS.map(i => i.value).filter(x => v.includes(x))
+}

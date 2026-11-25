@@ -5,7 +5,7 @@
  * フォームのキーは public/form-layouts/*.json の "key" フィールドと対応している。
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
-import { readCorrectionItems } from './correctionItems'
+import { readCorrectionItems, readTeiseiItems } from './correctionItems'
 import { PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode } from '../data/masterData'
 import { examLocationForForm } from './examLocation'
 import { birthDateModeFor, type BirthDateStyle } from './birthDateStyle'
@@ -240,9 +240,14 @@ export function buildFormData(
   const appDateIso = typeof extra.application_date === 'string' ? extra.application_date
     : typeof jx?.application_date === 'string' ? jx.application_date : null
   const appDate = parseBirthDate(appDateIso)
-  const licReturn   = extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : ''
+  // 免許証返納 有／無：申込で選んだもの。選ぶ欄のない申請（免許申請など）は、免許証を持っているか（免許番号があるか）で決める
+  const licReturn   = extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return
+    : appType === 'renewal' || appType === 'lapsed' || appType === 'correction' ? ''
+    : licenseDigits ? 'yes' : 'no'
   // 訂正（同時申請）：変更のある項目。訂正なしなら何も印字しない
   const changes = extra.correction === 'yes' ? readCorrectionItems(extra.correction_items) : []
+  // 訂正申請書①（訂正だけの人）
+  const teisei = readTeiseiItems(extra.teisei_items)
 
   return {
     // ── 氏名 ──
@@ -359,6 +364,12 @@ export function buildFormData(
     change_address:        changes.includes('address')     ? '×' : '',
     change_domicile:       changes.includes('domicile')    ? '×' : '',
     change_nationality:    changes.includes('nationality') ? '×' : '',
+    // 訂正申請書①訂正項目
+    teisei_name:           teisei.includes('name')     ? '×' : '',
+    teisei_birth:          teisei.includes('birth')    ? '×' : '',
+    teisei_domicile:       teisei.includes('domicile') ? '×' : '',
+    teisei_address:        teisei.includes('address')  ? '×' : '',
+    teisei_other:          teisei.includes('other')    ? '×' : '',
     // 講習要件（⑪ 一号乗船履歴／二号特別／三号講習）：更新講習の受講者は三号
     training_req_1:        '',
     training_req_2:        '',
