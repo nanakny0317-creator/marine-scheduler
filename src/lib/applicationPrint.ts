@@ -66,9 +66,9 @@ export async function printApplicationForms(targets: PrintTarget[], title?: stri
   // 裏面（変更前の氏名・本籍・国籍）は手書き、住所変更は住民票の確認。漏れないよう、必ず続けてメモを出す
   const memo = backSideMemoTargets(targets)
   if (memo.length > 0) {
-    alert(`訂正（変更）がある人が ${memo.length} 人います（裏面の手書き・住民票の確認）。
+    alert(`裏面の手書き・住民票の確認が要る人が ${memo.length} 人います（訂正・通称）。
 
-続けて「訂正の確認メモ」を開きます。コピー用紙に印刷して、申請書と一緒に置いてください。`)
+続けて「${memoTitle(memo)}」を開きます。コピー用紙に印刷して、申請書と一緒に置いてください。`)
     await printBackSideMemo(memo)
   }
   return jobs.length
@@ -93,23 +93,36 @@ const TEISEI_MEMO_ITEMS: { item: TeiseiItem; label: string }[] = [
 
 interface MemoTarget { student: Student; enrollment: Enrollment; items: string[] }
 
-/** 更新・失効で訂正あり（変更の項目がある）の人 */
+/** 通称だけの人がいれば「訂正・通称の確認メモ」 */
+function memoTitle(memo: MemoTarget[]): string {
+  return memo.some(m => m.items.some(i => i.startsWith('裏面：通称'))) ? '訂正・通称の確認メモ' : '訂正の確認メモ'
+}
+
+/** 通称（OCR欄は本名なので、通称は裏面に手書き）。書き写せるよう通称そのものも出す */
+export function aliasMemoLabel(s: Student): string | null {
+  const name = s.alias_name?.trim() ?? '', kana = s.alias_kana?.trim() ?? ''
+  if (!name && !kana) return null
+  return `裏面：通称　${name}${kana ? `（${kana}）` : ''}`
+}
+
+/** 確認メモが要る人：更新・失効で訂正あり（変更の項目がある）／訂正申請書／通称がある人（試験申請書以外） */
 export function backSideMemoTargets(targets: PrintTarget[]): MemoTarget[] {
   const out: MemoTarget[] = []
   for (const { student, enrollment } of targets) {
     const t = appTypeOf(enrollment)
     let ex: Record<string, unknown> = {}
     try { ex = JSON.parse(enrollment.extra_json) as Record<string, unknown> } catch { /* 空 */ }
+    const items: string[] = []
     if (t === 'correction') {
       const tItems = readTeiseiItems(ex.teisei_items)
-      const items = TEISEI_MEMO_ITEMS.filter(b => tItems.includes(b.item)).map(b => b.label)
-      if (items.length) out.push({ student, enrollment, items })
-      continue
+      items.push(...TEISEI_MEMO_ITEMS.filter(b => tItems.includes(b.item)).map(b => b.label))
+    } else if ((t === 'renewal' || t === 'lapsed') && ex.correction === 'yes') {
+      const changes = readCorrectionItems(ex.correction_items)
+      items.push(...BACK_SIDE_ITEMS.filter(b => changes.includes(b.item)).map(b => b.label))
     }
-    if (t !== 'renewal' && t !== 'lapsed') continue
-    if (ex.correction !== 'yes') continue
-    const changes = readCorrectionItems(ex.correction_items)
-    const items = BACK_SIDE_ITEMS.filter(b => changes.includes(b.item)).map(b => b.label)
+    // 試験申請書には裏面の通称欄がないので出さない
+    const alias = PRINT_FORM_MAP[t] && t !== 'new' ? aliasMemoLabel(student) : null
+    if (alias) items.push(alias)
     if (items.length) out.push({ student, enrollment, items })
   }
   return out
@@ -132,7 +145,7 @@ export async function printBackSideMemo(memo: MemoTarget[]): Promise<void> {
   }).join('\n')
   const today = new Date().toLocaleDateString('ja-JP')
   const html = `<!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8"><title>訂正の確認メモ</title>
+<html lang="ja"><head><meta charset="UTF-8"><title>${escHtml(memoTitle(memo))}</title>
 <style>
 @page { size: A4 portrait; margin: 15mm; }
 body { font-family: 'Yu Gothic', 'Meiryo', sans-serif; font-size: 11pt; color: #000; }
@@ -146,8 +159,8 @@ td.chk { width: 10mm; text-align: center; font-size: 14pt; }
 .kana, .sub { font-size: 9pt; }
 tr { page-break-inside: avoid; }
 </style></head><body>
-<h1>訂正の確認メモ（${memo.length}人）</h1>
-<p class="lead">印刷日 ${escHtml(today)}　裏面に変更前の内容を手書きし、住所変更の人は住民票を確認してください。済んだら左の欄に印を付けます。</p>
+<h1>${escHtml(memoTitle(memo))}（${memo.length}人）</h1>
+<p class="lead">印刷日 ${escHtml(today)}　裏面に変更前の内容・通称を手書きし、住所変更の人は住民票を確認してください。済んだら左の欄に印を付けます。</p>
 <table>
 <thead><tr><th>済</th><th>氏名</th><th>申請書・講習日</th><th>手書き・確認すること</th></tr></thead>
 <tbody>

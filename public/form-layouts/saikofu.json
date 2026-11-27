@@ -241,7 +241,7 @@
     "label": "⑤_電話番号",
     "page": 1,
     "type": "chars",
-    "x": 281.52,
+    "x": 282.94,
     "y": 405.16,
     "fontSize": 13.4,
     "charWidth": 16.82,
@@ -629,5 +629,31 @@
     "maxChars": 2,
     "fontSize": 13.6,
     "anchor": "center"
+  },
+  {
+    "align": "right",
+    "id": "name_kana_rest",
+    "key": "full_kana",
+    "label": "④_氏名カナ（続き）",
+    "page": 1,
+    "type": "text",
+    "x": 512,
+    "y": 515.18,
+    "fontSize": 10,
+    "width": 44.69,
+    "startChar": 22
+  },
+  {
+    "align": "right",
+    "id": "name_kanji_rest",
+    "key": "full_name",
+    "label": "④_氏名漢字（続き）",
+    "page": 1,
+    "type": "text",
+    "x": 212.59,
+    "y": 455.41,
+    "fontSize": 10,
+    "width": 330,
+    "startChar": 12
   }
 ]

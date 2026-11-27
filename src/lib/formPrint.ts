@@ -31,6 +31,8 @@ export interface FieldDef {
   anchor?: 'center'
   /** 文字欄（text）の横幅の倍率（例 0.7 = 70%の幅の縦長の字）。旧アプリの住所欄に合わせる用 */
   scaleX?: number
+  /** 文字欄（text）の寄せ。'right' = 欄（x〜x+width）の右端にそろえる（氏名の続きの欄） */
+  align?: 'right'
 }
 
 // ── 全体の位置補正（プリンターの癖） ────────────────────────────────
@@ -61,7 +63,18 @@ export type FormData = Record<string, string>
 // OCR-HK に無い文字（漢字・× など）は、文字ごとに自動でゴシック体になる。
 // 小さいカナ・濁音は formFieldMap 側で「大文字＋小文字区分の×」「清音＋゛」に分けてあるので、すべて OCR-HK で出る。
 export const OCR_FONT_FAMILY = 'OCRHK'
-export const FONT_STACK = `'${OCR_FONT_FAMILY}','MS Gothic','ＭＳ ゴシック','Hiragino Kaku Gothic Pro','Noto Sans CJK JP',monospace`
+export const GOTHIC_STACK = `'MS Gothic','ＭＳ ゴシック','Hiragino Kaku Gothic Pro','Noto Sans CJK JP',monospace`
+export const FONT_STACK = `'${OCR_FONT_FAMILY}',${GOTHIC_STACK}`
+
+// 人が読む欄（氏名の漢字欄。申請書には「楷書体で記入」）は OCR-HK を使わず、アルファベットもゴシック体。
+// OCR-HK の英字は機械読み取り用の字形（O に線が入るなど）なので、外国籍の方のアルファベット氏名が変に見える
+const GOTHIC_KEYS = new Set(['full_name'])
+export function isGothicField(f: Pick<FieldDef, 'key'>): boolean { return GOTHIC_KEYS.has(f.key) }
+export function fontStackFor(f: Pick<FieldDef, 'key'>): string { return isGothicField(f) ? GOTHIC_STACK : FONT_STACK }
+/** ゴシック体の文字マスでは英数字を全角にして、1マスに1文字の大きさで出す */
+export function cellText(f: Pick<FieldDef, 'key'>, v: string): string {
+  return isGothicField(f) ? v.replace(/[!-~]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xfee0)) : v
+}
 const OCR_FONT_URL = '/fonts/ocr-hk.ttf'
 
 // 印刷用HTMLは data URL で開くので、フォントは base64 で埋め込む（読み込みは1回だけ）
@@ -98,16 +111,23 @@ const SY = A4_H / CAL_H
 const px = (x: number) => (x * SX).toFixed(2)
 const py = (y: number) => (y * SY).toFixed(2)
 
-/** 文字列の幅の目安（全角＝1文字分、半角＝半分） */
-function textWidthPt(v: string, fs: number): number {
+/**
+ * 文字列の幅の目安。OCR-HK は英数字・空白・カナもすべて同じ幅（1文字の 0.924 倍。フォントの実測）、
+ * OCR-HK に無い漢字などはゴシック体で全角＝1文字分
+ */
+const OCR_ADVANCE = 0.924
+function textWidthPt(v: string, fs: number, gothic = false): number {
   let w = 0
-  for (const ch of v) w += /[ -~｡-ﾟ]/.test(ch) ? fs * 0.5 : fs
+  for (const ch of v) {
+    if (gothic) w += /[ -~｡-ﾟ]/.test(ch) ? fs * 0.5 : fs   // ゴシック体：半角は半分
+    else w += /[ -~｡-ﾟ゠-ヿ゛゜]/.test(ch) ? fs * OCR_ADVANCE : fs
+  }
   return w
 }
 /** 欄の幅に入らないときの横の縮め率（入るなら 1） */
-function autoSqueeze(v: string, fs: number, width?: number): number {
+function autoSqueeze(v: string, fs: number, width?: number, gothic = false): number {
   if (!width) return 1
-  const w = textWidthPt(v, fs)
+  const w = textWidthPt(v, fs, gothic)
   return w > width ? Math.max(0.5, width / w) : 1
 }
 
@@ -129,22 +149,30 @@ function fieldToHtml(field: FieldDef, data: FormData): string {
   if (!value) return ''
 
   if (field.type === 'text') {
+    // 「何文字目から」の指定があれば、そこから後ろ全部（マスに入りきらなかった続きなど）
+    if (field.startChar) {
+      const rest = Array.from(value).slice(field.startChar).join('').trim()
+      if (!rest) return ''
+      return fieldToHtml({ ...field, startChar: undefined }, { ...data, [field.key]: rest })
+    }
     // 横の縮め：指定があればそれ、無ければ欄の幅に入らないときだけ自動で縮める
-    const sxr = field.scaleX && field.scaleX > 0 && field.scaleX !== 1 ? field.scaleX : autoSqueeze(value, fs, field.width)
+    const sxr = field.scaleX && field.scaleX > 0 && field.scaleX !== 1 ? field.scaleX : autoSqueeze(value, fs, field.width, isGothicField(field))
     // 横に縮めるときは、縮めた後の幅が欄の幅に収まるよう、縮める前の幅で切る
-    const maxW = field.width ? `max-width:${(Number(px(field.width)) / sxr).toFixed(2)}pt;` : ''
+    // 右寄せは欄の幅いっぱいの箱の中で右にそろえる（縮めるときは箱ごと縮むので右端は欄の右端のまま）
+    const wPt = field.width ? (Number(px(field.width)) / sxr).toFixed(2) : ''
+    const maxW = !wPt ? '' : field.align === 'right' ? `width:${wPt}pt;text-align:right;` : `max-width:${wPt}pt;`
     const squeeze = sxr !== 1 ? `transform:scaleX(${sxr});transform-origin:left bottom;` : ''
-    return `<span style="position:absolute;left:${px(field.x)}pt;bottom:${py(field.y)}pt;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:1;white-space:nowrap;overflow:hidden;${maxW}${squeeze}">${esc(value)}</span>`
+    return `<span style="position:absolute;left:${px(field.x)}pt;bottom:${py(field.y)}pt;font-size:${fs}pt;font-family:${fontStackFor(field)};color:#000;line-height:1;white-space:nowrap;overflow:hidden;${maxW}${squeeze}">${esc(value)}</span>`
   }
 
   // chars: 1 文字ずつ、各枠の中心に配置（縦も中央）
   const f       = toCenterAnchor(field)
   const cw      = f.charWidth ?? fs * 1.2
   const start   = f.startChar ?? 0
-  const chars   = Array.from(value).slice(start, start + (f.maxChars ?? 20))
+  const chars   = Array.from(cellText(f, value)).slice(start, start + (f.maxChars ?? 20))
   return chars.map((ch, i) => {
     const cx = f.x + i * cw
-    return `<span style="position:absolute;left:${px(cx - cw / 2)}pt;bottom:${py(f.y - fs / 2)}pt;width:${px(cw)}pt;height:${fs}pt;text-align:center;font-size:${fs}pt;font-family:${FONT_STACK};color:#000;line-height:${fs}pt;">${esc(ch)}</span>`
+    return `<span style="position:absolute;left:${px(cx - cw / 2)}pt;bottom:${py(f.y - fs / 2)}pt;width:${px(cw)}pt;height:${fs}pt;text-align:center;font-size:${fs}pt;font-family:${fontStackFor(f)};color:#000;line-height:${fs}pt;">${esc(ch)}</span>`
   }).join('')
 }
 

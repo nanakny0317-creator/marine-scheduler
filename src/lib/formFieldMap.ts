@@ -6,7 +6,7 @@
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
 import { readCorrectionItems, readTeiseiItems } from './correctionItems'
-import { PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode } from '../data/masterData'
+import { MARINE_LICENSE_VALUES, PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode, readMarineLicenses } from '../data/masterData'
 import { examLocationForForm } from './examLocation'
 import { birthDateModeFor, type BirthDateStyle } from './birthDateStyle'
 
@@ -74,8 +74,9 @@ function kanaCells(s: string): { kana: string[]; small: string[] } {
   const norm = s.normalize('NFKC')
     .replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60))
     .normalize('NFD')
-  for (const ch of norm) {
-    if (/\s/.test(ch)) continue
+  for (const ch of norm.trim()) {
+    // 単語の間（ミドルネームなど）は1マスあける。続けて空白があっても1マス
+    if (/\s/.test(ch)) { if (kana.length && kana[kana.length - 1] !== ' ') { kana.push(' '); small.push(' ') } continue }
     if (ch === '゙' || ch === '゛') { kana.push('゛'); small.push(' '); continue }
     if (ch === '゚' || ch === '゜') { kana.push('゜'); small.push(' '); continue }
     const large = SMALL_TO_LARGE[ch]
@@ -95,10 +96,20 @@ export function ocrKanaName(lastKana: string | null | undefined, firstKana: stri
   return { kana, small: small.includes('×') ? small : '' }
 }
 
-/** 姓・名（漢字） → 「姓 名」（1マスあける） */
+/**
+ * 姓・名（漢字） → 「姓 名」（1マスあける）。
+ * 外国籍の方は書類の順に入力するので、欄の中の空白（ミドルネームなど）も1マスとして残す。
+ * アルファベットは半角の大文字にする（申請書は大文字で記入）
+ */
 export function ocrKanjiName(last: string | null | undefined, first: string | null | undefined): string {
-  return [last ?? '', first ?? ''].map(x => x.replace(/\s/g, '')).filter(Boolean).join(' ')
+  return [last ?? '', first ?? '']
+    .map(x => x.replace(/[Ａ-Ｚａ-ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).toUpperCase().trim().replace(/\s+/g, ' '))
+    .filter(Boolean).join(' ')
 }
+
+/** 氏名のOCR欄のマス数（カナ22・漢字12）。入りきらない分は氏名欄の下に続けて印字する */
+export const NAME_KANA_CELLS = 22
+export const NAME_KANJI_CELLS = 12
 
 // ── OCR欄のチェック（×）・文字マス用の小物 ───────────────────────────
 const X = (b: boolean) => (b ? '×' : '')
@@ -231,6 +242,7 @@ export function buildFormData(
   const licExp   = parseBirthDate(student.license_expiry ?? null)      // 和暦変換を流用
   const licIssue = parseBirthDate(student.license_issue_date ?? null)
   const licOpts  = (student.license_options ?? '').split(',').map(x => x.trim())
+  const marine   = readMarineLicenses(student.marine_licenses)
   const flag = (b: boolean) => (b ? 'true' : '')
 
   // 更新講習（更新申請書 ⑫〜⑮・⑰）
@@ -436,6 +448,11 @@ export function buildFormData(
     lic_class_2:      X(licClass === '二級'),
     lic_class_kokawa: X(licClass === '湖川'),
     lic_class_tokushu: X(licOpts.includes('特殊')),
+    // 現有の海技免許：免許申請書⑫（key は「航海一級」「機関二級内」など、保存値と同じ）
+    ...Object.fromEntries(MARINE_LICENSE_VALUES.map(v => [v, X(marine.includes(v))])),
+    // 試験申請書⑪：航海・機関の免許を持っているか
+    '航海有': X(marine.some(v => v.startsWith('航海'))),
+    '機関有': X(marine.some(v => v.startsWith('機関'))),
     // 再交付の事由（失効再交付①）：失効再交付の申込は「期限切」
     reissue_expired: X(appType === 'lapsed'),
 

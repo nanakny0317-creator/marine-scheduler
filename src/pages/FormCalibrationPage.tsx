@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { toCenterAnchor, FONT_STACK, printForms } from '../lib/formPrint'
+import { toCenterAnchor, fontStackFor, cellText, printForms } from '../lib/formPrint'
 import { sampleDataForPage, sampleValueFor } from '../lib/formSample'
 import PrintOffsetControl from '../components/PrintOffsetControl'
 import { formLayoutsApi } from '../lib/api'
@@ -39,6 +39,8 @@ interface FieldDef {
   anchor?: 'center'
   // 文字欄の横幅の倍率（住所欄など。画面では編集しないが、保存時に残す）
   scaleX?: number
+  // 文字欄の寄せ（'right' = 欄の右端にそろえる。氏名の続きの欄。画面では編集しないが、保存時に残す）
+  align?: 'right'
 }
 
 interface ClickPoint { x: number; y: number }
@@ -358,7 +360,7 @@ export default function FormCalibrationPage() {
       x: ptA.x, y: ptA.y,
       fontSize: fFontSize,
       ...(fType === 'chars' ? { charWidth, maxChars: fMaxChars, ...(fStartChar > 0 ? { startChar: fStartChar } : {}), anchor: 'center' as const } : {}),
-      ...(fType === 'text'  ? { width: fWidth } : {}),
+      ...(fType === 'text'  ? { width: fWidth, ...(fStartChar > 0 ? { startChar: fStartChar } : {}) } : {}),
       ...(fType === 'mark'  ? {
         dataKey:    fDataKey.trim()    || undefined,
         matchValue: fMatchValue.trim() || undefined,
@@ -368,8 +370,8 @@ export default function FormCalibrationPage() {
 
     setFields(prev => {
       const next = editId
-        // 画面に入力欄のない設定（文字の横幅 scaleX）は、編集しても元の値を残す
-        ? prev.map(f => f.id === editId ? { ...(f.scaleX ? { scaleX: f.scaleX } : {}), id: editId, ...fieldData } : f)
+        // 画面に入力欄のない設定（文字の横幅 scaleX・右寄せ align）は、編集しても元の値を残す
+        ? prev.map(f => f.id === editId ? { ...(f.scaleX ? { scaleX: f.scaleX } : {}), ...(f.align ? { align: f.align } : {}), id: editId, ...fieldData } : f)
         : [...prev, { id: uid(), ...fieldData }]
       saveFields(next)
       return next
@@ -741,11 +743,11 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                   const s = imgSize.w / PDF_W, t = imgSize.h / PDF_H
                   const value = sampleValueFor(f, sampleData)
                   const fsPx = f.fontSize * t
-                  const common = { fontFamily: FONT_STACK, fontSize: fsPx, color: '#1d4ed8' } as const
+                  const common = { fontFamily: fontStackFor(f), fontSize: fsPx, color: '#1d4ed8' } as const
                   if (f.type === 'chars') {
                     const cw = f.charWidth ?? f.fontSize * 1.2
                     const start = f.startChar ?? 0
-                    return Array.from(value).slice(start, start + (f.maxChars ?? 20)).map((ch, i) => (
+                    return Array.from(cellText(f, value)).slice(start, start + (f.maxChars ?? 20)).map((ch, i) => (
                       <span key={`${f.id}-${i}`} className="absolute text-center"
                         style={{ ...common, left: (f.x + i * cw - cw / 2) * s, top: (PDF_H - f.y - f.fontSize / 2) * t,
                           width: cw * s, height: fsPx, lineHeight: `${fsPx}px` }}>
@@ -757,7 +759,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                   return (
                     <span key={f.id} className="absolute whitespace-nowrap overflow-hidden"
                       style={{ ...common, left: f.x * s, top: (PDF_H - f.y) * t - fsPx, lineHeight: 1,
-                        maxWidth: f.width ? (f.width * s) / sxr : undefined,
+                        ...(f.align === 'right' && f.width ? { width: (f.width * s) / sxr, textAlign: 'right' as const } : { maxWidth: f.width ? (f.width * s) / sxr : undefined }),
                         transform: sxr !== 1 ? `scaleX(${sxr})` : undefined, transformOrigin: 'left bottom' }}>
                       {value}
                     </span>
@@ -811,7 +813,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                     const boxW = Math.max(Math.abs(pitchPx), fontPx)
                     const boxH = fontPx * 1.4
                     const chars = editSampleText !== null
-                      ? Array.from(editSampleText).slice(editField?.startChar ?? 0)
+                      ? Array.from(cellText({ key: fKey.trim() }, editSampleText)).slice(editField?.startChar ?? 0)
                       : Array.from(previewText)
                     return (
                       <>
@@ -826,7 +828,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                               }`}
                               style={{ left: cx - boxW / 2, top: dispY - boxH / 2, width: boxW, height: boxH }}
                             >
-                              <span className="text-red-500 font-bold leading-none" style={{ fontSize: fontPx, opacity: 0.85, fontFamily: FONT_STACK }}>
+                              <span className="text-red-500 font-bold leading-none" style={{ fontSize: fontPx, opacity: 0.85, fontFamily: fontStackFor({ key: fKey.trim() }) }}>
                                 {chars[i] ?? ''}
                               </span>
                             </div>
@@ -855,7 +857,7 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                         left: dispX,
                         top: dispY - fontPx * 1.1,
                         fontSize: fontPx,
-                        fontFamily: FONT_STACK,
+                        fontFamily: fontStackFor({ key: fKey.trim() }),
                         maxWidth: (fWidth * sx),
                         opacity: 0.85,
                       }}
@@ -1002,9 +1004,9 @@ ${FORM_LABELS[file]}に切り替えると、その変更は消えます。切り
                   />
                 </div>
               )}
-              {fType === 'chars' && (
+              {(fType === 'chars' || fType === 'text') && (
                 <div>
-                  <label className="block text-[11px] text-gray-400 mb-0.5" title="住所のように1つの項目が何行かに分かれているとき、2行目以降は前の行の枠の数だけずらす">何文字目から（続きの行用）</label>
+                  <label className="block text-[11px] text-gray-400 mb-0.5" title="住所のように1つの項目が何行かに分かれているとき、2行目以降は前の行の枠の数だけずらす。文字欄ではそこから後ろ全部（氏名の続きなど）">何文字目から（続きの行用）</label>
                   <input
                     type="number"
                     min={1}

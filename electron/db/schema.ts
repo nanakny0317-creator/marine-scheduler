@@ -17,10 +17,13 @@ CREATE TABLE IF NOT EXISTS students (
   license_class      TEXT,      -- 現有免許：種類（一級/二級/湖川、旧免許は 旧一級〜旧五級/旧湖川）
   license_options    TEXT,      -- 現有免許：追加区分（限定1海里,特殊,特定 をカンマ区切り）
   license_equipment_limited INTEGER NOT NULL DEFAULT 0,  -- 現有免許：設備限定
+  marine_licenses    TEXT,      -- 現有の海技免許（航海一級,機関内三級 などをカンマ区切り）
   address_room   TEXT,          -- 部屋番号（申込書では「番地-部屋番号」）
   mail_address_room TEXT,       -- 送付先：部屋番号
   domicile       TEXT,          -- 本籍地（都道府県）
   nationality    TEXT,          -- 国籍（日本は空欄）
+  alias_name     TEXT,          -- 通称（住民票に載っている外国籍の方。申請書の裏面に手書き）
+  alias_kana     TEXT,          -- 通称のフリガナ
   last_name      TEXT NOT NULL,
   first_name   TEXT NOT NULL,
   last_kana   TEXT,

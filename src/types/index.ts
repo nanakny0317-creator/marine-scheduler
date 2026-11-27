@@ -9,9 +9,12 @@ export interface Student {
   license_class?: string | null            // 種類：一級/二級/湖川、旧免許は 旧一級〜旧五級/旧湖川
   license_options?: string | null          // 追加区分：限定1海里,特殊,特定（カンマ区切り）
   license_equipment_limited?: boolean      // 設備限定
+  marine_licenses?: string | null          // 現有の海技免許：航海一級・機関内三級 など（カンマ区切り。免許申請書⑫・試験申請書⑪）
   // 申請者情報（免許申請書に記載）
   domicile?: string | null                 // 本籍地（都道府県）
   nationality?: string | null              // 国籍（日本は空欄）
+  alias_name?: string | null               // 通称（住民票に載っている外国籍の方）。OCR欄は本名、通称は裏面に手書き
+  alias_kana?: string | null               // 通称のフリガナ
   last_name: string
   first_name: string
   last_kana: string | null

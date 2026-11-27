@@ -26,8 +26,11 @@ export function toStudent(row: Row): Student {
     license_class: row.license_class ? String(row.license_class) : null,
     license_options: row.license_options ? String(row.license_options) : null,
     license_equipment_limited: Number(row.license_equipment_limited ?? 0) === 1,
+    marine_licenses: row.marine_licenses ? String(row.marine_licenses) : null,
     domicile: row.domicile ? String(row.domicile) : null,
     nationality: row.nationality ? String(row.nationality) : null,
+    alias_name: row.alias_name ? String(row.alias_name) : null,
+    alias_kana: row.alias_kana ? String(row.alias_kana) : null,
     last_name: String(row.last_name ?? ''),
     first_name: String(row.first_name ?? ''),
     last_kana: row.last_kana ? String(row.last_kana) : null,
@@ -71,6 +74,7 @@ function licenseParams(input: StudentInput): (string | number | null)[] {
     input.license_equipment_limited ? 1 : 0,
     t(input.domicile), t(input.nationality),
     t(input.address_room), t(input.mail_address_room),
+    t(input.marine_licenses), t(input.alias_name), t(toKatakana(input.alias_kana ?? null)),
   ]
 }
 
@@ -112,8 +116,9 @@ export function listStudents(params: StudentSearchParams = {}): Student[] {
     const like = `%${w}%`
     where.push(`(last_name LIKE ? OR first_name LIKE ? OR (last_name || first_name) LIKE ?
           OR last_kana LIKE ? OR first_kana LIKE ? OR (COALESCE(last_kana,'') || COALESCE(first_kana,'')) LIKE ?
-          OR email LIKE ? OR phone LIKE ? OR mobile LIKE ? OR student_code LIKE ?)`)
-    wp.push(like, like, like, like, like, like, like, like, like, like)
+          OR email LIKE ? OR phone LIKE ? OR mobile LIKE ? OR student_code LIKE ?
+          OR alias_name LIKE ? OR alias_kana LIKE ?)`)
+    wp.push(like, like, like, like, like, like, like, like, like, like, like, like)
   }
   // 生年月日
   if (params.birthDate) {
@@ -166,9 +171,9 @@ export function createStudent(input: StudentInput): Student {
         mail_postal_code, mail_prefecture, mail_city, mail_address1, mail_address2,
         phone, mobile, email, note,
         license_issue_date, license_expiry, license_class, license_options, license_equipment_limited,
-        domicile, nationality, address_room, mail_address_room,
+        domicile, nationality, address_room, mail_address_room, marine_licenses, alias_name, alias_kana,
         created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
              datetime('now','localtime'), datetime('now','localtime'))`,
     [
       code,
@@ -201,7 +206,7 @@ export function updateStudent(id: number, input: StudentInput): Student {
        mail_postal_code=?, mail_prefecture=?, mail_city=?, mail_address1=?, mail_address2=?,
        phone=?, mobile=?, email=?, note=?,
        license_issue_date=?, license_expiry=?, license_class=?, license_options=?, license_equipment_limited=?,
-       domicile=?, nationality=?, address_room=?, mail_address_room=?,
+       domicile=?, nationality=?, address_room=?, mail_address_room=?, marine_licenses=?, alias_name=?, alias_kana=?,
        updated_at=datetime('now','localtime')
      WHERE id=?`,
     [

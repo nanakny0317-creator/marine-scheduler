@@ -18,7 +18,8 @@ import Section from '../FormSection'
 import DateTextInput from '../DateTextInput'
 import { PHYSICAL_VALID_YEARS, expiryAfterYears, fmtYmd } from '../../lib/validity'
 import { useEnrollmentForm } from './EnrollmentFormModal'
-import { LICENSE_CLASSES, LICENSE_OPTIONS, OLD_LICENSE_CLASSES, NATIONALITIES, PREFECTURES } from '../../data/masterData'
+import { NAME_KANA_CELLS, NAME_KANJI_CELLS, ocrKanaName, ocrKanjiName } from '../../lib/formFieldMap'
+import { LICENSE_CLASSES, LICENSE_OPTIONS, OLD_LICENSE_CLASSES, NATIONALITIES, PREFECTURES, MARINE_LICENSE_GROUPS, MARINE_LICENSE_VALUES, readMarineLicenses, marineLicenseSummary } from '../../data/masterData'
 
 // コンポーネント外で定義することで、親の再レンダリング時に unmount/remount されない
 interface FieldProps {
@@ -84,7 +85,7 @@ function Field({
 }
 
 // フリガナ欄：ひらがな入力を確定時にカタカナへ変換
-const KANA_FIELDS: (keyof StudentInput)[] = ['last_kana', 'first_kana']
+const KANA_FIELDS: (keyof StudentInput)[] = ['last_kana', 'first_kana', 'alias_kana']
 const hiraToKata = (s: string) =>
   s.replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60))
 
@@ -190,6 +191,7 @@ export default function StudentForm({ student, onSaved, onCancel, embedded = fal
   const [addrTab, setAddrTab] = useState<'main' | 'mail'>('main')
   // 旧免許の選択欄：旧免許が入っているときだけ最初から開く
   const [showOldLicense, setShowOldLicense] = useState(!!student?.license_class?.startsWith('旧'))
+  const [showMarine, setShowMarine] = useState(!!student?.marine_licenses)
   const firstRef = useRef<HTMLInputElement>(null)
 
   // ── 新規時のオプションセクション ──
@@ -274,6 +276,12 @@ export default function StudentForm({ student, onSaved, onCancel, embedded = fal
     const next = licenseOpts.includes(o) ? licenseOpts.filter(x => x !== o) : [...licenseOpts, o]
     // 表示順を一定に保つ
     set('license_options', LICENSE_OPTIONS.filter(x => next.includes(x)).join(',') || null)
+  }
+  // 現有の海技免許（免許申請書⑫・試験申請書⑪）
+  const marine = readMarineLicenses(form.marine_licenses)
+  const toggleMarine = (v: string) => {
+    const next = marine.includes(v) ? marine.filter(x => x !== v) : [...marine, v]
+    set('marine_licenses', MARINE_LICENSE_VALUES.filter(x => next.includes(x)).join(',') || null)
   }
   const chipCls = (on: boolean) =>
     `px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
@@ -428,6 +436,14 @@ export default function StudentForm({ student, onSaved, onCancel, embedded = fal
     if (e.key === 'Escape' && !embedded) onCancel()
   }
 
+  const isForeign = !!form.nationality?.trim() && form.nationality.trim() !== '日本'
+  // 申請書のOCR欄（カナ22マス・漢字12マス）に入りきるか。はみ出す分は氏名欄の下に続けて印字する
+  const kanaLen = Array.from(ocrKanaName(form.last_kana, form.first_kana).kana).length
+  const kanjiLen = Array.from(ocrKanjiName(form.last_name, form.first_name)).length
+  const nameOverflow = [
+    kanaLen > NAME_KANA_CELLS ? `フリガナが ${kanaLen} マス（${NAME_KANA_CELLS} マスまで）` : '',
+    kanjiLen > NAME_KANJI_CELLS ? `氏名が ${kanjiLen} マス（${NAME_KANJI_CELLS} マスまで）` : '',
+  ].filter(Boolean).join('、') + (kanaLen > NAME_KANA_CELLS || kanjiLen > NAME_KANJI_CELLS ? '。入りきらない分は申請書の氏名欄の下に続けて印字します' : '')
   const f = (name: keyof StudentInput) => ({
     value: (form[name] as string) ?? '',
     onChange: (v: string) => set(name, KANA_FIELDS.includes(name) ? hiraToKata(v) : v),
@@ -505,6 +521,24 @@ export default function StudentForm({ student, onSaved, onCancel, embedded = fal
                   <div className="col-span-4 row-start-3 col-start-5">
                     <Field label="メイ（フリガナ）" placeholder="タロウ" {...f('first_kana')} />
                   </div>
+                  {/* 外国籍の方の氏名の案内と、OCR欄のマスに入りきらないときの注意 */}
+                  {(isForeign || nameOverflow) && (
+                    <div className="col-span-8 row-start-4 col-start-1 -mt-1.5 space-y-0.5 text-xs">
+                      {isForeign && <p className="text-gray-500">外国籍の方は住民票・パスポートの順に入力（姓・名の区別は気にせず、ミドルネームも含めて全部。単語の間は空白）</p>}
+                      {nameOverflow && <p className="text-amber-600">⚠ {nameOverflow}</p>}
+                    </div>
+                  )}
+                  {/* 通称（外国籍の方で住民票に通称がある場合）。申請書のOCR欄は本名、通称は裏面に手書き */}
+                  {(isForeign || form.alias_name || form.alias_kana) && (
+                    <>
+                      <div className="col-span-4 row-start-2 col-start-9">
+                        <Field label="通称（住民票にある場合）" placeholder="例：金田 花子" {...f('alias_name')} />
+                      </div>
+                      <div className="col-span-4 row-start-3 col-start-9">
+                        <Field label="通称（フリガナ）" placeholder="カネダ ハナコ" {...f('alias_kana')} />
+                      </div>
+                    </>
+                  )}
                   <div className="col-span-4 row-start-1 col-start-3">
                     <Field label="生年月日" {...f('birth_date')}>
                       <DateTextInput showAge value={form.birth_date} onChange={(v) => set('birth_date', v || null)} onKeyDown={handleKeyDown} />
@@ -724,6 +758,49 @@ export default function StudentForm({ student, onSaved, onCancel, embedded = fal
                           <button key={c} type="button" tabIndex={-1} onClick={() => toggleLicenseClass(c)} className={chipCls(form.license_class === c)}>
                             {c.replace(/^旧/, '')}
                           </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* 海技免許（お持ちの方だけ。普段は閉じておく） */}
+                  <div className="rounded-lg border border-gray-100">
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowMarine(v => !v)}
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
+                    >
+                      <span>
+                        海技免許をお持ちの場合
+                        {marine.length > 0 && (
+                          <span className="ml-2 text-lavender-600 font-semibold">{marineLicenseSummary(form.marine_licenses)}</span>
+                        )}
+                      </span>
+                      <span className="text-gray-400">{showMarine ? '▲' : '▼'}</span>
+                    </button>
+                    {showMarine && (
+                      <div className="px-3 pb-2.5 pt-1 space-y-1.5">
+                        {MARINE_LICENSE_GROUPS.map(g => (
+                          <div key={g.name} className="flex items-start gap-2">
+                            <span className="w-14 shrink-0 pt-1 text-xs text-gray-500">{g.name}</span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {g.items.map(i => (
+                                <button key={i.value} type="button" tabIndex={-1} onClick={() => toggleMarine(i.value)} className={chipCls(marine.includes(i.value))}>
+                                  {i.label}
+                                </button>
+                              ))}
+                              {(g.sub ?? []).map(s => (
+                                <span key={s.name} className="flex flex-wrap items-center gap-1.5">
+                                  <span className="ml-1 text-xs text-gray-400">{s.name}</span>
+                                  {s.items.map(i => (
+                                    <button key={i.value} type="button" tabIndex={-1} onClick={() => toggleMarine(i.value)} className={chipCls(marine.includes(i.value))}>
+                                      {i.label}
+                                    </button>
+                                  ))}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}

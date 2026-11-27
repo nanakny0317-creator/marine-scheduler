@@ -68,7 +68,7 @@ export async function initDb(): Promise<Database> {
   // マイグレーション: 現有免許情報カラム
   if (tableInfo.length > 0) {
     const cols = tableInfo[0].values.map((row) => row[1] as string)
-    for (const c of ['license_issue_date', 'license_expiry', 'license_class', 'license_options']) {
+    for (const c of ['license_issue_date', 'license_expiry', 'license_class', 'license_options', 'marine_licenses', 'alias_name', 'alias_kana']) {
       if (!cols.includes(c)) db.run(`ALTER TABLE students ADD COLUMN ${c} TEXT`)
     }
     if (!cols.includes('license_equipment_limited')) {

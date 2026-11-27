@@ -906,5 +906,31 @@
     "maxChars": 1,
     "fontSize": 9.7,
     "anchor": "center"
+  },
+  {
+    "id": "name_kana_rest",
+    "key": "full_kana",
+    "label": "⑤_氏名カナ（続き）",
+    "page": 1,
+    "type": "text",
+    "x": 512,
+    "y": 546.34,
+    "width": 52.6,
+    "fontSize": 10,
+    "startChar": 22,
+    "align": "right"
+  },
+  {
+    "id": "name_kanji_rest",
+    "key": "full_name",
+    "label": "⑤_氏名漢字（続き）",
+    "page": 1,
+    "type": "text",
+    "x": 216.65,
+    "y": 490.52,
+    "width": 330,
+    "fontSize": 10,
+    "startChar": 12,
+    "align": "right"
   }
 ]

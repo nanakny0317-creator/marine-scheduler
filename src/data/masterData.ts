@@ -61,6 +61,38 @@ export function parseLicenseText(text: string | null | undefined): {
   }
 }
 
+// ── 現有の海技免許（免許申請書⑫・試験申請書⑪） ───────────────────────
+/**
+ * 申請書⑫の並びどおり。value は保存値（免許申請書の書式の key と同じ）、label は画面の表示。
+ * 航海・機関の「三級当」は申請書の表記のまま。
+ */
+export interface MarineLicenseItem { value: string; label: string }
+export interface MarineLicenseGroup { name: string; items: MarineLicenseItem[]; sub?: { name: string; items: MarineLicenseItem[] }[] }
+const grades = (prefix: string, gs: string[], suffix = '級') => gs.map(g => ({ value: `${prefix}${g}${suffix}`, label: `${g}級` }))
+export const MARINE_LICENSE_GROUPS: MarineLicenseGroup[] = [
+  { name: '航海', items: [...grades('航海', ['一', '二', '三', '四', '五', '六']), { value: '航海三級当', label: '三級当' }] },
+  { name: '機関', items: [...grades('機関', ['一', '二', '三', '四', '五', '六']), { value: '機関三級当', label: '三級当' }],
+    sub: [{ name: '内燃', items: ['二', '三', '四', '五', '六'].map(g => ({ value: `機関${g}級内`, label: `${g}級内` })) }] },
+  { name: '通信', items: grades('通信', ['一', '二', '三']) },
+  { name: '電子通信', items: grades('電子通信', ['一', '二', '三', '四']) },
+]
+export const MARINE_LICENSE_VALUES: string[] = MARINE_LICENSE_GROUPS.flatMap(g => [...g.items, ...(g.sub ?? []).flatMap(s => s.items)].map(i => i.value))
+
+/** 保存値（カンマ区切り）→ 申請書の並び順の配列（知らない値は落とす） */
+export function readMarineLicenses(v: string | null | undefined): string[] {
+  const set = new Set((v ?? '').split(',').map(x => x.trim()).filter(Boolean))
+  return MARINE_LICENSE_VALUES.filter(x => set.has(x))
+}
+
+/** 表示用（例：「航海 二級・機関 二級内」） */
+export function marineLicenseSummary(v: string | null | undefined): string {
+  const sel = new Set(readMarineLicenses(v))
+  return MARINE_LICENSE_GROUPS.map(g => {
+    const labels = [...g.items, ...(g.sub ?? []).flatMap(s => s.items)].filter(i => sel.has(i.value)).map(i => i.label)
+    return labels.length ? `${g.name} ${labels.join('・')}` : ''
+  }).filter(Boolean).join('　')
+}
+
 // ── 都道府県（JIS順） ──────────────────────────────────────────────
 export const PREFECTURES: string[] = [
   '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',

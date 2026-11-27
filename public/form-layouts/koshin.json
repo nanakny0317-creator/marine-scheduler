@@ -83,8 +83,8 @@
     "label": "③_氏名カナ",
     "page": 1,
     "type": "chars",
-    "x": 71.73,
-    "y": 594.9,
+    "x": 73.15,
+    "y": 596.32,
     "fontSize": 15,
     "charWidth": 22.62,
     "maxChars": 22,
@@ -665,5 +665,31 @@
     "charWidth": 10.78,
     "maxChars": 1,
     "anchor": "center"
+  },
+  {
+    "align": "right",
+    "id": "name_kana_rest",
+    "key": "full_kana",
+    "label": "③_氏名カナ（続き）",
+    "page": 1,
+    "type": "text",
+    "x": 512,
+    "y": 567.08,
+    "fontSize": 10,
+    "width": 44.93,
+    "startChar": 22
+  },
+  {
+    "align": "right",
+    "id": "name_kanji_rest",
+    "key": "full_name",
+    "label": "③_氏名漢字（続き）",
+    "page": 1,
+    "type": "text",
+    "x": 209.68,
+    "y": 507.1,
+    "fontSize": 10,
+    "width": 330,
+    "startChar": 12
   }
 ]

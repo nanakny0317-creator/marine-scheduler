@@ -95,8 +95,11 @@ interface TestStudent {
   license_class?: string | null
   license_options?: string | null
   license_equipment_limited?: boolean
+  marine_licenses?: string | null
   domicile?: string | null
   nationality?: string | null
+  alias_name?: string | null
+  alias_kana?: string | null
   note?: string | null   // 何を確かめるためのデータか
 }
 
@@ -105,8 +108,8 @@ const STUDENT_COLS = [
   'postal_code', 'prefecture', 'city', 'address1', 'address2', 'address_room',
   'mail_postal_code', 'mail_prefecture', 'mail_city', 'mail_address1', 'mail_address2', 'mail_address_room',
   'phone', 'mobile', 'email',
-  'license_number', 'license_issue_date', 'license_expiry', 'license_class', 'license_options', 'license_equipment_limited',
-  'domicile', 'nationality', 'note',
+  'license_number', 'license_issue_date', 'license_expiry', 'license_class', 'license_options', 'license_equipment_limited', 'marine_licenses',
+  'domicile', 'nationality', 'alias_name', 'alias_kana', 'note',
 ] as const
 
 function insertStudent(s: TestStudent): number {
@@ -414,6 +417,27 @@ export function devSeedTestData(): DevCounts {
       license_number: '0300250099999', license_class: '一級', license_options: '特殊', license_issue_date: yearsFromToday(-3), license_expiry: yearsFromToday(2),
       domicile: '滋賀県', note: '失効再交付：免許証を紛失（有効期限内）' })
     insertEnrollment({ student_id: l2, course_date: rn4.course_date, venue: rn4.location, extra: renewalExtra('lapsed', rn4.location, rn4.start_time, '') })
+
+    // ═════ 外国籍の長い名前（OCR欄のマスからはみ出す：続きは氏名欄の下に印字） ═════
+    // パスポートの順（ファミリーネームが先・ミドルネームあり）。更新申請書（カナ22・漢字12マス）
+    const f1 = insertStudent({ last_name: 'NGUYEN', first_name: 'VAN THANH LONG PHUC MINH', last_kana: 'グエン', first_kana: 'ヴァン タイン ロン フック ミン', birth_date: '1990-05-20', gender: 'male',
+      postal_code: '5560011', prefecture: '大阪府', city: '大阪市浪速区', address1: '難波中2-10-70', address_room: '805', mobile: '090-0000-7101',
+      license_number: '0300270011111', license_class: '二級', license_issue_date: yearsFromToday(-5, 40), license_expiry: daysFromToday(40),
+      nationality: 'ベトナム', note: '外国籍の長い名前（パスポート順・ファミリーネームが先）：カナも氏名もはみ出す・更新講習' })
+    insertEnrollment({ student_id: f1, course_date: rn1.course_date, venue: rn1.location, extra: renewalExtra('renewal', rn1.location, rn1.start_time, 'no') })
+
+    // 住民票の順（名が先・ミドルネームが最後）＋通称あり。試験申請書（カナ22マス・漢字は1行）→ 確認メモに通称
+    const f2 = insertStudent({ last_name: 'WILLIAM', first_name: 'ALEXANDER JAMES ROBERTSON', last_kana: 'ウィリアム', first_kana: 'アレクサンダー ジェームズ ロバートソン', birth_date: '1987-10-03', gender: 'male',
+      postal_code: '6500044', prefecture: '兵庫県', city: '神戸市中央区', address1: '東川崎町1-3-3', mobile: '080-0000-7102', email: 'william@example.com',
+      nationality: 'イギリス', alias_name: '山本 ウィリアム', alias_kana: 'ヤマモト ウィリアム', note: '外国籍の長い名前（住民票順）＋通称あり：カナがはみ出す・試験申請（二級）' })
+    insertEnrollment({ student_id: f2, menu: '2級小型船舶操縦士', course_date: daysFromToday(8), venue: classroom(2), extra: newExamExtra({ session: ex2Osaka, classroom: classroom(2), courseDates: [daysFromToday(8), daysFromToday(15)], shintai: 'need' }) })
+
+    // 姓が2語（DELA CRUZ）・小文字で入力。失効再交付申請書（漢字12マス）
+    const f3 = insertStudent({ last_name: 'dela cruz', first_name: 'maria cristina santos', last_kana: 'デラ クルス', first_kana: 'マリア クリスティーナ サントス', birth_date: '1982-02-28', gender: 'female',
+      postal_code: '6008000', prefecture: '京都府', city: '京都市下京区', address1: '烏丸通四条下ル1-1', mobile: '070-0000-7103',
+      license_number: '0300260022222', license_class: '二級', license_options: '特殊', license_issue_date: yearsFromToday(-7), license_expiry: yearsFromToday(-1),
+      nationality: 'フィリピン', note: '外国籍の長い名前（姓が2語・小文字で入力→印字は大文字）：カナも氏名もはみ出す・失効再交付' })
+    insertEnrollment({ student_id: f3, course_date: rn4.course_date, venue: rn4.location, extra: renewalExtra('lapsed', rn4.location, rn4.start_time, 'no') })
 
     // ═════ 重複の確認用 ═════
     // 同姓同名・別人（生年月日が違う）

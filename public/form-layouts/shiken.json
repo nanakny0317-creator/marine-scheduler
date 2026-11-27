@@ -1325,5 +1325,18 @@
     "maxChars": 1,
     "fontSize": 8.4,
     "anchor": "center"
+  },
+  {
+    "id": "name_kana_rest",
+    "key": "full_kana",
+    "label": "④_氏名カナ（続き）",
+    "page": 1,
+    "type": "text",
+    "x": 262,
+    "y": 519,
+    "width": 275.71,
+    "fontSize": 10,
+    "startChar": 22,
+    "align": "right"
   }
 ]

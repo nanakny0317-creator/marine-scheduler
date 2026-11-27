@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { Student } from '../../types'
-import { licenseSummary } from '../../data/masterData'
+import { licenseSummary, marineLicenseSummary } from '../../data/masterData'
 
 /** DB の日付文字列をローカル日付として解釈（UTC ずれ防止） */
 function parseLocalYmd(s: string): Date | null {
@@ -129,6 +129,7 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
           <Row label="有効期限" value={dash(student.license_expiry ?? null)} />
           <Row label="交付日" value={dash(student.license_issue_date ?? null)} />
           <Row label="種類" value={dash(licenseSummary(student) || null)} />
+          <Row label="海技免許" value={dash(marineLicenseSummary(student.marine_licenses) || null)} />
         </div>
       </section>
 
@@ -141,6 +142,9 @@ export default function MemberBasicInfoReadOnly({ student, className = '' }: Pro
           <Row label="性別" value={genderLabel(student.gender)} />
           <Row label="本籍地" value={dash(student.domicile ?? null)} />
           <Row label="国籍" value={student.nationality?.trim() || '日本'} />
+          {(student.alias_name || student.alias_kana) && (
+            <Row label="通称" value={[student.alias_name, student.alias_kana && `（${student.alias_kana}）`].filter(Boolean).join('')} />
+          )}
         </div>
       </section>
 
