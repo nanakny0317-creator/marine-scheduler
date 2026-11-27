@@ -118,6 +118,8 @@ const DATA_KEY_OPTIONS: { value: string; label: string; values?: string[] }[] = 
   { value: 'license_return_yes',   label: '免許証返納：有（×）' },
   { value: 'license_return_no',    label: '免許証返納：無（×）' },
   { value: 'license_return',       label: '免許証返納', values: ['yes', 'no'] },
+  { value: 'license_diff_name',     label: '試験⑩ 現有免許証と違う：氏名（×）' },
+  { value: 'license_diff_domicile', label: '試験⑩ 現有免許証と違う：本籍・国籍（×）' },
   { value: 'reissue_expired',      label: '再交付の事由：期限切（×）' },
   { value: 'reissue_washed',       label: '再交付の事由：流失（×）' },
   { value: 'reissue_burned',       label: '再交付の事由：焼失（×）' },

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CORRECTION_ITEMS, REISSUE_NO_LICENSE, REISSUE_REASONS, readCorrectionItems, readReissueReasons, type CorrectionItem, type ReissueReason } from '../../lib/correctionItems'
+import { CORRECTION_ITEMS, LICENSE_DIFF_ITEMS, REISSUE_NO_LICENSE, REISSUE_REASONS, readCorrectionItems, readLicenseDiff, readReissueReasons, type CorrectionItem, type LicenseDiffItem, type ReissueReason } from '../../lib/correctionItems'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { ApplicationType, Classroom, Enrollment, EnrollmentInput, ExamRecord, ExamSession, PhysicalExam, RenewalSession } from '../../types'
@@ -98,6 +98,7 @@ interface ExtraResult {
   correction: '' | 'yes' | 'no'      // 訂正（登録事項の訂正申請）有／無（更新・失効）
   correctionItems: CorrectionItem[]  // 訂正ありのとき、変更のある項目（申請書の「変更」欄に×）
   reissueReasons: ReissueReason[]    // 失効再交付：再交付の事由（申請書①。複数可）
+  licenseDiff: LicenseDiffItem[]     // 試験：現有免許証と違う項目（申請書⑩。住民票のコピーを添付）
   courseOrg: number                  // 講習機関コード（更新・失効）
   bureau: string                     // 提出先 "本局-支局"（更新・失効）
 }
@@ -151,7 +152,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
       examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
       // 免許証返納：免許証を持っていれば有（紛失などで手元にないときだけ無）。新しい申込は有から
-      licenseReturn: 'yes', correction: '', correctionItems: [], reissueReasons: ['expired'], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: 'yes', correction: '', correctionItems: [], reissueReasons: ['expired'], licenseDiff: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -201,7 +202,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       prevExam:      readPrevExam(extra.prev_exam),
       shintai:       extra.shintai === 'need' || extra.shintai === 'have' || extra.shintai === 'omit' ? extra.shintai : '',
       shintaiPass:   readShintaiPass(extra.shintai_pass),
-      licenseReturn: '', correction: '', correctionItems: [], reissueReasons: ['expired'], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: '', correction: '', correctionItems: [], reissueReasons: ['expired'], licenseDiff: readLicenseDiff(extra.license_diff), courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -221,6 +222,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     correction: extra.correction === 'yes' || extra.correction === 'no' ? extra.correction : '',
     correctionItems: readCorrectionItems(extra.correction_items),
     reissueReasons: readReissueReasons(extra.reissue_reasons),
+    licenseDiff: [],
     courseOrg: typeof extra.course_org_code === 'number' ? extra.course_org_code : DEFAULT_COURSE_ORG,
     bureau: typeof extra.bureau_code === 'string' && typeof extra.branch_code === 'string'
       ? bureauKey(extra.bureau_code, extra.branch_code) : DEFAULT_BUREAU_KEY,
@@ -265,6 +267,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   const [correction,        setCorrection]        = useState<'' | 'yes' | 'no'>('')
   const [correctionItems,   setCorrectionItems]   = useState<CorrectionItem[]>([])
   const [reissueReasons,    setReissueReasons]    = useState<ReissueReason[]>(['expired'])
+  const [licenseDiff,       setLicenseDiff]       = useState<LicenseDiffItem[]>([])
   const [courseOrg,         setCourseOrg]         = useState<number>(DEFAULT_COURSE_ORG)
   const [bureau,            setBureau]            = useState<string>(DEFAULT_BUREAU_KEY)
 
@@ -439,6 +442,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
     setCorrection(ex.correction)
     setCorrectionItems(ex.correctionItems)
     setReissueReasons(ex.reissueReasons)
+    setLicenseDiff(ex.licenseDiff)
     setCourseOrg(ex.courseOrg)
     setBureau(ex.bureau)
     setMenu(enrollment?.menu ?? '')
@@ -547,6 +551,8 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
         extra.shintai_pass = { date: shintaiPass.date, location: shintaiPass.location.trim(), number: shintaiPass.number.trim() }
       } else delete extra.shintai_pass
       if (jointId != null) extra.joint_enrollment_id = jointId; else delete extra.joint_enrollment_id
+      if (licenseDiff.length) extra.license_diff = LICENSE_DIFF_ITEMS.map(i => i.value).filter(v => licenseDiff.includes(v))
+      else delete extra.license_diff
       if (matchedExamSession) {
         extra.exam_session_id = matchedExamSession.id
         extra.exam_id         = matchedExamSession.exam_id
@@ -577,6 +583,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       else delete extra.correction_items
       if (applicationType === 'lapsed') extra.reissue_reasons = REISSUE_REASONS.map(i => i.value).filter(v => reissueReasons.includes(v))
       else delete extra.reissue_reasons
+      delete extra.license_diff
       extra.course_org_code = courseOrg
       const [bc, brc] = bureau.split('-')
       extra.bureau_code = bc
@@ -847,6 +854,29 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                     </div>
                   </div>
                 )}
+              </div>
+              {/* 申請書⑩ 現有免許証の確認事項（小型船舶の免許をお持ちの方） */}
+              <div>
+                <label className="field-label">現有免許証と違う項目（免許をお持ちの方）</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {LICENSE_DIFF_ITEMS.map(({ value, label }) => {
+                    const on = licenseDiff.includes(value)
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setLicenseDiff(on ? licenseDiff.filter(v => v !== value) : [...licenseDiff, value])}
+                        className={[
+                          'px-3 py-1 rounded-lg border text-sm font-medium transition',
+                          on ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                        ].join(' ')}
+                      >
+                        {on ? '☑' : '☐'} {label}
+                      </button>
+                    )
+                  })}
+                  <span className="note-text">{licenseDiff.length ? '住民票のコピーを添付（確認メモに出ます）' : '違いがなければ選ばない'}</span>
+                </div>
               </div>
               {!examQualType ? (
                 <p className="note-text">資格種別を選ぶと、登録済みの試験日程から選択できます</p>

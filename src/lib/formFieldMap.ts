@@ -5,7 +5,7 @@
  * フォームのキーは public/form-layouts/*.json の "key" フィールドと対応している。
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
-import { readCorrectionItems, readReissueReasons, readTeiseiItems } from './correctionItems'
+import { readCorrectionItems, readLicenseDiff, readReissueReasons, readTeiseiItems } from './correctionItems'
 import { MARINE_LICENSE_VALUES, PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode, readMarineLicenses } from '../data/masterData'
 import { examLocationForForm } from './examLocation'
 import { birthDateModeFor, type BirthDateStyle } from './birthDateStyle'
@@ -262,6 +262,8 @@ export function buildFormData(
   const teisei = readTeiseiItems(extra.teisei_items)
   // 失効再交付申請書①再交付の事由（失効再交付の申込だけ。未設定は期限切）
   const reissue = appType === 'lapsed' ? readReissueReasons(extra.reissue_reasons) : []
+  // 試験申請書⑩：現有免許証の氏名・本籍国籍が今と違う（同時申請はどちらかに入っていれば）
+  const licDiff = appType === 'new' ? [...new Set([...readLicenseDiff(extra.license_diff), ...readLicenseDiff(jx?.license_diff)])] : []
 
   return {
     // ── 氏名 ──
@@ -455,6 +457,9 @@ export function buildFormData(
     // 試験申請書⑪：航海・機関の免許を持っているか
     '航海有': X(marine.some(v => v.startsWith('航海'))),
     '機関有': X(marine.some(v => v.startsWith('機関'))),
+    // 試験申請書⑩ 現有免許証の確認事項
+    license_diff_name:     X(licDiff.includes('name')),
+    license_diff_domicile: X(licDiff.includes('domicile')),
     // 再交付の事由（失効再交付①）
     reissue_expired: X(reissue.includes('expired')),
     reissue_washed:  X(reissue.includes('washed')),

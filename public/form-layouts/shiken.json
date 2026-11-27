@@ -1302,7 +1302,7 @@
   },
   {
     "id": "cvt0078",
-    "key": "Text",
+    "key": "license_diff_name",
     "label": "⑩_氏名",
     "page": 1,
     "type": "chars",
@@ -1315,7 +1315,7 @@
   },
   {
     "id": "cvt0079",
-    "key": "Text",
+    "key": "license_diff_domicile",
     "label": "⑩_本籍・国籍",
     "page": 1,
     "type": "chars",

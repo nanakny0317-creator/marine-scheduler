@@ -10,7 +10,7 @@ import { buildFormData } from './formFieldMap'
 import { loadBirthDateStyle } from './birthDateStyle'
 import { printForms, type FieldDef, type FormPrintJob } from './formPrint'
 import { findJointPartner, orderJoint } from './jointApplication'
-import { readCorrectionItems, readTeiseiItems, type CorrectionItem, type TeiseiItem } from './correctionItems'
+import { LICENSE_DIFF_ITEMS, readCorrectionItems, readLicenseDiff, readTeiseiItems, type CorrectionItem, type TeiseiItem } from './correctionItems'
 
 export const PRINT_FORM_MAP: Record<string, { layout: string; title: string; pageCount: number }> = {
   new:     { layout: '/form-layouts/shiken.json',  title: '試験申請書',       pageCount: 1 },
@@ -66,7 +66,7 @@ export async function printApplicationForms(targets: PrintTarget[], title?: stri
   // 裏面（変更前の氏名・本籍・国籍）は手書き、住所変更は住民票の確認。漏れないよう、必ず続けてメモを出す
   const memo = backSideMemoTargets(targets)
   if (memo.length > 0) {
-    alert(`裏面の手書き・住民票の確認が要る人が ${memo.length} 人います（訂正・通称）。
+    alert(`裏面の手書き・住民票の確認や添付が要る人が ${memo.length} 人います（訂正・通称・現有免許証との違い）。
 
 続けて「${memoTitle(memo)}」を開きます。コピー用紙に印刷して、申請書と一緒に置いてください。`)
     await printBackSideMemo(memo)
@@ -105,7 +105,7 @@ export function aliasMemoLabel(s: Student): string | null {
   return `裏面：通称　${name}${kana ? `（${kana}）` : ''}`
 }
 
-/** 確認メモが要る人：更新・失効で訂正あり（変更の項目がある）／訂正申請書／通称がある人（試験申請書以外） */
+/** 確認メモが要る人：更新・失効で訂正あり（変更の項目がある）／訂正申請書／試験で現有免許証と違う項目がある／通称がある人（試験申請書以外） */
 export function backSideMemoTargets(targets: PrintTarget[]): MemoTarget[] {
   const out: MemoTarget[] = []
   for (const { student, enrollment } of targets) {
@@ -119,6 +119,10 @@ export function backSideMemoTargets(targets: PrintTarget[]): MemoTarget[] {
     } else if ((t === 'renewal' || t === 'lapsed') && ex.correction === 'yes') {
       const changes = readCorrectionItems(ex.correction_items)
       items.push(...BACK_SIDE_ITEMS.filter(b => changes.includes(b.item)).map(b => b.label))
+    } else if (t === 'new') {
+      // 試験申請書⑩：現有免許証と氏名・本籍国籍が違う → 住民票のコピーを添付
+      const diff = readLicenseDiff(ex.license_diff)
+      if (diff.length) items.push(`住民票のコピーを添付（現有免許証と${LICENSE_DIFF_ITEMS.filter(i => diff.includes(i.value)).map(i => i.label).join('・')}が違う）`)
     }
     // 試験申請書には裏面の通称欄がないので出さない
     const alias = PRINT_FORM_MAP[t] && t !== 'new' ? aliasMemoLabel(student) : null
@@ -160,7 +164,7 @@ td.chk { width: 10mm; text-align: center; font-size: 14pt; }
 tr { page-break-inside: avoid; }
 </style></head><body>
 <h1>${escHtml(memoTitle(memo))}（${memo.length}人）</h1>
-<p class="lead">印刷日 ${escHtml(today)}　裏面に変更前の内容・通称を手書きし、住所変更の人は住民票を確認してください。済んだら左の欄に印を付けます。</p>
+<p class="lead">印刷日 ${escHtml(today)}　裏面に変更前の内容・通称を手書きし、住所変更の人は住民票を確認、住民票のコピーが要る人は添付してください。済んだら左の欄に印を付けます。</p>
 <table>
 <thead><tr><th>済</th><th>氏名</th><th>申請書・講習日</th><th>手書き・確認すること</th></tr></thead>
 <tbody>

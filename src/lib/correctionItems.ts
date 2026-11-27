@@ -56,3 +56,19 @@ export function readReissueReasons(v: unknown): ReissueReason[] {
 
 /** 免許証が手元にない事由（返納は「無」になる）。き損は免許証があるので含めない */
 export const REISSUE_NO_LICENSE: ReissueReason[] = ['washed', 'burned', 'lost', 'stolen']
+
+/**
+ * 試験申請書⑩「現有免許証の確認事項」：持っている免許証の氏名・本籍国籍が今（④⑨）と違う（extra.license_diff）。
+ * 違うときは住民票のコピーを添付する（確認メモに出す）
+ */
+export type LicenseDiffItem = 'name' | 'domicile'
+
+export const LICENSE_DIFF_ITEMS: { value: LicenseDiffItem; label: string }[] = [
+  { value: 'name',     label: '氏名' },
+  { value: 'domicile', label: '本籍・国籍' },
+]
+
+export function readLicenseDiff(v: unknown): LicenseDiffItem[] {
+  if (!Array.isArray(v)) return []
+  return LICENSE_DIFF_ITEMS.map(i => i.value).filter(x => v.includes(x))
+}
