@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CORRECTION_ITEMS, readCorrectionItems, type CorrectionItem } from '../../lib/correctionItems'
+import { CORRECTION_ITEMS, REISSUE_NO_LICENSE, REISSUE_REASONS, readCorrectionItems, readReissueReasons, type CorrectionItem, type ReissueReason } from '../../lib/correctionItems'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import type { ApplicationType, Classroom, Enrollment, EnrollmentInput, ExamRecord, ExamSession, PhysicalExam, RenewalSession } from '../../types'
@@ -97,6 +97,7 @@ interface ExtraResult {
   licenseReturn: '' | 'yes' | 'no'   // 免許証返納 有／無（更新・失効）
   correction: '' | 'yes' | 'no'      // 訂正（登録事項の訂正申請）有／無（更新・失効）
   correctionItems: CorrectionItem[]  // 訂正ありのとき、変更のある項目（申請書の「変更」欄に×）
+  reissueReasons: ReissueReason[]    // 失効再交付：再交付の事由（申請書①。複数可）
   courseOrg: number                  // 講習機関コード（更新・失効）
   bureau: string                     // 提出先 "本局-支局"（更新・失効）
 }
@@ -150,7 +151,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
       examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
       // 免許証返納：免許証を持っていれば有（紛失などで手元にないときだけ無）。新しい申込は有から
-      licenseReturn: 'yes', correction: '', correctionItems: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: 'yes', correction: '', correctionItems: [], reissueReasons: ['expired'], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -200,7 +201,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       prevExam:      readPrevExam(extra.prev_exam),
       shintai:       extra.shintai === 'need' || extra.shintai === 'have' || extra.shintai === 'omit' ? extra.shintai : '',
       shintaiPass:   readShintaiPass(extra.shintai_pass),
-      licenseReturn: '', correction: '', correctionItems: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: '', correction: '', correctionItems: [], reissueReasons: ['expired'], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -219,6 +220,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     licenseReturn: extra.license_return === 'yes' || extra.license_return === 'no' ? extra.license_return : '',
     correction: extra.correction === 'yes' || extra.correction === 'no' ? extra.correction : '',
     correctionItems: readCorrectionItems(extra.correction_items),
+    reissueReasons: readReissueReasons(extra.reissue_reasons),
     courseOrg: typeof extra.course_org_code === 'number' ? extra.course_org_code : DEFAULT_COURSE_ORG,
     bureau: typeof extra.bureau_code === 'string' && typeof extra.branch_code === 'string'
       ? bureauKey(extra.bureau_code, extra.branch_code) : DEFAULT_BUREAU_KEY,
@@ -262,6 +264,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   const [licenseReturn,     setLicenseReturn]     = useState<'' | 'yes' | 'no'>('')
   const [correction,        setCorrection]        = useState<'' | 'yes' | 'no'>('')
   const [correctionItems,   setCorrectionItems]   = useState<CorrectionItem[]>([])
+  const [reissueReasons,    setReissueReasons]    = useState<ReissueReason[]>(['expired'])
   const [courseOrg,         setCourseOrg]         = useState<number>(DEFAULT_COURSE_ORG)
   const [bureau,            setBureau]            = useState<string>(DEFAULT_BUREAU_KEY)
 
@@ -435,6 +438,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
     setLicenseReturn(ex.licenseReturn)
     setCorrection(ex.correction)
     setCorrectionItems(ex.correctionItems)
+    setReissueReasons(ex.reissueReasons)
     setCourseOrg(ex.courseOrg)
     setBureau(ex.bureau)
     setMenu(enrollment?.menu ?? '')
@@ -558,6 +562,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       delete extra.license_return
       delete extra.correction
       delete extra.correction_items
+      delete extra.reissue_reasons
       delete extra.course_org_code
       delete extra.bureau_code
       delete extra.branch_code
@@ -570,6 +575,8 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       if (correction)    extra.correction     = correction;    else delete extra.correction
       if (correction === 'yes' && correctionItems.length) extra.correction_items = CORRECTION_ITEMS.map(i => i.value).filter(v => correctionItems.includes(v))
       else delete extra.correction_items
+      if (applicationType === 'lapsed') extra.reissue_reasons = REISSUE_REASONS.map(i => i.value).filter(v => reissueReasons.includes(v))
+      else delete extra.reissue_reasons
       extra.course_org_code = courseOrg
       const [bc, brc] = bureau.split('-')
       extra.bureau_code = bc
@@ -957,6 +964,37 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                 <input type="text" value={courseTime} onChange={e => setCourseTime(e.target.value)} className="field-input" placeholder="14:00" />
               </div>
             </div>
+            {applicationType === 'lapsed' && (
+              <div>
+                <label className="field-label">再交付の事由</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {REISSUE_REASONS.map(({ value, label }) => {
+                    const on = reissueReasons.includes(value)
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setReissueReasons(on ? reissueReasons.filter(v => v !== value) : [...reissueReasons, value])
+                          // 流失・焼失・紛失・盗難は免許証が手元にないので、返納が未選択なら「無」に
+                          if (!on && REISSUE_NO_LICENSE.includes(value) && !licenseReturn) setLicenseReturn('no')
+                        }}
+                        className={[
+                          'px-3 py-1 rounded-lg border text-sm font-medium transition',
+                          on ? 'bg-lavender-400 text-white border-lavender-400' : 'bg-white text-gray-500 border-gray-200 hover:border-lavender-300',
+                        ].join(' ')}
+                      >
+                        {on ? '☑' : '☐'} {label}
+                      </button>
+                    )
+                  })}
+                  {reissueReasons.length === 0 && <span className="note-text text-orange-500">事由を選んでください</span>}
+                </div>
+                {reissueReasons.some(r => REISSUE_NO_LICENSE.includes(r)) && licenseReturn === 'yes' && (
+                  <p className="note-text text-orange-500 mt-1">免許証が手元にない事由です。免許証返納は「無」では？</p>
+                )}
+              </div>
+            )}
             <div>
               <label className="field-label">免許証返納</label>
               <div className="flex items-center gap-2">

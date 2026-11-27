@@ -65,6 +65,8 @@ function issuesOf(x: Entry): string[] {
   if (ex.license_return !== 'yes' && ex.license_return !== 'no') out.push('免許証返納')
   if (ex.correction !== 'yes' && ex.correction !== 'no') out.push('訂正の有無')
   else if (ex.correction === 'yes' && !(Array.isArray(ex.correction_items) && ex.correction_items.length)) out.push('訂正の項目')
+  // 失効再交付：事由を全部外したまま（未設定の古い申込は期限切として扱うので出さない）
+  if (ex.application_type === 'lapsed' && Array.isArray(ex.reissue_reasons) && ex.reissue_reasons.length === 0) out.push('再交付の事由')
   return out
 }
 

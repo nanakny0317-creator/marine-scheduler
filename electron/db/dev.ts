@@ -415,8 +415,8 @@ export function devSeedTestData(): DevCounts {
     const l2 = insertStudent({ last_name: '沖田', first_name: '修', last_kana: 'オキタ', first_kana: 'オサム', birth_date: '1970-04-04', gender: 'male',
       postal_code: '5200000', prefecture: '滋賀県', city: '彦根市', address1: '元町3-3', mobile: '090-0000-9102',
       license_number: '0300250099999', license_class: '一級', license_options: '特殊', license_issue_date: yearsFromToday(-3), license_expiry: yearsFromToday(2),
-      domicile: '滋賀県', note: '失効再交付：免許証を紛失（有効期限内）' })
-    insertEnrollment({ student_id: l2, course_date: rn4.course_date, venue: rn4.location, extra: renewalExtra('lapsed', rn4.location, rn4.start_time, '') })
+      domicile: '滋賀県', note: '失効再交付：免許証を紛失（有効期限内）・事由 紛失・返納 無' })
+    insertEnrollment({ student_id: l2, course_date: rn4.course_date, venue: rn4.location, extra: { ...renewalExtra('lapsed', rn4.location, rn4.start_time, 'no'), reissue_reasons: ['lost'] } })
 
     // ═════ 外国籍の長い名前（OCR欄のマスからはみ出す：続きは氏名欄の下に印字） ═════
     // パスポートの順（ファミリーネームが先・ミドルネームあり）。更新申請書（カナ22・漢字12マス）

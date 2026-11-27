@@ -5,7 +5,7 @@
  * フォームのキーは public/form-layouts/*.json の "key" フィールドと対応している。
  */
 import type { Student, Enrollment, ExamSession, Venue } from '../types'
-import { readCorrectionItems, readTeiseiItems } from './correctionItems'
+import { readCorrectionItems, readReissueReasons, readTeiseiItems } from './correctionItems'
 import { MARINE_LICENSE_VALUES, PREFECTURES, courseOrgCode2, licenseSummary, nationalityCode, readMarineLicenses } from '../data/masterData'
 import { examLocationForForm } from './examLocation'
 import { birthDateModeFor, type BirthDateStyle } from './birthDateStyle'
@@ -260,6 +260,8 @@ export function buildFormData(
   const changes = extra.correction === 'yes' ? readCorrectionItems(extra.correction_items) : []
   // 訂正申請書①（訂正だけの人）
   const teisei = readTeiseiItems(extra.teisei_items)
+  // 失効再交付申請書①再交付の事由（失効再交付の申込だけ。未設定は期限切）
+  const reissue = appType === 'lapsed' ? readReissueReasons(extra.reissue_reasons) : []
 
   return {
     // ── 氏名 ──
@@ -453,8 +455,13 @@ export function buildFormData(
     // 試験申請書⑪：航海・機関の免許を持っているか
     '航海有': X(marine.some(v => v.startsWith('航海'))),
     '機関有': X(marine.some(v => v.startsWith('機関'))),
-    // 再交付の事由（失効再交付①）：失効再交付の申込は「期限切」
-    reissue_expired: X(appType === 'lapsed'),
+    // 再交付の事由（失効再交付①）
+    reissue_expired: X(reissue.includes('expired')),
+    reissue_washed:  X(reissue.includes('washed')),
+    reissue_burned:  X(reissue.includes('burned')),
+    reissue_lost:    X(reissue.includes('lost')),
+    reissue_stolen:  X(reissue.includes('stolen')),
+    reissue_damaged: X(reissue.includes('damaged')),
 
     // ── mark 型対応（条件チェック） ──
     // 性別チェック

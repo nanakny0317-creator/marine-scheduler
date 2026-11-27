@@ -14,7 +14,7 @@
   },
   {
     "id": "cvt0045",
-    "key": "流出",
+    "key": "reissue_washed",
     "label": "①流失",
     "page": 1,
     "type": "chars",
@@ -27,7 +27,7 @@
   },
   {
     "id": "cvt0046",
-    "key": "焼失",
+    "key": "reissue_burned",
     "label": "①焼失",
     "page": 1,
     "type": "chars",
@@ -40,7 +40,7 @@
   },
   {
     "id": "cvt0047",
-    "key": "紛失",
+    "key": "reissue_lost",
     "label": "①紛失",
     "page": 1,
     "type": "chars",
@@ -53,7 +53,7 @@
   },
   {
     "id": "cvt0048",
-    "key": "盗難",
+    "key": "reissue_stolen",
     "label": "①盗難",
     "page": 1,
     "type": "chars",
@@ -66,7 +66,7 @@
   },
   {
     "id": "cvt0049",
-    "key": "き損",
+    "key": "reissue_damaged",
     "label": "①き損",
     "page": 1,
     "type": "chars",
