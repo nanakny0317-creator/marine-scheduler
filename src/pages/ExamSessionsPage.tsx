@@ -400,7 +400,7 @@ ${e instanceof Error ? e.message : String(e)}`)
       {formOpen && (
         <ExamSessionFormModal
           initial={editTarget
-            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id, exam_type: editTarget.exam_type, gakka_venue: editTarget.gakka_venue, jitsugi_venue: editTarget.jitsugi_venue, result_date: editTarget.result_date }
+            ? { exam_date: editTarget.exam_date, exam_location: editTarget.exam_location, qualification_type: editTarget.qualification_type, exam_id: editTarget.exam_id, exam_type: editTarget.exam_type, gakka_venue: editTarget.gakka_venue, jitsugi_venue: editTarget.jitsugi_venue, result_date: editTarget.result_date, exam_office: editTarget.exam_office }
             : makeEmpty()
           }
           editId={editTarget?.id ?? null}

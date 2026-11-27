@@ -231,14 +231,14 @@ export function devSeedTestData(): DevCounts {
 
     // ── 試験日程 ──
     const year = new Date().getFullYear()
-    const ex2Osaka  = insertExamSession({ exam_date: daysFromToday(21), exam_location: '大阪府大阪市',          qualification_type: '二級', exam_id: `${year}-T-001`, gakka_venue: '大阪南港ATC', jitsugi_venue: '大阪南港ATC' })
-    const ex2Biwa   = insertExamSession({ exam_date: daysFromToday(35), exam_location: '滋賀県大津市（浜大津）', qualification_type: '二級', exam_id: `${year}-T-002`, gakka_venue: '浜大津公民館', jitsugi_venue: '大津港' })
-    const ex1Nishi  = insertExamSession({ exam_date: daysFromToday(28), exam_location: '兵庫県西宮市',          qualification_type: '一級', exam_id: `${year}-T-003`, gakka_venue: '西宮市民会館', jitsugi_venue: '新西宮ヨットハーバー' })
-    const exTokushu = insertExamSession({ exam_date: daysFromToday(42), exam_location: '滋賀県彦根市',          qualification_type: '特殊', exam_id: `${year}-T-004`, gakka_venue: '彦根市民会館', jitsugi_venue: '彦根港' })
-    const exKosen   = insertExamSession({ exam_date: daysFromToday(56), exam_location: '京都府舞鶴市',          qualification_type: '湖川', exam_id: `${year}-T-005`, gakka_venue: '舞鶴市商工観光センター', jitsugi_venue: '舞鶴港' })
+    const ex2Osaka  = insertExamSession({ exam_date: daysFromToday(21), exam_location: '大阪府大阪市',          qualification_type: '二級', exam_id: `${String(year).slice(2)}0001`, gakka_venue: '大阪南港ATC', jitsugi_venue: '大阪南港ATC' })
+    const ex2Biwa   = insertExamSession({ exam_date: daysFromToday(35), exam_location: '滋賀県大津市（浜大津）', qualification_type: '二級', exam_id: `${String(year).slice(2)}0002`, gakka_venue: '浜大津公民館', jitsugi_venue: '大津港' })
+    const ex1Nishi  = insertExamSession({ exam_date: daysFromToday(28), exam_location: '兵庫県西宮市',          qualification_type: '一級', exam_id: `${String(year).slice(2)}0003`, gakka_venue: '西宮市民会館', jitsugi_venue: '新西宮ヨットハーバー' })
+    const exTokushu = insertExamSession({ exam_date: daysFromToday(42), exam_location: '滋賀県彦根市',          qualification_type: '特殊', exam_id: `${String(year).slice(2)}0004`, gakka_venue: '彦根市民会館', jitsugi_venue: '彦根港' })
+    const exKosen   = insertExamSession({ exam_date: daysFromToday(56), exam_location: '京都府舞鶴市',          qualification_type: '湖川', exam_id: `${String(year).slice(2)}0005`, gakka_venue: '舞鶴市商工観光センター', jitsugi_venue: '舞鶴港' })
     // 過去の試験（試験記録・免除の根拠用）
-    const exPast    = insertExamSession({ exam_date: daysFromToday(-120), exam_location: '大阪府大阪市',        qualification_type: '二級', exam_id: `${year}-T-900`, gakka_venue: '大阪南港ATC', jitsugi_venue: '大阪南港ATC' })
-    const exOld     = insertExamSession({ exam_date: yearsFromToday(-3), exam_location: '兵庫県神戸市',         qualification_type: '二級', exam_id: `${year - 3}-T-901`, gakka_venue: '神戸市産業振興センター', jitsugi_venue: '神戸港' })
+    const exPast    = insertExamSession({ exam_date: daysFromToday(-120), exam_location: '大阪府大阪市',        qualification_type: '二級', exam_id: `${String(year).slice(2)}0900`, gakka_venue: '大阪南港ATC', jitsugi_venue: '大阪南港ATC' })
+    const exOld     = insertExamSession({ exam_date: yearsFromToday(-3), exam_location: '兵庫県神戸市',         qualification_type: '二級', exam_id: `${String(year - 3).slice(2)}0901`, gakka_venue: '神戸市産業振興センター', jitsugi_venue: '神戸港' })
 
     // ── 更新講習の日程 ──
     const rn1 = insertRenewalSession(daysFromToday(10), venue(0), '13:30', '午後の部')
@@ -321,7 +321,7 @@ export function devSeedTestData(): DevCounts {
          jitsugi === '免' ? null : ses.id, jitsugi === '免' ? null : num, jitsugi, jitsugi ? resultDate : null, TEST_NOTE])
 
     // A. 発表日を過ぎた・まだ誰も合否を入れていない（3名、うち1名は学科免除）
-    const exWaitA = insertExamSession({ exam_date: daysFromToday(-6), exam_location: '大阪府大阪市', qualification_type: '二級', exam_id: `${year}-T-801`, gakka_venue: '大阪南港ATC', jitsugi_venue: '大阪南港ATC' })
+    const exWaitA = insertExamSession({ exam_date: daysFromToday(-6), exam_location: '大阪府大阪市', qualification_type: '二級', exam_id: `${String(year).slice(2)}0801`, gakka_venue: '大阪南港ATC', jitsugi_venue: '大阪南港ATC' })
     setResult(exWaitA.id, daysFromToday(-1), false)
     const wa = [
       insertStudent({ last_name: '待井', first_name: '一真', last_kana: 'マチイ', first_kana: 'カズマ', birth_date: '1991-02-02', gender: 'male',
@@ -335,7 +335,7 @@ export function devSeedTestData(): DevCounts {
       extra: newExamExtra({ session: exWaitA, classroom: classroom(0), courseDates: [daysFromToday(-20 + i)], shintai: 'need', gakka: i !== 2 }) }))
 
     // B. 試験は済んだが発表はまだ（2名。うち1名は途中まで入力済み）
-    const exWaitB = insertExamSession({ exam_date: daysFromToday(-2), exam_location: '兵庫県西宮市', qualification_type: '一級', exam_id: `${year}-T-802`, gakka_venue: '西宮市民会館', jitsugi_venue: '新西宮ヨットハーバー' })
+    const exWaitB = insertExamSession({ exam_date: daysFromToday(-2), exam_location: '兵庫県西宮市', qualification_type: '一級', exam_id: `${String(year).slice(2)}0802`, gakka_venue: '西宮市民会館', jitsugi_venue: '新西宮ヨットハーバー' })
     setResult(exWaitB.id, daysFromToday(3), false)
     const wb1 = insertStudent({ last_name: '前田', first_name: '発子', last_kana: 'マエダ', first_kana: 'ハツコ', birth_date: '1993-03-13', gender: 'female',
       postal_code: '6620000', prefecture: '兵庫県', city: '西宮市', address1: '甲子園町1-1', mobile: '090-0000-7201', domicile: '兵庫県', note: '合格確認B：発表前' })
@@ -346,7 +346,7 @@ export function devSeedTestData(): DevCounts {
     insertResult(wb2, wb2e, exWaitB, '0302', '合', null, daysFromToday(3))
 
     // C. 合否確定済み（合格2名・不合格1名）→ 免許申請の画面に合格者2名が出る
-    const exDone = insertExamSession({ exam_date: daysFromToday(-14), exam_location: '滋賀県大津市（浜大津）', qualification_type: '二級', exam_id: `${year}-T-803`, gakka_venue: '浜大津公民館', jitsugi_venue: '大津港' })
+    const exDone = insertExamSession({ exam_date: daysFromToday(-14), exam_location: '滋賀県大津市（浜大津）', qualification_type: '二級', exam_id: `${String(year).slice(2)}0803`, gakka_venue: '浜大津公民館', jitsugi_venue: '大津港' })
     const doneRd = daysFromToday(-10)
     setResult(exDone.id, doneRd, true)
     const dn: [string, string, string, string, string | null, string | null][] = [

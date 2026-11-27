@@ -190,12 +190,13 @@ export interface ExamSession {
   jitsugi_venue: string  // 実技試験会場
   result_date: string    // 合格発表日（空＝試験日の曜日から自動。lib/examResult の resultDateOf で決まる）
   result_checked: boolean // 合格発表を確認済み
+  exam_office: string    // 試験事務所番号（海レ協の事務所。免許申請書②）。空＝近畿（6）
   created_at: string
   updated_at: string
 }
 
-export type ExamSessionInput = Omit<ExamSession, 'id' | 'created_at' | 'updated_at' | 'result_date' | 'result_checked'>
-  & { result_date?: string; result_checked?: boolean }
+export type ExamSessionInput = Omit<ExamSession, 'id' | 'created_at' | 'updated_at' | 'result_date' | 'result_checked' | 'exam_office'>
+  & { result_date?: string; result_checked?: boolean; exam_office?: string }
 
 // ===== 授業会場マスター =====
 export interface Classroom {

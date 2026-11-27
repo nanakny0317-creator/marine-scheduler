@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 import type { ExamSessionInput } from '../types'
 import { examSessionsApi } from '../lib/api'
 import { normalizeExamLocation } from '../lib/examLocation'
+import { normalizeExamId } from '../lib/examId'
+import { defaultExamOffice, examOfficeLabel, loadExamOffices, DEFAULT_EXAM_OFFICES, type ExamOffice } from '../lib/examOffices'
 import { defaultResultDate } from '../lib/examResult'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -28,7 +30,7 @@ function fmtWithDow(d: string): string {
 }
 
 export function makeEmptyExamSession(): ExamSessionInput {
-  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技', gakka_venue: '', jitsugi_venue: '', result_date: '' }
+  return { exam_date: '', exam_location: '', qualification_type: '二級', exam_id: '', exam_type: '学科+実技', gakka_venue: '', jitsugi_venue: '', result_date: '', exam_office: '' }
 }
 
 // ── 追加/編集フォームモーダル ─────────────────────────────────
@@ -56,6 +58,10 @@ export default function ExamSessionFormModal({ initial, editId, onSave, onCancel
       .catch(() => {})
   }, [])
 
+  // 試験事務所のマスター（設定画面で変更できる）
+  const [offices, setOffices] = useState<ExamOffice[]>(DEFAULT_EXAM_OFFICES)
+  useEffect(() => { loadExamOffices().then(setOffices).catch(() => {}) }, [])
+
   const set = <K extends keyof ExamSessionInput>(k: K, v: ExamSessionInput[K]) =>
     setForm(f => ({ ...f, [k]: v }))
 
@@ -64,10 +70,12 @@ export default function ExamSessionFormModal({ initial, editId, onSave, onCancel
     if (!form.exam_date) { setError('試験日を入力してください'); return }
     const location = normalizeExamLocation(form.exam_location)
     if (!location) { setError('試験地を入力してください'); return }
-    if (!form.exam_id.trim()) { setError('試験IDを入力してください'); return }
+    // 試験IDは数字6桁（全角は半角に。数字以外は除く。足りない桁は前を0で埋める＝Excel取り込みと同じ）
+    const examId = normalizeExamId(form.exam_id)
+    if (!examId) { setError('試験IDを入力してください（数字6桁）'); return }
     setSaving(true)
     try {
-      await onSave({ ...form, exam_location: location })
+      await onSave({ ...form, exam_location: location, exam_id: examId })
     } catch {
       setError('保存に失敗しました')
       setSaving(false)
@@ -140,12 +148,28 @@ export default function ExamSessionFormModal({ initial, editId, onSave, onCancel
           </div>
 
           <div>
+            <label className="block text-xs text-gray-500 mb-1">試験事務所（免許申請書の試験事務所番号）</label>
+            <select
+              value={form.exam_office || ''}
+              onChange={e => set('exam_office', e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
+            >
+              <option value="">基本：{defaultExamOffice(offices) ? examOfficeLabel(defaultExamOffice(offices)!.number, offices) : '—'}</option>
+              {form.exam_office && !offices.some(o => o.number === form.exam_office) && (
+                <option value={form.exam_office}>番号 {form.exam_office}（一覧にない）</option>
+              )}
+              {offices.map(o => <option key={o.name + o.number} value={o.number}>{o.name}（{o.number}）</option>)}
+            </select>
+            <p className="text-[11px] text-gray-400 mt-0.5">事務所の一覧と番号は「設定 → 試験事務所」で変更できます</p>
+          </div>
+
+          <div>
             <label className="block text-xs text-gray-500 mb-1">試験ID</label>
             <input
               type="text"
               value={form.exam_id}
               onChange={e => set('exam_id', e.target.value)}
-              placeholder="例：2025-A-001"
+              placeholder="例：061201（数字6桁）"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lavender-400"
               required
             />

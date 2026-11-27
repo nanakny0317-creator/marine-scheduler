@@ -198,7 +198,7 @@ export async function initDb(): Promise<Database> {
   const examSessInfo = db.exec("PRAGMA table_info(exam_sessions)")
   if (examSessInfo.length > 0) {
     const cols = examSessInfo[0].values.map((row) => row[1] as string)
-    for (const c of ['gakka_venue', 'jitsugi_venue', 'result_date']) {
+    for (const c of ['gakka_venue', 'jitsugi_venue', 'result_date', 'exam_office']) {
       if (!cols.includes(c)) db.run(`ALTER TABLE exam_sessions ADD COLUMN ${c} TEXT NOT NULL DEFAULT ''`)
     }
     if (!cols.includes('result_checked')) db.run('ALTER TABLE exam_sessions ADD COLUMN result_checked INTEGER NOT NULL DEFAULT 0')

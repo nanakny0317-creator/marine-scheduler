@@ -17,8 +17,11 @@ import type { Enrollment, ExamRecord, ExamResult, ExamSession, Student } from '.
 import { enrollmentsApi, examRecordsApi, examSessionsApi } from '../lib/api'
 import { resultDateOf, todayIsoLocal } from '../lib/examResult'
 import { rosterEntriesFor, type RosterEntry } from '../lib/rosterPrint'
-import { needsResultCheck, recordFor, statusOf, type ResultStatus } from '../lib/examResultEntry'
+import { needsResultCheck, recordFor, saveResult, statusOf, type ResultStatus } from '../lib/examResultEntry'
 import ScheduleItemDetailModal from '../components/students/ScheduleItemDetailModal'
+import { printLicenseApplications } from '../lib/licensePrint'
+import ApplicationDateModal from '../components/students/ApplicationDateModal'
+import { formatApplicationDate, getApplicationDate } from '../lib/applicationDate'
 
 type Filter = 'open' | 'confirmed' | 'all'
 const FILTERS: { key: Filter; label: string }[] = [
@@ -137,7 +140,49 @@ export default function LicenseApplicationsPage() {
     if (notes.length === 0) return true
     return window.confirm(`${notes.join('、')}含まれています。\nこのまま${label}を印刷しますか？`)
   }
-  void confirmBeforePrint
+
+  const [printing, setPrinting] = useState(false)
+  const [showAppDate, setShowAppDate] = useState(false)
+  const printMenkyo = async () => {
+    if (!selected || !confirmBeforePrint('免許申請書')) return
+    const noNumber = checkedRows.filter(r => !(r.rec?.gakka_exam_number ?? r.rec?.jitsugi_exam_number)).length
+    const noDate = checkedRows.filter(r => !getApplicationDate(r.x.enrollment, 'license')).length
+    if (noDate > 0 && !window.confirm(`申請日が未設定の人が ${noDate} 名います（⑬申請月日が空欄になります）。
+このまま印刷しますか？`)) return
+    if (noNumber > 0 && !window.confirm(`受験番号が入っていない人が ${noNumber} 名います（④が空欄になります）。
+このまま印刷しますか？`)) return
+    setPrinting(true)
+    try {
+      await printLicenseApplications({
+        targets: checkedRows.map(r => ({ entry: r.x, session: selected, record: r.rec })),
+        sessions, applicants, records,
+        rosterFor: s => rosterEntriesFor(s, applicants),
+      })
+    } catch (e) {
+      alert(`印刷できませんでした：${e instanceof Error ? e.message : String(e)}`)
+    } finally { setPrinting(false) }
+  }
+
+  /**
+   * 受験番号：受験票が届いたら（試験の1週間前ごろ）ここで入れる。
+   * 試験記録に保存するので、合格確認（合否の入力）の受験番号と同じもの
+   */
+  const [savingNo, setSavingNo] = useState<number | null>(null)
+  const saveExamNumber = async (r: Row, raw: string) => {
+    if (!selected) return
+    const v = raw.normalize('NFKC').trim() || null
+    if (v === (r.rec?.gakka_exam_number ?? r.rec?.jitsugi_exam_number ?? null)) return
+    setSavingNo(r.x.enrollment.id)
+    try {
+      const saved = await saveResult(r.x, selected, records, {
+        ...(r.st.takesGakka ? { gakka_exam_number: v } : {}),
+        ...(r.st.takesJitsugi ? { jitsugi_exam_number: v } : {}),
+      })
+      setRecords(prev => prev.some(x => x.id === saved.id) ? prev.map(x => x.id === saved.id ? saved : x) : [...prev, saved])
+    } catch (e) {
+      alert(`受験番号を保存できませんでした：${e instanceof Error ? e.message : String(e)}`)
+    } finally { setSavingNo(null) }
+  }
 
   const sessionSummary = (s: ExamSession) => {
     const list = rowsBySession.get(s.id) ?? []
@@ -234,6 +279,7 @@ export default function LicenseApplicationsPage() {
                       <th className="text-left px-2 py-2 font-medium">氏名</th>
                       <th className="text-left px-2 py-2 font-medium">生年月日</th>
                       <th className="text-left px-2 py-2 font-medium">受験番号</th>
+                      <th className="text-left px-2 py-2 font-medium">申請日</th>
                       <th className="text-left px-2 py-2 font-medium">学科</th>
                       <th className="text-left px-2 py-2 font-medium">実技</th>
                     </tr>
@@ -252,7 +298,17 @@ export default function LicenseApplicationsPage() {
                             <span className="block text-[11px] text-gray-400">{x.student.last_kana} {x.student.first_kana}</span>
                           </td>
                           <td className="px-2 py-2 text-gray-600">{x.student.birth_date ? fmt(x.student.birth_date, 'yyyy/M/d') : ''}</td>
-                          <td className="px-2 py-2 text-gray-600 font-mono text-xs">{rec?.gakka_exam_number ?? rec?.jitsugi_exam_number ?? ''}</td>
+                          <td className="px-2 py-2" onDoubleClick={ev => ev.stopPropagation()}>
+                            <input type="text" inputMode="numeric" defaultValue={rec?.gakka_exam_number ?? rec?.jitsugi_exam_number ?? ''}
+                              key={`${x.enrollment.id}-${rec?.id ?? 'new'}-${rec?.updated_at ?? ''}`}
+                              disabled={savingNo === x.enrollment.id}
+                              onClick={ev => ev.stopPropagation()}
+                              onKeyDown={ev => { if (ev.key === 'Enter') (ev.target as HTMLInputElement).blur() }}
+                              onBlur={ev => saveExamNumber(r, ev.target.value)}
+                              title="受験票の受験番号（4桁）。合格確認の受験番号と同じ"
+                              className="field-input w-20 py-1 font-mono text-xs" placeholder="0001" />
+                          </td>
+                          <td className="px-2 py-2 text-gray-600 text-xs">{formatApplicationDate(getApplicationDate(x.enrollment, 'license')) || <span className="text-gray-300">未設定</span>}</td>
                           <td className="px-2 py-2 text-xs">{resultCell(st.gakka)}</td>
                           <td className="px-2 py-2 text-xs">{resultCell(st.jitsugi)}</td>
                         </tr>
@@ -264,8 +320,12 @@ export default function LicenseApplicationsPage() {
 
               <div className="shrink-0 border-t border-lavender-100 bg-white px-6 py-3 flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-bold text-lavender-600 mr-1">選んだ {checkedRows.length}名：</span>
-                <span className="text-xs text-gray-400 mr-1">準備中：</span>
-                {['免許申請書', '免許委任状（個別）', '免許委任状（一覧）', 'ラベル印刷'].map(l => (
+                <button type="button" onClick={() => setShowAppDate(true)} disabled={checkedRows.length === 0} className="btn-secondary btn-sm disabled:opacity-40">申請日を設定</button>
+                <button type="button" onClick={printMenkyo} disabled={printing || checkedRows.length === 0} className="btn-primary btn-sm disabled:opacity-40">
+                  {printing ? '作成中…' : '🖨 免許申請書'}
+                </button>
+                <span className="text-xs text-gray-400 ml-2 mr-1">準備中：</span>
+                {['免許委任状（個別）', '免許委任状（一覧）', 'ラベル印刷'].map(l => (
                   <button key={l} type="button" disabled className="btn-secondary btn-sm opacity-40 cursor-not-allowed" title="様式を確認してから作ります">{l}</button>
                 ))}
                 <button type="button" onClick={() => setChecked(defaultChecked())} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">
@@ -277,6 +337,15 @@ export default function LicenseApplicationsPage() {
         </main>
       </div>
 
+      {showAppDate && selected && (
+        <ApplicationDateModal
+          kind="license"
+          items={checkedRows.map(r => ({ student: r.x.student, enrollment: r.x.enrollment }))}
+          suggested={{ iso: resultDateOf(selected), label: '合格発表日' }}
+          onClose={() => setShowAppDate(false)}
+          onSaved={() => { setShowAppDate(false); load() }}
+        />
+      )}
       {detail && (
         <ScheduleItemDetailModal student={detail.student} enrollment={detail.enrollment}
           onClose={() => { setDetail(null); load() }} onUpdated={() => load()} />

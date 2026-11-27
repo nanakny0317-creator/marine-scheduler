@@ -9,7 +9,7 @@ import StudentForm from './StudentForm'
 import EnrollmentFormModal from './EnrollmentFormModal'
 import { getApplicationDate, setApplicationDate } from '../../lib/applicationDate'
 import { PRINT_FORM_MAP, printApplicationForms } from '../../lib/applicationPrint'
-import DateTextInput from '../DateTextInput'
+import CalendarDateInput from '../CalendarDateInput'
 
 const TYPE_LABEL: Record<string, string> = {
   new: '試験申請', renewal: '更新講習', lapsed: '失効再交付',
@@ -286,11 +286,10 @@ export default function ScheduleItemDetailModal({ student, enrollment, onClose, 
             <div className="flex items-center gap-2">
             <label className="flex items-center gap-1.5 text-xs text-gray-500" title="申請書に印字する申請日" onBlur={saveAppDate}>
               申請日
-              <DateTextInput
+              <CalendarDateInput
                 value={appDate}
                 onChange={setAppDate}
-                placeholder="未設定"
-                className="w-36"
+                className="w-40"
               />
             </label>
             <button

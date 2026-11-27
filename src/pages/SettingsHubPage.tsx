@@ -4,6 +4,7 @@ import {
   DEFAULT_BIRTH_DATE_STYLE, loadBirthDateStyle, saveBirthDateStyle,
   type BirthDateMode, type BirthDateStyle,
 } from '../lib/birthDateStyle'
+import { DEFAULT_EXAM_OFFICES, loadExamOffices, saveExamOffices, type ExamOffice } from '../lib/examOffices'
 
 interface Item {
   icon: string
@@ -75,6 +76,57 @@ function BirthDateStyleSetting() {
   )
 }
 
+/** 試験事務所（海レ協の事務所）と番号のマスター：免許申請書②試験事務所番号 */
+function ExamOfficeSetting() {
+  const [list, setList] = useState<ExamOffice[]>(DEFAULT_EXAM_OFFICES)
+  const [dirty, setDirty] = useState(false)
+  const [saved, setSaved] = useState(false)
+  useEffect(() => { loadExamOffices().then(setList) }, [])
+
+  const edit = (next: ExamOffice[]) => { setList(next); setDirty(true) }
+  const update = (i: number, patch: Partial<ExamOffice>) => edit(list.map((o, j) => j === i ? { ...o, ...patch } : o))
+  const setDefault = (i: number) => edit(list.map((o, j) => ({ ...o, isDefault: j === i })))
+  const remove = (i: number) => {
+    if (!window.confirm(`「${list[i].name}」を一覧から消しますか？（登録済みの試験日程の番号はそのまま残ります）`)) return
+    edit(list.filter((_, j) => j !== i))
+  }
+  const save = async () => {
+    const clean = list.map(o => ({ ...o, name: o.name.trim(), number: o.number.normalize('NFKC').trim() })).filter(o => o.name && o.number)
+    if (clean.length === 0) { alert('事務所を1つ以上入れてください'); return }
+    if (!clean.some(o => o.isDefault)) clean[0] = { ...clean[0], isDefault: true }
+    await saveExamOffices(clean)
+    setList(clean); setDirty(false); setSaved(true)
+    setTimeout(() => setSaved(false), 1500)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-lavender-100 shadow-sm px-5 py-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-bold text-gray-700 flex-1">試験事務所（免許申請書の試験事務所番号）</span>
+        {saved && <span className="text-xs text-mint-600">保存しました</span>}
+        <button type="button" onClick={save} disabled={!dirty} className="btn-primary btn-sm disabled:opacity-40">保存</button>
+      </div>
+      <table className="w-full text-sm">
+        <thead className="text-xs text-gray-400">
+          <tr><th className="text-left font-medium w-16">基本</th><th className="text-left font-medium">事務所</th><th className="text-left font-medium w-28">番号</th><th className="w-10"></th></tr>
+        </thead>
+        <tbody>
+          {list.map((o, i) => (
+            <tr key={i}>
+              <td className="py-1"><input type="radio" name="exam-office-default" checked={!!o.isDefault} onChange={() => setDefault(i)} className="accent-lavender-500" title="試験日程で選ばなかったときの事務所" /></td>
+              <td className="py-1 pr-2"><input type="text" value={o.name} onChange={e => update(i, { name: e.target.value })} className="field-input py-1" placeholder="近畿" /></td>
+              <td className="py-1 pr-2"><input type="text" value={o.number} onChange={e => update(i, { number: e.target.value })} className="field-input py-1 font-mono" placeholder="6" /></td>
+              <td className="py-1 text-right"><button type="button" onClick={() => remove(i)} className="text-xs text-gray-400 hover:text-red-500">削除</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <button type="button" onClick={() => edit([...list, { name: '', number: '' }])} className="text-xs text-lavender-600 hover:underline">＋ 事務所を追加</button>
+      <p className="text-xs text-gray-400">試験日程ごとに事務所を選びます。選ばなかった試験日程は「基本」の事務所の番号を印字します。番号を変えても、登録済みの試験日程の番号は変わりません。</p>
+    </div>
+  )
+}
+
 export default function SettingsHubPage() {
   const navigate = useNavigate()
 
@@ -114,6 +166,7 @@ export default function SettingsHubPage() {
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-lavender-600">申請書の印字</h2>
           <BirthDateStyleSetting />
+          <ExamOfficeSetting />
         </section>
       </div>
     </div>

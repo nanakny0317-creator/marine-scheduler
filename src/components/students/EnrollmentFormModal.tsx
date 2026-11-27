@@ -99,6 +99,7 @@ interface ExtraResult {
   correctionItems: CorrectionItem[]  // 訂正ありのとき、変更のある項目（申請書の「変更」欄に×）
   reissueReasons: ReissueReason[]    // 失効再交付：再交付の事由（申請書①。複数可）
   licenseDiff: LicenseDiffItem[]     // 試験：現有免許証と違う項目（申請書⑩。住民票のコピーを添付）
+  equipmentLimited: boolean          // 試験：設備等限定（免許申請書①。ほぼいないので基本は無し）
   courseOrg: number                  // 講習機関コード（更新・失効）
   bureau: string                     // 提出先 "本局-支局"（更新・失効）
 }
@@ -152,7 +153,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       examDate: '', examLocation: '', examStartTime: '', examQualType: '',
       examGakka: true, examJitsugi: true, prevExam: { ...EMPTY_PREV }, shintai: '', shintaiPass: { ...EMPTY_SHINTAI_PASS },
       // 免許証返納：免許証を持っていれば有（紛失などで手元にないときだけ無）。新しい申込は有から
-      licenseReturn: 'yes', correction: '', correctionItems: [], reissueReasons: ['expired'], licenseDiff: [], courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: 'yes', correction: '', correctionItems: [], reissueReasons: ['expired'], licenseDiff: [], equipmentLimited: false, courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -202,7 +203,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
       prevExam:      readPrevExam(extra.prev_exam),
       shintai:       extra.shintai === 'need' || extra.shintai === 'have' || extra.shintai === 'omit' ? extra.shintai : '',
       shintaiPass:   readShintaiPass(extra.shintai_pass),
-      licenseReturn: '', correction: '', correctionItems: [], reissueReasons: ['expired'], licenseDiff: readLicenseDiff(extra.license_diff), courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
+      licenseReturn: '', correction: '', correctionItems: [], reissueReasons: ['expired'], licenseDiff: readLicenseDiff(extra.license_diff), equipmentLimited: extra.equipment_limited === true, courseOrg: DEFAULT_COURSE_ORG, bureau: DEFAULT_BUREAU_KEY,
     }
   }
 
@@ -223,6 +224,7 @@ function readExtra(enrollment: Enrollment | null): ExtraResult {
     correctionItems: readCorrectionItems(extra.correction_items),
     reissueReasons: readReissueReasons(extra.reissue_reasons),
     licenseDiff: [],
+    equipmentLimited: false,
     courseOrg: typeof extra.course_org_code === 'number' ? extra.course_org_code : DEFAULT_COURSE_ORG,
     bureau: typeof extra.bureau_code === 'string' && typeof extra.branch_code === 'string'
       ? bureauKey(extra.bureau_code, extra.branch_code) : DEFAULT_BUREAU_KEY,
@@ -268,6 +270,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
   const [correctionItems,   setCorrectionItems]   = useState<CorrectionItem[]>([])
   const [reissueReasons,    setReissueReasons]    = useState<ReissueReason[]>(['expired'])
   const [licenseDiff,       setLicenseDiff]       = useState<LicenseDiffItem[]>([])
+  const [equipmentLimited,  setEquipmentLimited]  = useState(false)
   const [courseOrg,         setCourseOrg]         = useState<number>(DEFAULT_COURSE_ORG)
   const [bureau,            setBureau]            = useState<string>(DEFAULT_BUREAU_KEY)
 
@@ -443,6 +446,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
     setCorrectionItems(ex.correctionItems)
     setReissueReasons(ex.reissueReasons)
     setLicenseDiff(ex.licenseDiff)
+    setEquipmentLimited(ex.equipmentLimited)
     setCourseOrg(ex.courseOrg)
     setBureau(ex.bureau)
     setMenu(enrollment?.menu ?? '')
@@ -553,6 +557,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       if (jointId != null) extra.joint_enrollment_id = jointId; else delete extra.joint_enrollment_id
       if (licenseDiff.length) extra.license_diff = LICENSE_DIFF_ITEMS.map(i => i.value).filter(v => licenseDiff.includes(v))
       else delete extra.license_diff
+      if (equipmentLimited) extra.equipment_limited = true; else delete extra.equipment_limited
       if (matchedExamSession) {
         extra.exam_session_id = matchedExamSession.id
         extra.exam_id         = matchedExamSession.exam_id
@@ -584,6 +589,7 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
       if (applicationType === 'lapsed') extra.reissue_reasons = REISSUE_REASONS.map(i => i.value).filter(v => reissueReasons.includes(v))
       else delete extra.reissue_reasons
       delete extra.license_diff
+      delete extra.equipment_limited
       extra.course_org_code = courseOrg
       const [bc, brc] = bureau.split('-')
       extra.bureau_code = bc
@@ -855,6 +861,11 @@ export function useEnrollmentForm(enrollment: Enrollment | null, studentId?: num
                   </div>
                 )}
               </div>
+              {/* 免許申請書① 設備等限定（ほぼいないので基本は無し） */}
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none w-fit">
+                <input type="checkbox" checked={equipmentLimited} onChange={e => setEquipmentLimited(e.target.checked)} className="rounded" />
+                設備等限定<span className="note-text">（免許申請書①に×。該当する人だけ）</span>
+              </label>
               {/* 申請書⑩ 現有免許証の確認事項（小型船舶の免許をお持ちの方） */}
               <div>
                 <label className="field-label">現有免許証と違う項目（免許をお持ちの方）</label>

@@ -180,14 +180,14 @@ export const browserApiMock: ElectronAPI = {
   examSessions: {
     list: () => Promise.resolve([...examSessions].sort((a, b) => a.exam_date.localeCompare(b.exam_date))),
     create: (input: ExamSessionInput) => {
-      const s: ExamSession = { ...input, result_date: input.result_date ?? '', result_checked: !!input.result_checked, id: id(), created_at: now(), updated_at: now() }
+      const s: ExamSession = { ...input, result_date: input.result_date ?? '', result_checked: !!input.result_checked, exam_office: input.exam_office ?? '', id: id(), created_at: now(), updated_at: now() }
       examSessions.push(s)
       return Promise.resolve(s)
     },
     update: (sid: number, input: ExamSessionInput) => {
       const idx = examSessions.findIndex(s => s.id === sid)
       if (idx === -1) return Promise.reject(new Error('not found'))
-      examSessions[idx] = { ...examSessions[idx], ...input, result_date: input.result_date ?? examSessions[idx].result_date, result_checked: input.result_checked ?? examSessions[idx].result_checked, updated_at: now() }
+      examSessions[idx] = { ...examSessions[idx], ...input, result_date: input.result_date ?? examSessions[idx].result_date, result_checked: input.result_checked ?? examSessions[idx].result_checked, exam_office: input.exam_office ?? examSessions[idx].exam_office, updated_at: now() }
       return Promise.resolve(examSessions[idx])
     },
     delete: (sid: number) => {
@@ -204,7 +204,7 @@ export const browserApiMock: ElectronAPI = {
           examSessions[idx] = { ...examSessions[idx], exam_id: row.exam_id, gakka_venue: row.gakka_venue, jitsugi_venue: row.jitsugi_venue, updated_at: now() }
           updated++
         } else {
-          examSessions.push({ ...row, result_date: '', result_checked: false, id: id(), created_at: now(), updated_at: now() })
+          examSessions.push({ ...row, result_date: '', result_checked: false, exam_office: row.exam_office ?? '', id: id(), created_at: now(), updated_at: now() })
           inserted++
         }
       }
